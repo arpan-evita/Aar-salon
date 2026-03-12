@@ -4,10 +4,10 @@ import gallery3 from "@/assets/gallery-3.jpg";
 import gallery4 from "@/assets/gallery-4.jpg";
 
 const images = [
-  { src: gallery1, alt: "Hair styling session", span: "col-span-2 row-span-2" },
-  { src: gallery2, alt: "Luxury salon interior", span: "" },
-  { src: gallery3, alt: "Bridal makeup", span: "" },
-  { src: gallery4, alt: "Nail art", span: "col-span-2" },
+  { src: gallery1, alt: "Shoe restoration before and after", span: "col-span-2 row-span-2" },
+  { src: gallery2, alt: "Handbag cleaning and conditioning", span: "" },
+  { src: gallery3, alt: "Suitcase repair service", span: "" },
+  { src: gallery4, alt: "Leather accessories collection", span: "col-span-2" },
 ];
 
 const GallerySection = () => (
@@ -15,7 +15,7 @@ const GallerySection = () => (
     <div className="container mx-auto">
       <div className="text-center mb-16">
         <p className="text-primary/80 tracking-[0.3em] text-xs uppercase mb-4">Our Work</p>
-        <h2 className="font-heading text-3xl md:text-5xl text-primary mb-4">Salon Gallery</h2>
+        <h2 className="font-heading text-3xl md:text-5xl text-primary mb-4">Restoration Gallery</h2>
         <div className="w-20 h-px gold-gradient mx-auto" />
       </div>
 

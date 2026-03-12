@@ -9,7 +9,7 @@ const navLinks = [
   { label: "Services", href: "/services" },
   { label: "Book Now", href: "/booking" },
   { label: "Gallery", href: "/gallery" },
-  { label: "Stylists", href: "/stylists" },
+  { label: "Our Team", href: "/stylists" },
   { label: "Contact", href: "/contact" },
 ];
 
@@ -36,11 +36,10 @@ const Navbar = () => {
     >
       <div className="container mx-auto flex items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-3">
-          <img src={logo} alt="Hair Dot Com" className="w-9 h-9 rounded-full object-cover" />
-          <span className="font-heading text-xl md:text-2xl text-primary tracking-wide">Hair Dot Com</span>
+          <img src={logo} alt="RSL Care" className="w-9 h-9 rounded-full object-cover" />
+          <span className="font-heading text-xl md:text-2xl text-primary tracking-wide">RSL Care</span>
         </Link>
 
-        {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
             <Link
@@ -84,11 +83,10 @@ const Navbar = () => {
             to="/booking"
             className="gold-gradient text-primary-foreground px-6 py-2.5 text-sm font-medium tracking-wider uppercase rounded transition-all duration-300 hover:opacity-90"
           >
-            Reserve
+            Book Now
           </Link>
         </div>
 
-        {/* Mobile toggle */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           className="md:hidden text-foreground"
@@ -97,7 +95,6 @@ const Navbar = () => {
         </button>
       </div>
 
-      {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden glass-strong mt-2 mx-4 rounded-lg p-6 animate-fade-in">
           <div className="flex flex-col gap-4">

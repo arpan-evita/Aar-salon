@@ -16,21 +16,18 @@ const LoadingScreen = ({ onComplete }: { onComplete: () => void }) => {
     <div
       className={`fixed inset-0 z-[9999] bg-background flex flex-col items-center justify-center transition-opacity duration-500 ${phase >= 3 ? "opacity-0 pointer-events-none" : "opacity-100"}`}
     >
-      {/* Logo */}
       <img
         src={logo}
-        alt="Hair Dot Com Salon & Academy"
+        alt="RSL Care"
         className={`w-28 h-28 md:w-36 md:h-36 rounded-full object-cover mb-6 transition-all duration-700 ease-out ${phase >= 1 ? "opacity-100 scale-100" : "opacity-0 scale-75"}`}
       />
 
-      {/* Tagline */}
       <p
         className={`font-heading italic text-sm md:text-base text-primary/70 mt-2 transition-all duration-700 ease-out ${phase >= 2 ? "opacity-100" : "opacity-0"}`}
       >
-        Where Style Meets Confidence
+        Revive. Restore. Renew.
       </p>
 
-      {/* Loading bar */}
       <div className="mt-10 w-40 h-[1px] bg-border/30 overflow-hidden rounded-full">
         <div
           className={`h-full gold-gradient transition-all ease-out ${phase >= 1 ? "w-full duration-[1800ms]" : "w-0"}`}

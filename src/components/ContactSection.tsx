@@ -10,26 +10,24 @@ const ContactSection = () => (
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
-        {/* Map */}
         <div className="rounded-2xl overflow-hidden h-[300px] lg:h-auto glass">
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3654.123456789!2d87.30!3d23.55!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjPCsDMzJzAwLjAiTiA4N8KwMTgnMDAuMCJF!5e0!3m2!1sen!2sin!4v1234567890"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3771.2!2d72.8363!3d19.0705!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTnCsDA0JzE0LjAiTiA3MsKwNTAnMTAuMCJF!5e0!3m2!1sen!2sin!4v1234567890"
             width="100%"
             height="100%"
             style={{ border: 0, minHeight: 300 }}
             allowFullScreen
             loading="lazy"
-            title="Hair Dot Com Location"
+            title="RSL Care Location"
           />
         </div>
 
-        {/* Info */}
         <div className="space-y-6">
           <div className="glass rounded-xl p-6 flex items-start gap-4">
             <MapPin className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="font-heading text-lg text-foreground mb-1">Address</h3>
-              <p className="text-muted-foreground text-sm">Bengal Ambuja Housing Complex, City Centre, Durgapur, West Bengal</p>
+              <p className="text-muted-foreground text-sm">17th/13th Road Corner, Opposite Satguru Kalyan, Near Khar Gymkhana, Khar West, Mumbai</p>
             </div>
           </div>
 
@@ -37,7 +35,7 @@ const ContactSection = () => (
             <Phone className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="font-heading text-lg text-foreground mb-1">Phone</h3>
-              <p className="text-muted-foreground text-sm">+91 98765 43210</p>
+              <p className="text-muted-foreground text-sm">Contact via Justdial</p>
             </div>
           </div>
 
@@ -45,19 +43,19 @@ const ContactSection = () => (
             <Clock className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="font-heading text-lg text-foreground mb-1">Opening Hours</h3>
-              <p className="text-muted-foreground text-sm">Open Daily: 10:30 AM – 8:30 PM</p>
+              <p className="text-muted-foreground text-sm">Open Daily · Until 9:00 PM</p>
             </div>
           </div>
 
           <div className="flex gap-4">
             <a
-              href="tel:+919876543210"
+              href="tel:+919999999999"
               className="flex-1 gold-gradient text-primary-foreground py-3 rounded-lg text-sm text-center tracking-wider uppercase font-medium hover:opacity-90 transition-opacity"
             >
               Call Now
             </a>
             <a
-              href="https://wa.me/919876543210"
+              href="https://wa.me/919999999999"
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 gold-border text-primary py-3 rounded-lg text-sm text-center tracking-wider uppercase hover:bg-primary/10 transition-all flex items-center justify-center gap-2"
