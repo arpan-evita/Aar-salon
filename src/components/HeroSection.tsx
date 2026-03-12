@@ -5,33 +5,30 @@ import heroBg from "@/assets/hero-bg.jpg";
 const HeroSection = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${heroBg})` }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
 
-      {/* Content */}
       <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-
         <div className="animate-fade-up">
           <p className="text-primary/80 tracking-[0.4em] text-xs md:text-sm uppercase mb-6">
-            — EST. 2013 —
+            — Premium Care & Restoration —
           </p>
         </div>
 
         <h1 className="animate-fade-up delay-100 font-heading text-5xl md:text-7xl lg:text-8xl font-bold text-primary mb-6 leading-tight">
-          Hair Dot Com
+          RSL Care
         </h1>
 
         <p className="animate-fade-up delay-200 font-heading italic text-xl md:text-2xl text-foreground/80 mb-4">
-          Where Style Meets Confidence
+          Revive. Restore. Renew.
         </p>
 
         <p className="animate-fade-up delay-300 text-foreground/60 text-sm md:text-base max-w-2xl mx-auto mb-10 leading-relaxed">
-          Experience premium hair, skin, and grooming services delivered by expert
-          stylists in a relaxing luxury environment.
+          Expert cleaning and repair services for shoes, handbags, suitcases &
+          leather accessories. Trusted by 200+ happy customers in Mumbai.
         </p>
 
         <div className="animate-fade-up delay-400 flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
@@ -39,7 +36,7 @@ const HeroSection = () => {
             to="/booking"
             className="gold-gradient text-primary-foreground px-8 py-4 text-sm font-medium tracking-wider uppercase rounded flex items-center gap-3 transition-all duration-300 hover:opacity-90 hover:gap-4"
           >
-            Book Appointment
+            Book a Service
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
@@ -53,15 +50,15 @@ const HeroSection = () => {
         <div className="animate-fade-up delay-500 flex flex-wrap items-center justify-center gap-6 md:gap-10 text-foreground/60 text-xs md:text-sm">
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4 text-primary" />
-            <span>City Centre, Durgapur</span>
+            <span>Khar West, Mumbai</span>
           </div>
           <div className="flex items-center gap-2">
             <Star className="w-4 h-4 text-primary" />
-            <span>4.9 Google Rating</span>
+            <span>4.7 Rating · 209 Reviews</span>
           </div>
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-primary" />
-            <span>Open Daily 10:30 AM – 8:30 PM</span>
+            <span>Open Daily · Until 9:00 PM</span>
           </div>
         </div>
       </div>

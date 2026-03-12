@@ -3,15 +3,15 @@ import { Check, Crown, Sparkles } from "lucide-react";
 const plans = [
   {
     icon: Sparkles,
-    name: "Silver Membership",
-    price: "₹2,999/year",
-    benefits: ["5% discount on all services", "Priority booking", "Free hair wash on every visit"],
+    name: "Care Plan",
+    price: "₹1,999/year",
+    benefits: ["5% discount on all services", "Priority service queue", "Free leather conditioning on every visit"],
   },
   {
     icon: Crown,
-    name: "Gold Membership",
-    price: "₹5,999/year",
-    benefits: ["10% discount on all services", "Priority booking", "Free hair spa on birthday", "Exclusive member events", "Complimentary beverages"],
+    name: "Premium Care Plan",
+    price: "₹3,999/year",
+    benefits: ["15% discount on all services", "Priority service queue", "Free deep cleaning on birthday month", "Pickup & delivery service", "Complimentary polishing"],
     featured: true,
   },
 ];
@@ -21,7 +21,7 @@ const MembershipSection = () => (
     <div className="container mx-auto max-w-4xl">
       <div className="text-center mb-16">
         <p className="text-primary/80 tracking-[0.3em] text-xs uppercase mb-4">Exclusive Access</p>
-        <h2 className="font-heading text-3xl md:text-5xl text-primary mb-4">Membership & Offers</h2>
+        <h2 className="font-heading text-3xl md:text-5xl text-primary mb-4">Membership Plans</h2>
         <div className="w-20 h-px gold-gradient mx-auto" />
       </div>
 

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Scissors, Sparkles, Palette, Wind, Heart, Hand, Gem, Flower2, Crown } from "lucide-react";
+import { Scissors, Sparkles, Palette, Wind, Heart, Hand, Gem, Flower2, Crown, ShoppingBag, Luggage, Wrench } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const iconMap: Record<string, React.ElementType> = {
-  Scissors, Sparkles, Palette, Wind, Heart, Hand, Gem, Flower2, Crown,
+  Scissors, Sparkles, Palette, Wind, Heart, Hand, Gem, Flower2, Crown, ShoppingBag, Luggage, Wrench,
 };
 
 type Service = { title: string; description: string | null; icon: string; price: string };
@@ -22,13 +22,13 @@ const ServicesSection = () => {
       <div className="container mx-auto">
         <div className="text-center mb-16">
           <p className="text-primary/80 tracking-[0.3em] text-xs uppercase mb-4">What We Offer</p>
-          <h2 className="font-heading text-3xl md:text-5xl text-primary mb-4">Our Premium Services</h2>
+          <h2 className="font-heading text-3xl md:text-5xl text-primary mb-4">Our Expert Services</h2>
           <div className="w-20 h-px gold-gradient mx-auto" />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {services.map((service) => {
-            const Icon = iconMap[service.icon] || Scissors;
+            const Icon = iconMap[service.icon] || Wrench;
             return (
               <div key={service.title} className="glass rounded-xl p-6 hover-lift hover-glow group cursor-pointer">
                 <Icon className="w-8 h-8 text-primary mb-4 group-hover:scale-110 transition-transform duration-300" />

@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
-import { Check, ChevronRight, Calendar, Clock, User, Scissors } from "lucide-react";
+import { Check, ChevronRight, Calendar, Clock, User, Wrench } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 const timeSlots = [
-  "10:30 AM", "11:00 AM", "11:30 AM", "12:00 PM", "12:30 PM",
+  "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "12:00 PM", "12:30 PM",
   "1:00 PM", "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM",
   "4:00 PM", "4:30 PM", "5:00 PM", "5:30 PM", "6:00 PM",
-  "6:30 PM", "7:00 PM", "7:30 PM", "8:00 PM",
+  "6:30 PM", "7:00 PM", "7:30 PM", "8:00 PM", "8:30 PM",
 ];
 
-const steps = ["Service", "Stylist", "Date", "Time", "Details"];
+const steps = ["Service", "Expert", "Date", "Time", "Details"];
 
 const BookingSection = () => {
   const { user } = useAuth();
@@ -36,7 +36,7 @@ const BookingSection = () => {
         supabase.from("stylists").select("name, specialty").eq("is_active", true),
       ]);
       if (svcRes.data) setServices(svcRes.data);
-      if (styRes.data) setStylists([...styRes.data, { name: "Any Available", specialty: "First available stylist" }]);
+      if (styRes.data) setStylists([...styRes.data, { name: "Any Available", specialty: "First available expert" }]);
     };
     load();
   }, []);
@@ -98,18 +98,18 @@ const BookingSection = () => {
             <div className="w-16 h-16 gold-gradient rounded-full flex items-center justify-center mx-auto mb-6">
               <Check className="w-8 h-8 text-primary-foreground" />
             </div>
-            <h2 className="font-heading text-3xl text-primary mb-4">Booking Confirmed!</h2>
-            <p className="text-foreground/70 mb-8">Your appointment has been reserved. We look forward to seeing you.</p>
+            <h2 className="font-heading text-3xl text-primary mb-4">Service Booked!</h2>
+            <p className="text-foreground/70 mb-8">Your service has been scheduled. We look forward to restoring your items.</p>
             <div className="glass rounded-lg p-6 text-left space-y-3 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">Service</span><span className="text-foreground">{selectedService}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Stylist</span><span className="text-foreground">{selectedStylist}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Expert</span><span className="text-foreground">{selectedStylist}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Date</span><span className="text-foreground">{formatDate(selectedDate)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Time</span><span className="text-foreground">{selectedTime}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Name</span><span className="text-foreground">{name}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Phone</span><span className="text-foreground">{phone}</span></div>
             </div>
             <button onClick={resetForm} className="mt-8 text-primary/70 hover:text-primary text-sm transition-colors">
-              Book Another Appointment
+              Book Another Service
             </button>
           </div>
         </div>
@@ -122,11 +122,10 @@ const BookingSection = () => {
       <div className="container mx-auto max-w-3xl">
         <div className="text-center mb-12">
           <p className="text-primary/80 tracking-[0.3em] text-xs uppercase mb-4">Schedule Your Visit</p>
-          <h2 className="font-heading text-3xl md:text-5xl text-primary mb-4">Book Your Appointment</h2>
+          <h2 className="font-heading text-3xl md:text-5xl text-primary mb-4">Book a Service</h2>
           <div className="w-20 h-px gold-gradient mx-auto" />
         </div>
 
-        {/* Steps indicator */}
         <div className="flex items-center justify-center gap-2 md:gap-4 mb-12">
           {steps.map((s, i) => (
             <div key={s} className="flex items-center gap-2">
@@ -145,7 +144,7 @@ const BookingSection = () => {
           {step === 0 && (
             <div>
               <h3 className="font-heading text-xl text-foreground mb-6 flex items-center gap-2">
-                <Scissors className="w-5 h-5 text-primary" /> Choose Your Service
+                <Wrench className="w-5 h-5 text-primary" /> Choose Your Service
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {services.map((s) => (
@@ -161,7 +160,7 @@ const BookingSection = () => {
           {step === 1 && (
             <div>
               <h3 className="font-heading text-xl text-foreground mb-6 flex items-center gap-2">
-                <User className="w-5 h-5 text-primary" /> Select Your Stylist
+                <User className="w-5 h-5 text-primary" /> Select Your Expert
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {stylists.map((s) => (
@@ -219,7 +218,7 @@ const BookingSection = () => {
                   className="w-full bg-secondary/50 border border-border/50 rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors" />
                 <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email (optional)"
                   className="w-full bg-secondary/50 border border-border/50 rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors" />
-                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Special requests (optional)" rows={3}
+                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Describe item(s) for service (optional)" rows={3}
                   className="w-full bg-secondary/50 border border-border/50 rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors resize-none" />
               </div>
             </div>

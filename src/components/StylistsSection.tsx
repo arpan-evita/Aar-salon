@@ -23,7 +23,7 @@ const StylistsSection = () => {
       <div className="container mx-auto">
         <div className="text-center mb-16">
           <p className="text-primary/80 tracking-[0.3em] text-xs uppercase mb-4">Meet The Team</p>
-          <h2 className="font-heading text-3xl md:text-5xl text-primary mb-4">Our Stylists</h2>
+          <h2 className="font-heading text-3xl md:text-5xl text-primary mb-4">Our Experts</h2>
           <div className="w-20 h-px gold-gradient mx-auto" />
         </div>
 
