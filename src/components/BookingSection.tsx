@@ -214,10 +214,10 @@ const BookingSection = () => {
   return (
     <section id="booking" className="section-padding">
       <div className="container mx-auto max-w-3xl">
-        <div className="text-center mb-12">
-          <p className="text-primary/80 tracking-[0.3em] text-xs uppercase mb-4">Schedule Your Visit</p>
-          <h2 className="font-heading text-3xl md:text-5xl text-primary mb-4">Book a Service</h2>
-          <div className="w-20 h-px gold-gradient mx-auto" />
+        <div className="text-center mb-8 md:mb-12">
+          <p className="text-primary/80 tracking-[0.3em] text-xs uppercase mb-3 md:mb-4">Schedule Your Visit</p>
+          <h2 className="font-heading text-3xl md:text-5xl text-primary mb-3 md:mb-4">Book a Service</h2>
+          <div className="w-16 md:w-20 h-px gold-gradient mx-auto" />
         </div>
 
         {/* Stepper */}
@@ -244,18 +244,27 @@ const BookingSection = () => {
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {services.map((s) => (
-                  <button key={s.title} onClick={() => { setSelectedService(s.title); setSelectedTime(""); }}
-                    className={`p-4 rounded-lg text-left transition-all duration-300 ${
-                      selectedService === s.title ? "gold-border bg-primary/10 text-primary" : "bg-secondary/50 text-foreground/70 hover:bg-secondary"
-                    }`}>
-                    <span className="text-sm font-medium">{s.title}</span>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> {s.duration_minutes} min
-                      </span>
-                      <span className="text-xs text-primary/70">{s.price}</span>
-                    </div>
-                  </button>
+                  <div key={s.title} className="flex flex-col gap-2">
+                    <button onClick={() => { setSelectedService(s.title); setSelectedTime(""); }}
+                      className={`p-4 rounded-lg text-left transition-all duration-300 w-full ${
+                        selectedService === s.title ? "gold-border bg-primary/10 text-primary" : "bg-secondary/50 text-foreground/70 hover:bg-secondary"
+                      }`}>
+                      <span className="text-sm font-medium">{s.title}</span>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> {s.duration_minutes} min
+                        </span>
+                        <span className="text-xs text-primary/70">{s.price}</span>
+                      </div>
+                    </button>
+                    {selectedService === s.title && (
+                      <div className="animate-in slide-in-from-top-2 fade-in duration-300 md:hidden">
+                        <button onClick={() => setStep(step + 1)} className="w-full bg-primary text-primary-foreground py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
+                          Continue <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
@@ -269,13 +278,22 @@ const BookingSection = () => {
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {stylists.map((s) => (
-                  <button key={s.name} onClick={() => { setSelectedStylist(s.name); setSelectedTime(""); }}
-                    className={`p-4 rounded-lg text-left transition-all duration-300 ${
-                      selectedStylist === s.name ? "gold-border bg-primary/10" : "bg-secondary/50 hover:bg-secondary"
-                    }`}>
-                    <span className={`text-sm font-medium ${selectedStylist === s.name ? "text-primary" : "text-foreground/80"}`}>{s.name}</span>
-                    <p className="text-xs text-muted-foreground mt-1">{s.specialty}</p>
-                  </button>
+                  <div key={s.name} className="flex flex-col gap-2">
+                    <button onClick={() => { setSelectedStylist(s.name); setSelectedTime(""); }}
+                      className={`p-4 rounded-lg text-left transition-all duration-300 w-full ${
+                        selectedStylist === s.name ? "gold-border bg-primary/10" : "bg-secondary/50 hover:bg-secondary"
+                      }`}>
+                      <span className={`text-sm font-medium ${selectedStylist === s.name ? "text-primary" : "text-foreground/80"}`}>{s.name}</span>
+                      <p className="text-xs text-muted-foreground mt-1">{s.specialty}</p>
+                    </button>
+                    {selectedStylist === s.name && (
+                      <div className="animate-in slide-in-from-top-2 fade-in duration-300 md:hidden">
+                        <button onClick={() => setStep(step + 1)} className="w-full bg-primary text-primary-foreground py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
+                          Continue <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
@@ -289,10 +307,19 @@ const BookingSection = () => {
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {generateDates().map((d) => (
-                  <button key={d} onClick={() => { setSelectedDate(d); setSelectedTime(""); }}
-                    className={`p-3 rounded-lg text-center text-sm transition-all duration-300 ${
-                      selectedDate === d ? "gold-border bg-primary/10 text-primary" : "bg-secondary/50 text-foreground/70 hover:bg-secondary"
-                    }`}>{formatDate(d)}</button>
+                  <div key={d} className="flex flex-col gap-2">
+                    <button onClick={() => { setSelectedDate(d); setSelectedTime(""); }}
+                      className={`p-3 rounded-lg text-center text-sm transition-all duration-300 w-full ${
+                        selectedDate === d ? "gold-border bg-primary/10 text-primary" : "bg-secondary/50 text-foreground/70 hover:bg-secondary"
+                      }`}>{formatDate(d)}</button>
+                    {selectedDate === d && (
+                      <div className="col-span-1 animate-in slide-in-from-top-2 fade-in duration-300 md:hidden">
+                        <button onClick={() => setStep(step + 1)} className="w-full bg-primary text-primary-foreground py-1.5 rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-1">
+                          Next <ChevronRight className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
@@ -318,17 +345,26 @@ const BookingSection = () => {
                   {timeSlots.map((t) => {
                     const occupied = isSlotOccupied(t);
                     return (
-                      <button key={t} onClick={() => !occupied && setSelectedTime(t)} disabled={occupied}
-                        className={`p-3 rounded-lg text-center text-xs transition-all duration-300 ${
-                          occupied
-                            ? "bg-secondary/30 text-muted-foreground/40 cursor-not-allowed line-through"
-                            : selectedTime === t
-                              ? "gold-border bg-primary/10 text-primary"
-                              : "bg-secondary/50 text-foreground/70 hover:bg-secondary"
-                        }`}>
-                        {t}
-                        {occupied && <span className="block text-[10px] mt-0.5 no-underline" style={{ textDecoration: "none" }}>Booked</span>}
-                      </button>
+                      <div key={t} className="flex flex-col gap-2">
+                        <button onClick={() => !occupied && setSelectedTime(t)} disabled={occupied}
+                          className={`p-3 rounded-lg text-center text-xs transition-all duration-300 w-full ${
+                            occupied
+                              ? "bg-secondary/30 text-muted-foreground/40 cursor-not-allowed line-through"
+                              : selectedTime === t
+                                ? "gold-border bg-primary/10 text-primary"
+                                : "bg-secondary/50 text-foreground/70 hover:bg-secondary"
+                          }`}>
+                          {t}
+                          {occupied && <span className="block text-[10px] mt-0.5 no-underline" style={{ textDecoration: "none" }}>Booked</span>}
+                        </button>
+                        {selectedTime === t && !occupied && (
+                          <div className="col-span-1 animate-in slide-in-from-top-2 fade-in duration-300 md:hidden">
+                            <button onClick={() => setStep(step + 1)} className="w-full bg-primary text-primary-foreground py-1.5 rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-1">
+                              Next <ChevronRight className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
@@ -374,7 +410,7 @@ const BookingSection = () => {
             </button>
             {step < 4 ? (
               <button onClick={() => setStep(step + 1)} disabled={!canProceed()}
-                className="gold-gradient text-primary-foreground px-8 py-3 text-sm font-medium tracking-wider uppercase rounded transition-all duration-300 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed">
+                className="hidden md:block gold-gradient text-primary-foreground px-8 py-3 text-sm font-medium tracking-wider uppercase rounded transition-all duration-300 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed">
                 Continue
               </button>
             ) : (

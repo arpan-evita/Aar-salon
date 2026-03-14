@@ -27,13 +27,13 @@ const StylistsSection = () => {
   return (
     <section className="section-padding">
       <div className="container mx-auto">
-        <div className="text-center mb-16">
-          <p className="text-primary/80 tracking-[0.3em] text-xs uppercase mb-4">Meet The Team</p>
-          <h2 className="font-heading text-3xl md:text-5xl text-primary mb-4">Our Stylists</h2>
-          <div className="w-20 h-px gold-gradient mx-auto" />
+        <div className="text-center mb-10 md:mb-16">
+          <p className="text-primary/80 tracking-[0.3em] text-xs uppercase mb-3 md:mb-4">Meet The Team</p>
+          <h2 className="font-heading text-3xl md:text-5xl text-primary mb-3 md:mb-4">Our Stylists</h2>
+          <div className="w-16 md:w-20 h-px gold-gradient mx-auto" />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-4xl mx-auto">
           {stylists.map((s, i) => (
             <div key={s.name} className="glass rounded-2xl overflow-hidden hover-lift hover-glow group">
               <div className="aspect-[3/4] overflow-hidden">

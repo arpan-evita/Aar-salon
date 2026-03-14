@@ -32,10 +32,10 @@ const ServicesSection = () => {
   return (
     <section id="services" className="section-padding">
       <div className="container mx-auto">
-        <div className="text-center mb-16">
-          <p className="text-primary/80 tracking-[0.3em] text-xs uppercase mb-4">What We Offer</p>
-          <h2 className="font-heading text-3xl md:text-5xl text-primary mb-4">Our Services</h2>
-          <div className="w-20 h-px gold-gradient mx-auto" />
+        <div className="text-center mb-10 md:mb-16">
+          <p className="text-primary/80 tracking-[0.3em] text-xs uppercase mb-3 md:mb-4">What We Offer</p>
+          <h2 className="font-heading text-3xl md:text-5xl text-primary mb-3 md:mb-4">Our Services</h2>
+          <div className="w-16 md:w-20 h-px gold-gradient mx-auto" />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

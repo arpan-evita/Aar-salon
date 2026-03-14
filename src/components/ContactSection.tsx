@@ -3,10 +3,10 @@ import { MapPin, Phone, Clock, MessageCircle } from "lucide-react";
 const ContactSection = () => (
   <section id="contact" className="section-padding">
     <div className="container mx-auto">
-      <div className="text-center mb-16">
-        <p className="text-primary/80 tracking-[0.3em] text-xs uppercase mb-4">Get In Touch</p>
-        <h2 className="font-heading text-3xl md:text-5xl text-primary mb-4">Visit Us</h2>
-        <div className="w-20 h-px gold-gradient mx-auto" />
+      <div className="text-center mb-10 md:mb-16">
+        <p className="text-primary/80 tracking-[0.3em] text-xs uppercase mb-3 md:mb-4">Get In Touch</p>
+        <h2 className="font-heading text-3xl md:text-5xl text-primary mb-3 md:mb-4">Visit Us</h2>
+        <div className="w-16 md:w-20 h-px gold-gradient mx-auto" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
