@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           booking_date: string
           booking_time: string
+          booking_end_time: string | null
           created_at: string
           customer_email: string | null
           customer_name: string
@@ -32,6 +33,7 @@ export type Database = {
         Insert: {
           booking_date: string
           booking_time: string
+          booking_end_time?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name: string
@@ -46,6 +48,7 @@ export type Database = {
         Update: {
           booking_date?: string
           booking_time?: string
+          booking_end_time?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name?: string
@@ -111,6 +114,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          duration_minutes: number
           icon: string
           id: string
           is_active: boolean
@@ -121,6 +125,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          duration_minutes?: number
           icon?: string
           id?: string
           is_active?: boolean
@@ -131,6 +136,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          duration_minutes?: number
           icon?: string
           id?: string
           is_active?: boolean

@@ -25,6 +25,7 @@ type Booking = {
   stylist: string;
   booking_date: string;
   booking_time: string;
+  booking_end_time: string | null;
   status: string;
 };
 
@@ -227,7 +228,7 @@ const AdminDashboard = () => {
                       <td className="p-4 text-sm text-foreground">{b.customer_name}</td>
                       <td className="p-4 text-sm text-foreground/70">{b.service}</td>
                       <td className="p-4 text-sm text-foreground/70 hidden md:table-cell">{b.stylist}</td>
-                      <td className="p-4 text-sm text-foreground/70">{formatDate(b.booking_date)}, {b.booking_time}</td>
+                      <td className="p-4 text-sm text-foreground/70">{formatDate(b.booking_date)}, {b.booking_time}{b.booking_end_time ? ` – ${b.booking_end_time}` : ""}</td>
                       <td className="p-4">
                         <select value={b.status} onChange={(e) => updateStatus(b.id, e.target.value)}
                           className={`text-xs px-3 py-1 rounded-full bg-transparent border cursor-pointer ${

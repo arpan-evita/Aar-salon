@@ -12,6 +12,7 @@ type Booking = {
   stylist: string;
   booking_date: string;
   booking_time: string;
+  booking_end_time: string | null;
   status: string;
   created_at: string;
 };
@@ -31,7 +32,7 @@ const MyBookings = () => {
     const load = async () => {
       const { data } = await supabase
         .from("bookings")
-        .select("id, service, stylist, booking_date, booking_time, status, created_at")
+        .select("id, service, stylist, booking_date, booking_time, booking_end_time, status, created_at")
         .eq("user_id", user.id)
         .order("booking_date", { ascending: false });
       if (data) setBookings(data);
@@ -120,7 +121,7 @@ const MyBookings = () => {
                       <CalendarDays className="w-3 h-3" /> {formatDate(b.booking_date)}
                     </span>
                     <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> {b.booking_time}
+                      <Clock className="w-3 h-3" /> {b.booking_time}{b.booking_end_time ? ` – ${b.booking_end_time}` : ""}
                     </span>
                   </div>
                 </div>

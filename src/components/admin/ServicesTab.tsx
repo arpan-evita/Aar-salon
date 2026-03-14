@@ -7,6 +7,7 @@ type Service = {
   title: string;
   description: string | null;
   price: string;
+  duration_minutes: number;
   icon: string;
   is_active: boolean;
   sort_order: number;
@@ -16,6 +17,7 @@ type ServiceForm = {
   title: string;
   description: string;
   price: string;
+  duration_minutes: number;
   icon: string;
   is_active: boolean;
   sort_order: number;
@@ -25,6 +27,7 @@ const emptyForm: ServiceForm = {
   title: "",
   description: "",
   price: "",
+  duration_minutes: 30,
   icon: "Scissors",
   is_active: true,
   sort_order: 0,
@@ -65,6 +68,7 @@ const ServicesTab = () => {
       title: s.title,
       description: s.description || "",
       price: s.price,
+      duration_minutes: s.duration_minutes,
       icon: s.icon,
       is_active: s.is_active,
       sort_order: s.sort_order,
@@ -81,6 +85,7 @@ const ServicesTab = () => {
       title: form.title.trim(),
       description: form.description.trim() || null,
       price: form.price.trim(),
+      duration_minutes: form.duration_minutes,
       icon: form.icon,
       is_active: form.is_active,
       sort_order: form.sort_order,
@@ -136,6 +141,12 @@ const ServicesTab = () => {
               <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Price *</label>
               <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })}
                 placeholder="e.g. ₹500"
+                className="w-full bg-secondary/50 border border-border/50 rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Duration (minutes) *</label>
+              <input type="number" value={form.duration_minutes} onChange={(e) => setForm({ ...form, duration_minutes: Math.max(15, Number(e.target.value)) })}
+                min={15} max={480} step={15}
                 className="w-full bg-secondary/50 border border-border/50 rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors" />
             </div>
             <div className="md:col-span-2">
@@ -221,6 +232,7 @@ const ServicesTab = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                  <span className="text-xs text-muted-foreground">{s.duration_minutes} min</span>
                   <span className="text-sm font-semibold text-primary">{s.price}</span>
                   <button onClick={() => toggleActive(s.id, s.is_active)}
                     className={`w-10 h-6 rounded-full transition-colors relative flex-shrink-0 ${s.is_active ? "bg-primary" : "bg-secondary"}`}>
