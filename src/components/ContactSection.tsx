@@ -12,13 +12,13 @@ const ContactSection = () => (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
         <div className="rounded-2xl overflow-hidden h-[300px] lg:h-auto glass">
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3771.2!2d72.8363!3d19.0705!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTnCsDA0JzE0LjAiTiA3MsKwNTAnMTAuMCJF!5e0!3m2!1sen!2sin!4v1234567890"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3654.5!2d87.3119!3d23.5204!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjPCsDMxJzEzLjQiTiA4N8KwMTgnNDIuOCJF!5e0!3m2!1sen!2sin!4v1234567890"
             width="100%"
             height="100%"
             style={{ border: 0, minHeight: 300 }}
             allowFullScreen
             loading="lazy"
-            title="RSL Care Location"
+            title="AAR Salon Location"
           />
         </div>
 
@@ -27,7 +27,7 @@ const ContactSection = () => (
             <MapPin className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="font-heading text-lg text-foreground mb-1">Address</h3>
-              <p className="text-muted-foreground text-sm">17th/13th Road Corner, Opposite Satguru Kalyan, Near Khar Gymkhana, Khar West, Mumbai</p>
+              <p className="text-muted-foreground text-sm">Beside Hestia City Centre, Durgapur, West Bengal</p>
             </div>
           </div>
 
@@ -43,7 +43,7 @@ const ContactSection = () => (
             <Clock className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="font-heading text-lg text-foreground mb-1">Opening Hours</h3>
-              <p className="text-muted-foreground text-sm">Open Daily · Until 9:00 PM</p>
+              <p className="text-muted-foreground text-sm">Open Daily · 10:00 AM – 9:00 PM</p>
             </div>
           </div>
 

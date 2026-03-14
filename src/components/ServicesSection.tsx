@@ -8,13 +8,25 @@ const iconMap: Record<string, React.ElementType> = {
 
 type Service = { title: string; description: string | null; icon: string; price: string };
 
+const fallbackServices: Service[] = [
+  { title: "Haircut & Styling", description: "Precision cuts and trending styles for men & women by expert stylists.", icon: "Scissors", price: "₹200" },
+  { title: "Hair Coloring", description: "Global color, highlights, balayage & fashion shades using premium products.", icon: "Palette", price: "₹1,500" },
+  { title: "Bridal Makeup", description: "Complete bridal & party makeup packages with HD and airbrush options.", icon: "Crown", price: "₹5,000" },
+  { title: "Facial & Skincare", description: "Deep cleansing facials, fruit facials, gold facials & anti-aging treatments.", icon: "Sparkles", price: "₹500" },
+  { title: "Spa & Massage", description: "Relaxing body massage, head massage & aromatherapy spa treatments.", icon: "Heart", price: "₹800" },
+  { title: "Nail Art & Care", description: "Manicure, pedicure, gel nails & creative nail art designs.", icon: "Gem", price: "₹300" },
+  { title: "Hair Treatments", description: "Keratin smoothing, hair spa, dandruff treatment & hair fall solutions.", icon: "Wind", price: "₹1,000" },
+  { title: "Waxing & Threading", description: "Full body waxing, eyebrow threading & upper lip shaping.", icon: "Hand", price: "₹150" },
+  { title: "Beard Grooming", description: "Beard trim, shaping, hot towel shave & men's grooming packages.", icon: "Scissors", price: "₹150" },
+];
+
 const ServicesSection = () => {
   const [services, setServices] = useState<Service[]>([]);
 
   useEffect(() => {
     supabase.from("services").select("title, description, icon, price")
       .eq("is_active", true).order("sort_order")
-      .then(({ data }) => { if (data) setServices(data); });
+      .then(({ data }) => { setServices(data && data.length > 0 ? data : fallbackServices); });
   }, []);
 
   return (
@@ -22,13 +34,13 @@ const ServicesSection = () => {
       <div className="container mx-auto">
         <div className="text-center mb-16">
           <p className="text-primary/80 tracking-[0.3em] text-xs uppercase mb-4">What We Offer</p>
-          <h2 className="font-heading text-3xl md:text-5xl text-primary mb-4">Our Expert Services</h2>
+          <h2 className="font-heading text-3xl md:text-5xl text-primary mb-4">Our Services</h2>
           <div className="w-20 h-px gold-gradient mx-auto" />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {services.map((service) => {
-            const Icon = iconMap[service.icon] || Wrench;
+            const Icon = iconMap[service.icon] || Scissors;
             return (
               <div key={service.title} className="glass rounded-xl p-6 hover-lift hover-glow group cursor-pointer">
                 <Icon className="w-8 h-8 text-primary mb-4 group-hover:scale-110 transition-transform duration-300" />

@@ -7,6 +7,12 @@ import stylist3 from "@/assets/stylist-3.jpg";
 
 const fallbackPhotos = [stylist1, stylist2, stylist3];
 
+const fallbackStylists = [
+  { name: "Rahul", specialty: "Senior Hair Stylist", experience: "8 years", rating: 4.9, photo_url: null },
+  { name: "Priya", specialty: "Beauty & Makeup Artist", experience: "6 years", rating: 4.8, photo_url: null },
+  { name: "Arjun", specialty: "Hair Colorist & Grooming", experience: "5 years", rating: 4.7, photo_url: null },
+];
+
 type Stylist = { name: string; specialty: string; experience: string | null; rating: number | null; photo_url: string | null };
 
 const StylistsSection = () => {
@@ -15,7 +21,7 @@ const StylistsSection = () => {
   useEffect(() => {
     supabase.from("stylists").select("name, specialty, experience, rating, photo_url")
       .eq("is_active", true)
-      .then(({ data }) => { if (data) setStylists(data); });
+      .then(({ data }) => { setStylists(data && data.length > 0 ? data : fallbackStylists); });
   }, []);
 
   return (
@@ -23,7 +29,7 @@ const StylistsSection = () => {
       <div className="container mx-auto">
         <div className="text-center mb-16">
           <p className="text-primary/80 tracking-[0.3em] text-xs uppercase mb-4">Meet The Team</p>
-          <h2 className="font-heading text-3xl md:text-5xl text-primary mb-4">Our Experts</h2>
+          <h2 className="font-heading text-3xl md:text-5xl text-primary mb-4">Our Stylists</h2>
           <div className="w-20 h-px gold-gradient mx-auto" />
         </div>
 

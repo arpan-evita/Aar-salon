@@ -18,14 +18,14 @@ const LoadingScreen = ({ onComplete }: { onComplete: () => void }) => {
     >
       <img
         src={logo}
-        alt="RSL Care"
+        alt="AAR Salon"
         className={`w-28 h-28 md:w-36 md:h-36 rounded-full object-cover mb-6 transition-all duration-700 ease-out ${phase >= 1 ? "opacity-100 scale-100" : "opacity-0 scale-75"}`}
       />
 
       <p
         className={`font-heading italic text-sm md:text-base text-primary/70 mt-2 transition-all duration-700 ease-out ${phase >= 2 ? "opacity-100" : "opacity-0"}`}
       >
-        Revive. Restore. Renew.
+        Style. Elegance. Confidence.
       </p>
 
       <div className="mt-10 w-40 h-[1px] bg-border/30 overflow-hidden rounded-full">

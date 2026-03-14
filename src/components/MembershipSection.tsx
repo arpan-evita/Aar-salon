@@ -3,15 +3,15 @@ import { Check, Crown, Sparkles } from "lucide-react";
 const plans = [
   {
     icon: Sparkles,
-    name: "Care Plan",
-    price: "₹1,999/year",
-    benefits: ["5% discount on all services", "Priority service queue", "Free leather conditioning on every visit"],
+    name: "Silver",
+    price: "₹999/month",
+    benefits: ["10% off all services", "Priority booking", "Free hair spa monthly", "Birthday special discount"],
   },
   {
     icon: Crown,
-    name: "Premium Care Plan",
-    price: "₹3,999/year",
-    benefits: ["15% discount on all services", "Priority service queue", "Free deep cleaning on birthday month", "Pickup & delivery service", "Complimentary polishing"],
+    name: "Gold",
+    price: "₹1,999/month",
+    benefits: ["20% off all services", "Priority booking", "Free facial monthly", "Free hair spa monthly", "Birthday special package", "Exclusive member events"],
     featured: true,
   },
 ];

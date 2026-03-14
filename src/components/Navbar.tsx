@@ -36,8 +36,8 @@ const Navbar = () => {
     >
       <div className="container mx-auto flex items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-3">
-          <img src={logo} alt="RSL Care" className="w-9 h-9 rounded-full object-cover" />
-          <span className="font-heading text-xl md:text-2xl text-primary tracking-wide">RSL Care</span>
+          <img src={logo} alt="AAR Salon" className="w-9 h-9 rounded-full object-cover" />
+          <span className="font-heading text-xl md:text-2xl text-primary tracking-wide">AAR Salon</span>
         </Link>
 
         <div className="hidden md:flex items-center gap-8">

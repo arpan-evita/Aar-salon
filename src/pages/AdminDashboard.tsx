@@ -144,8 +144,8 @@ const AdminDashboard = () => {
       {/* Sidebar */}
       <aside className="w-64 glass-strong border-r border-border/30 p-6 hidden lg:flex flex-col">
         <Link to="/" className="flex items-center gap-2 mb-8">
-          <img src={logo} alt="Hair Dot Com" className="w-8 h-8 rounded-full object-cover" />
-          <span className="font-heading text-lg text-primary">RSL Care</span>
+          <img src={logo} alt="AAR Salon" className="w-8 h-8 rounded-full object-cover" />
+          <span className="font-heading text-lg text-primary">AAR Salon</span>
         </Link>
         <p className="text-xs text-muted-foreground uppercase tracking-widest mb-6">Admin Panel</p>
         <nav className="space-y-1 flex-1">
