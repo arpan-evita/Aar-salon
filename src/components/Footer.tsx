@@ -7,18 +7,18 @@ const Footer = () => (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
         <div>
           <div className="flex items-center gap-3 mb-4">
-            <img src={logo} alt="RSL Care" className="w-10 h-10 rounded-full object-cover" />
-            <h3 className="font-heading text-xl text-primary">RSL Care</h3>
+            <img src={logo} alt="AAR Salon" className="w-10 h-10 rounded-full object-cover" />
+            <h3 className="font-heading text-xl text-primary">AAR Salon</h3>
           </div>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            Professional shoe, handbag & suitcase cleaning and repair service in Khar West, Mumbai. Revive. Restore. Renew.
+            Premium unisex hair & beauty salon beside Hestia City Centre, Durgapur. Style. Elegance. Confidence.
           </p>
         </div>
         <div>
           <h4 className="font-heading text-sm text-foreground mb-4 tracking-wider uppercase">Quick Links</h4>
           <div className="space-y-2">
             <Link to="/services" className="block text-sm text-muted-foreground hover:text-primary transition-colors">Services</Link>
-            <Link to="/booking" className="block text-sm text-muted-foreground hover:text-primary transition-colors">Book Now</Link>
+            <Link to="/booking" className="block text-sm text-muted-foreground hover:text-primary transition-colors">Book Appointment</Link>
             <Link to="/gallery" className="block text-sm text-muted-foreground hover:text-primary transition-colors">Gallery</Link>
             <Link to="/contact" className="block text-sm text-muted-foreground hover:text-primary transition-colors">Contact</Link>
           </div>
@@ -33,7 +33,7 @@ const Footer = () => (
         </div>
       </div>
       <div className="border-t border-border/30 pt-8 text-center">
-        <p className="text-muted-foreground text-xs">© 2026 RSL Care. All rights reserved.</p>
+        <p className="text-muted-foreground text-xs">© 2026 AAR Salon. All rights reserved.</p>
       </div>
     </div>
   </footer>
