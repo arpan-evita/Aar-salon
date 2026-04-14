@@ -4,7 +4,7 @@ import {
   CalendarDays, Users, Scissors, BarChart3, Clock, ArrowLeft,
   TrendingUp, IndianRupee, UserCheck, Calendar, LogOut, Plus, Mail, Shield, Trash2,
   Package, BookOpen, Target, Star, LayoutDashboard, TicketPercent, Award, ChevronDown,
-  Menu, X, Search, Bell
+  Menu, X, Search, Bell, Zap
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
