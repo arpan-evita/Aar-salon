@@ -3,7 +3,8 @@ import {
   IndianRupee, Receipt, Download, Filter, Plus, 
   Search, CheckCircle2, XCircle, Clock, PieChart,
   ShoppingCart, Tag, Award, Calculator, Trash2, Printer,
-  ArrowUpRight, ArrowDownRight, Wallet, Briefcase, FileText
+  ArrowUpRight, ArrowDownRight, Wallet, Briefcase, FileText,
+  UserPlus, UserMinus, UserCircle, Edit3, Settings2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -26,17 +27,23 @@ const BillingSystem = () => {
   // Invoice state
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+  const [isGuestMode, setIsGuestMode] = useState(false);
+  const [isAddingNewCustomer, setIsAddingNewCustomer] = useState(false);
+  const [newCust, setNewCust] = useState({ name: "", phone: "" });
   const [customers, setCustomers] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
   const [staffList, setStaffList] = useState<any[]>([]);
+  const [customItem, setCustomItem] = useState({ title: "", price: 0 });
 
   // Expense state
   const [newExpense, setNewExpense] = useState({
     title: "",
     amount: 0,
     category: "Rent",
+    customCategory: "",
     date: new Date().toISOString().split('T')[0],
-    note: ""
+    note: "",
+    paymentMethod: "Cash"
   });
 
   useEffect(() => {
@@ -77,10 +84,12 @@ const BillingSystem = () => {
       return;
     }
 
+    const finalCategory = newExpense.category === "Other" ? newExpense.customCategory : newExpense.category;
+
     const { error } = await supabase.from('expenses').insert({
       title: newExpense.title,
       amount: newExpense.amount,
-      category: newExpense.category,
+      category: finalCategory || "General",
       expense_date: newExpense.date,
       note: newExpense.note
     });
@@ -90,6 +99,15 @@ const BillingSystem = () => {
     } else {
        toast.success("Expense logged successfully!");
        setIsExpenseSheetOpen(false);
+       setNewExpense({
+         title: "",
+         amount: 0,
+         category: "Rent",
+         customCategory: "",
+         date: new Date().toISOString().split('T')[0],
+         note: "",
+         paymentMethod: "Cash"
+       });
        fetchFinancialData();
     }
   };
@@ -103,15 +121,40 @@ const BillingSystem = () => {
   const netProfit = totalRevenue - totalExpenses;
 
   const handleCreateInvoice = async () => {
-    if (!selectedCustomerId || selectedItems.length === 0) {
-      toast.error("Please select a customer and at least one item.");
+    if (!isGuestMode && !isAddingNewCustomer && !selectedCustomerId) {
+      toast.error("Please select a customer or enable Guest Mode.");
       return;
+    }
+    if (selectedItems.length === 0) {
+      toast.error("Please add at least one item to the bill.");
+      return;
+    }
+
+    let finalCustomerId = selectedCustomerId || null;
+
+    // Handle New Customer Creation In-line
+    if (isAddingNewCustomer) {
+       if (!newCust.name || !newCust.phone) {
+          toast.error("Customer Name and Phone are required.");
+          return;
+       }
+       const { data: createdCust, error: custError } = await supabase
+          .from('customers')
+          .insert({ full_name: newCust.name, phone: newCust.phone })
+          .select()
+          .single();
+       
+       if (custError) {
+          toast.error("Failed to register new customer in-line.");
+          return;
+       }
+       finalCustomerId = createdCust.id;
     }
 
     const { data: invoice, error: invoiceError } = await supabase
       .from('invoices')
       .insert({
-        customer_id: selectedCustomerId,
+        customer_id: isGuestMode ? null : finalCustomerId,
         subtotal: calculateSubtotal(),
         tax: calculateTax(),
         total: calculateTotal(),
@@ -129,7 +172,7 @@ const BillingSystem = () => {
     const itemsToInsert = selectedItems.map(item => ({
       invoice_id: invoice.id,
       item_type: item.type,
-      item_id: item.id,
+      item_id: item.id.toString().startsWith('custom-') ? '00000000-0000-0000-0000-000000000000' : item.id,
       item_name: item.title,
       quantity: item.quantity,
       unit_price: item.price,
@@ -142,11 +185,32 @@ const BillingSystem = () => {
     if (itemsError) {
       toast.error("Failed to save invoice items.");
     } else {
-      toast.success("Invoice created successfully!");
+      toast.success(isGuestMode ? "Guest invoice generated!" : "Invoice finalized!");
       setIsInvoiceSheetOpen(false);
       setSelectedItems([]);
+      setSelectedCustomerId("");
+      setIsGuestMode(false);
+      setIsAddingNewCustomer(false);
       fetchFinancialData();
+      fetchInitialData(); // Refresh customer list
     }
+  };
+
+  const addCustomItem = () => {
+     if (!customItem.title || customItem.price <= 0) {
+        toast.error("Enter valid Name and Price for custom charge.");
+        return;
+     }
+     const item = {
+        id: `custom-${Date.now()}`,
+        title: customItem.title,
+        price: customItem.price,
+        type: 'custom',
+        quantity: 1,
+        staff_id: ""
+     };
+     setSelectedItems([...selectedItems, item]);
+     setCustomItem({ title: "", price: 0 });
   };
 
   const addItem = (item: any, type: string) => {
@@ -324,30 +388,65 @@ const BillingSystem = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                   <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Category</label>
-                      <select 
-                         value={newExpense.category}
-                         onChange={(e) => setNewExpense({...newExpense, category: e.target.value})}
-                         className="w-full bg-secondary/50 border border-border/30 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none">
-                         <option>Rent</option>
-                         <option>Salary</option>
-                         <option>Inventory</option>
-                         <option>Utility</option>
-                         <option>Marketing</option>
-                         <option>General</option>
-                      </select>
-                   </div>
-                   <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Amount (₹)</label>
-                      <input 
-                        type="number" 
-                        value={newExpense.amount}
-                        onChange={(e) => setNewExpense({...newExpense, amount: Number(e.target.value)})}
-                        className="w-full bg-secondary/50 border border-border/30 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none"
-                      />
-                   </div>
-                </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Category</label>
+                       <select 
+                          value={newExpense.category}
+                          onChange={(e) => setNewExpense({...newExpense, category: e.target.value})}
+                          className="w-full bg-secondary/50 border border-border/30 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none">
+                          <option>Rent</option>
+                          <option>Salary</option>
+                          <option>Inventory</option>
+                          <option>Utility</option>
+                          <option>Marketing</option>
+                          <option>Taxes</option>
+                          <option>Other</option>
+                       </select>
+                       {newExpense.category === "Other" && (
+                         <input 
+                           type="text"
+                           placeholder="Specify Category..."
+                           value={newExpense.customCategory}
+                           onChange={(e) => setNewExpense({...newExpense, customCategory: e.target.value})}
+                           className="w-full mt-2 bg-secondary/50 border border-border/30 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none animate-in slide-in-from-top-2 duration-300"
+                         />
+                       )}
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Amount (₹)</label>
+                       <input 
+                         type="number" 
+                         value={newExpense.amount || ""}
+                         onChange={(e) => setNewExpense({...newExpense, amount: Number(e.target.value)})}
+                         className="w-full bg-secondary/50 border border-border/30 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none font-bold"
+                       />
+                    </div>
+                 </div>
+
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Source of Payment</label>
+                    <div className="flex gap-2">
+                       {["Cash", "UPI", "Bank Transfer", "Credit Card"].map((method) => (
+                          <button
+                             key={method}
+                             onClick={() => setNewExpense({...newExpense, paymentMethod: method})}
+                             className={`flex-1 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all ${newExpense.paymentMethod === method ? 'bg-primary/20 border-primary text-primary shadow-inner' : 'bg-secondary/30 border-border/30 text-muted-foreground hover:bg-secondary'}`}
+                          >
+                             {method}
+                          </button>
+                       ))}
+                    </div>
+                 </div>
+
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Operational Notes</label>
+                    <textarea 
+                      placeholder="Add any specific details about this expense..."
+                      value={newExpense.note}
+                      onChange={(e) => setNewExpense({...newExpense, note: e.target.value})}
+                      className="w-full bg-secondary/50 border border-border/30 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none min-h-[80px]"
+                    />
+                 </div>
 
                 <div className="p-4 bg-red-500/5 border border-red-500/20 rounded-2xl flex items-start gap-3">
                    <FileText className="w-5 h-5 text-red-500 mt-0.5" />
@@ -379,48 +478,129 @@ const BillingSystem = () => {
                </SheetHeader>
 
                <div className="space-y-6">
-                  <div>
-                     <label className="text-[10px] font-bold uppercase text-muted-foreground mb-2 block tracking-widest">Select Customer</label>
-                     <select 
-                        value={selectedCustomerId} 
-                        onChange={(e) => setSelectedCustomerId(e.target.value)} 
-                        className="w-full bg-secondary/50 border border-border/30 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all font-medium"
-                      >
-                        <option value="">Search or Select Customer...</option>
-                        {customers.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
-                     </select>
+                  <div className="flex items-center justify-between gap-4">
+                     <div className="flex-1">
+                        <label className="text-[10px] font-bold uppercase text-muted-foreground mb-2 block tracking-widest">Customer Identity</label>
+                        {!isGuestMode && !isAddingNewCustomer ? (
+                           <div className="flex gap-2">
+                              <select 
+                                 value={selectedCustomerId} 
+                                 onChange={(e) => setSelectedCustomerId(e.target.value)} 
+                                 className="flex-1 bg-secondary/30 border border-border/20 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 font-medium"
+                               >
+                                 <option value="">Search or Select Customer...</option>
+                                 {customers.map(c => <option key={c.id} value={c.id}>{c.full_name} ({c.phone})</option>)}
+                              </select>
+                              <button 
+                                 onClick={() => setIsAddingNewCustomer(true)}
+                                 className="p-3 rounded-xl bg-secondary/50 border border-border/20 text-primary hover:bg-secondary transition-all"
+                                 title="Quick Add Customer"
+                              >
+                                 <UserPlus className="w-5 h-5" />
+                              </button>
+                           </div>
+                        ) : isAddingNewCustomer ? (
+                           <div className="flex gap-2 items-center animate-in slide-in-from-left-2 duration-300">
+                              <input 
+                                 type="text" 
+                                 placeholder="Full Name" 
+                                 value={newCust.name}
+                                 onChange={(e) => setNewCust({...newCust, name: e.target.value})}
+                                 className="flex-1 bg-secondary/50 border border-border/20 rounded-xl px-3 py-2 text-xs focus:border-primary/50 outline-none"
+                              />
+                              <input 
+                                 type="text" 
+                                 placeholder="Phone" 
+                                 value={newCust.phone}
+                                 onChange={(e) => setNewCust({...newCust, phone: e.target.value})}
+                                 className="flex-1 bg-secondary/50 border border-border/20 rounded-xl px-3 py-2 text-xs focus:border-primary/50 outline-none"
+                              />
+                              <button onClick={() => setIsAddingNewCustomer(false)} className="text-muted-foreground hover:text-red-400 p-1"><XCircle className="w-5 h-5" /></button>
+                           </div>
+                        ) : (
+                           <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 text-xs font-bold text-primary flex items-center justify-between animate-in zoom-in-95 duration-200">
+                              <span className="flex items-center gap-2"><UserCircle className="w-4 h-4" /> WALK-IN GUEST (ANONYMOUS)</span>
+                              <button onClick={() => setIsGuestMode(false)} className="text-[10px] underline uppercase">Reset</button>
+                           </div>
+                        )}
+                     </div>
+                     {!isAddingNewCustomer && (
+                        <div className="flex flex-col items-center gap-1">
+                           <label className="text-[9px] font-bold text-muted-foreground uppercase opacity-50">Guest</label>
+                           <button 
+                              onClick={() => { setIsGuestMode(!isGuestMode); if(!isGuestMode) setSelectedCustomerId(""); }}
+                              className={`p-2 rounded-full border transition-all ${isGuestMode ? 'bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/30' : 'bg-secondary/50 border-border/30 text-muted-foreground'}`}
+                           >
+                              <UserMinus className="w-4 h-4" />
+                           </button>
+                        </div>
+                     )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase text-muted-foreground mb-2 block tracking-widest">Available Services</label>
-                      <div className="h-64 overflow-y-auto no-scrollbar border border-border/10 rounded-2xl bg-secondary/10 p-2 space-y-1">
-                        {services.map(s => (
-                           <button 
-                             key={s.id} 
-                             onClick={() => addItem(s, 'service')} 
-                             className="w-full flex justify-between items-center p-3 rounded-xl hover:bg-primary/20 text-xs transition-all group border border-transparent hover:border-primary/20"
-                           >
-                              <span className="font-medium">{s.title}</span>
-                              <span className="font-bold text-primary group-hover:scale-110 transition-transform">₹{s.price}</span>
-                           </button>
-                        ))}
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-bold uppercase text-muted-foreground mb-2 block tracking-widest">Available Services</label>
+                         <div className="h-48 overflow-y-auto no-scrollbar border border-border/10 rounded-2xl bg-secondary/10 p-2 space-y-1">
+                           {services.map(s => (
+                              <button 
+                                key={s.id} 
+                                onClick={() => addItem(s, 'service')} 
+                                className="w-full flex justify-between items-center p-3 rounded-xl hover:bg-primary/20 text-xs transition-all group border border-transparent hover:border-primary/20"
+                              >
+                                 <span className="font-medium">{s.title}</span>
+                                 <span className="font-bold text-primary group-hover:scale-110 transition-transform">₹{s.price}</span>
+                              </button>
+                           ))}
+                         </div>
+                      </div>
+
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-bold uppercase text-muted-foreground mb-2 block tracking-widest">Add Custom Charge</label>
+                         <div className="p-3 bg-secondary/10 border border-border/10 rounded-2xl space-y-3">
+                            <input 
+                               type="text" 
+                               placeholder="Description (e.g. Special Tint)" 
+                               value={customItem.title}
+                               onChange={(e) => setCustomItem({...customItem, title: e.target.value})}
+                               className="w-full bg-background/50 border border-border/20 rounded-lg px-3 py-2 text-xs focus:border-primary/50 outline-none"
+                            />
+                            <div className="flex gap-2">
+                               <input 
+                                  type="number" 
+                                  placeholder="Price" 
+                                  value={customItem.price || ""}
+                                  onChange={(e) => setCustomItem({...customItem, price: Number(e.target.value)})}
+                                  className="flex-1 bg-background/50 border border-border/20 rounded-lg px-3 py-2 text-xs focus:border-primary/50 outline-none"
+                               />
+                               <button 
+                                 onClick={addCustomItem}
+                                 className="bg-primary text-primary-foreground px-4 rounded-lg text-[10px] font-bold uppercase hover:bg-primary/90 transition-all"
+                               >
+                                  Add
+                               </button>
+                            </div>
+                         </div>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                       <label className="text-[10px] font-bold uppercase text-muted-foreground mb-2 block tracking-widest">Bill Summary ({selectedItems.length})</label>
-                       <div className="h-64 overflow-y-auto no-scrollbar border border-border/10 rounded-2xl bg-secondary/10 p-3 space-y-3">
+                       <label className="text-[10px] font-bold uppercase text-muted-foreground mb-2 block tracking-widest font-heading">Active Bill Summary ({selectedItems.length})</label>
+                       <div className="h-80 overflow-y-auto no-scrollbar border border-border/10 rounded-2xl bg-secondary/10 p-3 space-y-3 shadow-inner">
                           {selectedItems.length === 0 ? (
-                            <div className="h-full flex items-center justify-center text-[10px] text-muted-foreground italic text-center px-4">
-                              Select services from the left to start billing.
+                            <div className="h-full flex flex-col items-center justify-center text-[10px] text-muted-foreground italic text-center px-4 space-y-4">
+                              <Receipt className="w-8 h-8 opacity-20" />
+                              <p>The cart is empty.<br/>Select services or add custom charges.</p>
                             </div>
                           ) : selectedItems.map((item) => (
-                            <div key={`${item.id}-${item.type}`} className="p-3 rounded-xl bg-background/50 border border-border/20 space-y-2 group">
+                            <div key={`${item.id}-${item.type}`} className="p-3 rounded-xl bg-background border border-border/20 space-y-2 group hover:border-primary/30 transition-all shadow-sm">
                                <div className="flex justify-between items-start">
-                                  <span className="text-[11px] font-bold text-foreground leading-tight">{item.title}</span>
-                                  <button onClick={() => removeItem(item.id)} className="text-muted-foreground hover:text-red-400">
-                                     <Trash2 className="w-3 h-3" />
+                                  <div className="flex flex-col">
+                                     <span className="text-[11px] font-bold text-foreground leading-tight">{item.title}</span>
+                                     <span className="text-[9px] text-primary font-bold">₹{item.price}</span>
+                                  </div>
+                                  <button onClick={() => removeItem(item.id)} className="text-muted-foreground hover:text-red-400 p-1">
+                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                </div>
                                <select 
@@ -440,16 +620,16 @@ const BillingSystem = () => {
                   <div className="bg-primary/5 rounded-3xl p-6 border border-primary/20 space-y-4 shadow-inner">
                      <div className="space-y-2">
                         <div className="flex justify-between text-xs font-medium text-muted-foreground">
-                           <span>Subtotal</span>
+                           <span>Base Subtotal</span>
                            <span>₹{calculateSubtotal().toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between text-xs font-medium text-muted-foreground">
-                           <span>GST (18%)</span>
+                           <span>GST Compliance (18%)</span>
                            <span>₹{calculateTax().toLocaleString()}</span>
                         </div>
-                        <div className="flex justify-between items-center pt-2 border-t border-primary/10">
-                           <span className="text-sm font-bold text-foreground">Total Payable</span>
-                           <span className="text-xl font-bold text-primary">₹{calculateTotal().toLocaleString()}</span>
+                        <div className="flex justify-between items-center pt-3 border-t border-primary/10">
+                           <span className="text-sm font-bold text-foreground">Total Payable Amount</span>
+                           <span className="text-2xl font-bold text-primary">₹{calculateTotal().toLocaleString()}</span>
                         </div>
                      </div>
                   </div>
@@ -459,10 +639,10 @@ const BillingSystem = () => {
             <div className="mt-auto p-6 bg-secondary/10 border-t border-border/20">
                <button 
                   onClick={handleCreateInvoice} 
-                  disabled={!selectedCustomerId || selectedItems.length === 0}
-                  className="w-full gold-gradient text-primary-foreground py-5 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:shadow-2xl transition-all disabled:opacity-50"
+                  disabled={(!isGuestMode && !isAddingNewCustomer && !selectedCustomerId) || selectedItems.length === 0}
+                  className="w-full gold-gradient text-primary-foreground py-5 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:shadow-2xl transition-all disabled:opacity-50 flex items-center justify-center gap-3"
                >
-                 Authorize & Print Invoice
+                 <ShoppingCart className="w-4 h-4" /> Authorize & Finalize Bill
                </button>
             </div>
            </div>
