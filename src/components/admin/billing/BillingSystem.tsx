@@ -36,6 +36,7 @@ const BillingSystem = () => {
   const [customItem, setCustomItem] = useState({ title: "", price: 0 });
 
   // Expense state
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
   const [newExpense, setNewExpense] = useState({
     title: "",
     amount: 0,
@@ -78,27 +79,41 @@ const BillingSystem = () => {
     setLoading(false);
   };
 
-  const handleCreateExpense = async () => {
+  const handleSaveExpense = async () => {
     if (!newExpense.title || newExpense.amount <= 0) {
       toast.error("Please enter a title and valid amount.");
       return;
     }
 
     const finalCategory = newExpense.category === "Other" ? newExpense.customCategory : newExpense.category;
-
-    const { error } = await supabase.from('expenses').insert({
+    const body = {
       title: newExpense.title,
-      amount: newExpense.amount,
+      amount: Number(newExpense.amount),
       category: finalCategory || "General",
       expense_date: newExpense.date,
       note: newExpense.note
-    });
+    };
+
+    let error;
+    if (editingExpenseId) {
+       const { error: updateError } = await supabase
+          .from('expenses')
+          .update(body)
+          .eq('id', editingExpenseId);
+       error = updateError;
+    } else {
+       const { error: insertError } = await supabase
+          .from('expenses')
+          .insert(body);
+       error = insertError;
+    }
 
     if (error) {
-       toast.error("Failed to log expense.");
+       toast.error(editingExpenseId ? "Failed to update expense." : "Failed to log expense.");
     } else {
-       toast.success("Expense logged successfully!");
+       toast.success(editingExpenseId ? "Expense updated!" : "Expense logged successfully!");
        setIsExpenseSheetOpen(false);
+       setEditingExpenseId(null);
        setNewExpense({
          title: "",
          amount: 0,
@@ -110,6 +125,36 @@ const BillingSystem = () => {
        });
        fetchFinancialData();
     }
+  };
+
+  const handleDeleteExpense = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this expense record?")) return;
+    
+    const { error } = await supabase
+      .from('expenses')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+       toast.error("Failed to delete expense.");
+    } else {
+       toast.success("Expense deleted.");
+       fetchFinancialData();
+    }
+  };
+
+  const openEditExpense = (exp: any) => {
+    setEditingExpenseId(exp.id);
+    setNewExpense({
+      title: exp.title,
+      amount: exp.amount,
+      category: ["Rent", "Salary", "Inventory", "Utility", "Marketing", "Taxes"].includes(exp.category) ? exp.category : "Other",
+      customCategory: ["Rent", "Salary", "Inventory", "Utility", "Marketing", "Taxes"].includes(exp.category) ? "" : exp.category,
+      date: exp.expense_date,
+      note: exp.note || "",
+      paymentMethod: "Cash"
+    });
+    setIsExpenseSheetOpen(true);
   };
 
   const calculateSubtotal = () => selectedItems.reduce((acc, item) => {
@@ -295,7 +340,9 @@ const BillingSystem = () => {
           </div>
           <div className="flex justify-between items-start mb-4">
              <div className="p-3 rounded-xl bg-primary/10 text-primary"><Calculator className="w-5 h-5" /></div>
-             <div className="text-[9px] font-bold uppercase px-2 py-1 rounded-full bg-primary/5 text-primary border border-primary/20">Operational Margin: {((netProfit / totalRevenue) * 100).toFixed(1)}%</div>
+             <div className="text-[9px] font-bold uppercase px-2 py-1 rounded-full bg-primary/5 text-primary border border-primary/20">
+               Operational Margin: {totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0'}%
+             </div>
           </div>
           <p className={`text-2xl font-bold tracking-tight ${netProfit >= 0 ? 'text-primary' : 'text-red-400'}`}>₹{netProfit.toLocaleString()}</p>
           <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-widest font-bold italic">Net Business Yield (P&L)</p>
@@ -358,18 +405,35 @@ const BillingSystem = () => {
                    <th className="text-left p-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Expense Title</th>
                    <th className="text-left p-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Category</th>
                    <th className="text-left p-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Date</th>
-                   <th className="text-right p-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Amount</th>
+                   <th className="text-left p-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Amount</th>
+                   <th className="text-right p-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Actions</th>
                  </tr>
                </thead>
                <tbody className="divide-y divide-border/10">
                  {expenses.map((exp) => (
-                   <tr key={exp.id} className="hover:bg-secondary/10 transition-colors group cursor-pointer">
+                   <tr key={exp.id} className="hover:bg-secondary/10 transition-colors group">
                      <td className="p-4 text-xs font-bold text-foreground">{exp.title}</td>
                      <td className="p-4">
                         <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border border-border/30 bg-secondary/50 text-muted-foreground">{exp.category}</span>
                      </td>
-                     <td className="p-4 text-xs text-muted-foreground">{new Date(exp.date).toLocaleDateString()}</td>
-                     <td className="p-4 text-right text-xs font-bold text-red-400">₹{Number(exp.amount).toLocaleString()}</td>
+                     <td className="p-4 text-xs text-muted-foreground">{exp.expense_date ? new Date(exp.expense_date).toLocaleDateString() : 'N/A'}</td>
+                     <td className="p-4 text-xs font-bold text-red-400">₹{Number(exp.amount).toLocaleString()}</td>
+                     <td className="p-4 text-right">
+                        <div className="flex justify-end gap-2">
+                           <button 
+                             onClick={() => openEditExpense(exp)}
+                             className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary transition-all"
+                           >
+                              <Edit3 className="w-4 h-4" />
+                           </button>
+                           <button 
+                             onClick={() => handleDeleteExpense(exp.id)}
+                             className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-red-400 transition-all"
+                           >
+                              <Trash2 className="w-4 h-4" />
+                           </button>
+                        </div>
+                     </td>
                    </tr>
                  ))}
                </tbody>
@@ -384,8 +448,12 @@ const BillingSystem = () => {
           <div className="flex flex-col h-full">
             <div className="p-8">
               <SheetHeader className="mb-8">
-                <SheetTitle className="text-2xl font-heading text-foreground">Record Business Expense</SheetTitle>
-                <SheetDescription>Track your operational costs to maintain accurate P&L statements.</SheetDescription>
+                <SheetTitle className="text-2xl font-heading text-foreground">
+                  {editingExpenseId ? "Modify Expense Record" : "Record Business Expense"}
+                </SheetTitle>
+                <SheetDescription>
+                  {editingExpenseId ? "Update the details of your existing expense entry." : "Track your operational costs to maintain accurate P&L statements."}
+                </SheetDescription>
               </SheetHeader>
 
               <div className="space-y-6">
@@ -471,9 +539,14 @@ const BillingSystem = () => {
             </div>
 
             <div className="mt-auto p-6 border-t border-border/10 bg-secondary/10 flex gap-4">
-               <button onClick={() => setIsExpenseSheetOpen(false)} className="flex-1 bg-background border border-border/50 text-foreground py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-secondary transition-all">Cancel</button>
-               <button onClick={handleCreateExpense} className="flex-[2] bg-red-500 text-white py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-red-500/20">
-                 Confirm Expense
+               <button 
+                onClick={() => { setIsExpenseSheetOpen(false); setEditingExpenseId(null); }} 
+                className="flex-1 bg-background border border-border/50 text-foreground py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-secondary transition-all"
+               >
+                 Cancel
+               </button>
+               <button onClick={handleSaveExpense} className="flex-[2] bg-red-500 text-white py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-red-500/20">
+                 {editingExpenseId ? "Update Expense" : "Confirm Expense"}
                </button>
             </div>
           </div>
