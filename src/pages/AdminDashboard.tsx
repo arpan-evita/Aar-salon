@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import BookingManagement from "@/components/admin/bookings/BookingManagement";
+import logo from "@/assets/logo.jpg";
 import ServicesTab from "@/components/admin/ServicesTab";
 import GrowthCommandCenter from "@/components/admin/GrowthCommandCenter";
 import CustomerCRM from "@/components/admin/crm/CustomerCRM";
@@ -23,7 +25,6 @@ import LoyaltyProgram from "@/components/admin/loyalty/LoyaltyProgram";
 import StaffManagement from "@/components/admin/staff/StaffManagement";
 import StaffPerformance from "@/components/admin/staff/StaffPerformance";
 import CampaignBuilder from "@/components/admin/automation/CampaignBuilder";
-import logo from "@/assets/logo.jpg";
 
 type TabGroup = {
   label: string;
@@ -71,47 +72,11 @@ const tabGroups: TabGroup[] = [
 // Flatten for easier state management
 const allTabs = tabGroups.flatMap(group => group.items);
 
-type Booking = {
-  id: string;
-  customer_name: string;
-  service: string;
-  stylist: string;
-  booking_date: string;
-  booking_time: string;
-  booking_end_time: string | null;
-  status: string;
-};
-
 const AdminDashboard = () => {
   const { user, roles, signOut, hasRole } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [totalBookings, setTotalBookings] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
-  useEffect(() => {
-    const load = async () => {
-      const { data, count } = await supabase
-        .from("bookings")
-        .select("*", { count: "exact" })
-        .order("created_at", { ascending: false })
-        .limit(20);
-      if (data) setBookings(data);
-      if (count !== null) setTotalBookings(count);
-    };
-    load();
-  }, []);
-
-  const updateStatus = async (id: string, status: string) => {
-    await supabase.from("bookings").update({ status }).eq("id", id);
-    setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status } : b)));
-  };
-
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row overflow-hidden">
@@ -219,53 +184,7 @@ const AdminDashboard = () => {
           {activeTab === "billing" && <BillingSystem />}
 
           {/* Bookings tab */}
-          {activeTab === "bookings" && (
-            <div className="glass rounded-2xl overflow-hidden border border-border/50 animate-in slide-in-from-bottom-4 duration-500">
-              <div className="p-6 border-b border-border/30 flex items-center justify-between">
-                <h2 className="font-heading text-xl text-foreground">Recent Bookings</h2>
-                <div className="flex gap-2">
-                  <button className="p-2 rounded-lg bg-secondary/50 border border-border/30 hover:bg-secondary transition-colors">
-                    <Calendar className="w-4 h-4 text-primary" />
-                  </button>
-                </div>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border/30 bg-secondary/20">
-                      <th className="text-left text-[10px] text-muted-foreground font-bold p-4 uppercase tracking-widest">Customer</th>
-                      <th className="text-left text-[10px] text-muted-foreground font-bold p-4 uppercase tracking-widest">Service</th>
-                      <th className="text-left text-[10px] text-muted-foreground font-bold p-4 uppercase tracking-widest hidden md:table-cell">Stylist</th>
-                      <th className="text-left text-[10px] text-muted-foreground font-bold p-4 uppercase tracking-widest">Date & Time</th>
-                      <th className="text-left text-[10px] text-muted-foreground font-bold p-4 uppercase tracking-widest">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/10">
-                    {bookings.length === 0 ? (
-                      <tr><td colSpan={5} className="p-12 text-center text-muted-foreground">No bookings found</td></tr>
-                    ) : bookings.map((b) => (
-                      <tr key={b.id} className="hover:bg-secondary/20 transition-colors group">
-                        <td className="p-4 text-sm font-medium text-foreground">{b.customer_name}</td>
-                        <td className="p-4 text-sm text-foreground/70">{b.service}</td>
-                        <td className="p-4 text-sm text-foreground/70 hidden md:table-cell">{b.stylist}</td>
-                        <td className="p-4 text-sm text-foreground/70 font-mono">{formatDate(b.booking_date)} • {b.booking_time}</td>
-                        <td className="p-4">
-                          <select value={b.status} onChange={(e) => updateStatus(b.id, e.target.value)}
-                            className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg bg-background border cursor-pointer transition-all ${
-                              b.status === "Confirmed" ? "border-green-500/30 text-green-400" : b.status === "Cancelled" ? "border-red-500/30 text-red-400" : "border-primary/30 text-primary"
-                            }`}>
-                            <option value="Pending">Pending</option>
-                            <option value="Confirmed">Confirmed</option>
-                            <option value="Cancelled">Cancelled</option>
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+          {activeTab === "bookings" && <BookingManagement />}
 
           {/* Staff tab */}
           {activeTab === "staff" && <StaffManagement />}
