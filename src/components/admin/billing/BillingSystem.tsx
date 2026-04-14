@@ -59,13 +59,11 @@ const BillingSystem = () => {
         .order('created_at', { ascending: false });
       if (data) setInvoices(data);
     } else {
-      // In a real app, fetch from 'expenses' table
-      const mockExpenses = [
-        { id: '1', title: "Shop Rent - April", amount: 45000, category: "Rent", date: "2024-04-01", status: "Paid" },
-        { id: '2', title: "Electricity Bill", amount: 8500, category: "Utility", date: "2024-04-05", status: "Paid" },
-        { id: '3', title: "Staff Tea/Coffee", amount: 1200, category: "General", date: "2024-04-10", status: "Paid" },
-      ];
-      setExpenses(mockExpenses);
+      const { data } = await supabase
+        .from('expenses')
+        .select('*')
+        .order('expense_date', { ascending: false });
+      if (data) setExpenses(data || []);
     }
     setLoading(false);
   };
@@ -75,10 +73,22 @@ const BillingSystem = () => {
       toast.error("Please enter a title and valid amount.");
       return;
     }
-    // Simulate save
-    setExpenses([...expenses, { ...newExpense, id: Date.now().toString(), status: 'Paid' }]);
-    toast.success("Expense logged successfully!");
-    setIsExpenseSheetOpen(false);
+
+    const { error } = await supabase.from('expenses').insert({
+      title: newExpense.title,
+      amount: newExpense.amount,
+      category: newExpense.category,
+      expense_date: newExpense.date,
+      note: newExpense.note
+    });
+
+    if (error) {
+       toast.error("Failed to log expense.");
+    } else {
+       toast.success("Expense logged successfully!");
+       setIsExpenseSheetOpen(false);
+       fetchFinancialData();
+    }
   };
 
   const calculateSubtotal = () => selectedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);

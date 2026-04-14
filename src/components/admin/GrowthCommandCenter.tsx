@@ -3,39 +3,111 @@ import {
   Package, BookOpen, Target, ArrowUpRight, ArrowDownRight,
   PieChart, Activity, Zap, ShieldCheck
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const GrowthCommandCenter = () => {
-  const [timeframe, setTimeframe] = useState("Today");
+  const [timeframe, setTimeframe] = useState("This Month");
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState({
+    netRevenue: 0,
+    activeBookings: 0,
+    growthCapital: 0,
+    customerLTV: 0,
+    loyaltyBreakdown: { vip: 0, gold: 0, silver: 0, atRisk: 0 },
+    revenueByCategory: [
+      { label: "Hair Services", share: 45, color: "bg-primary" },
+      { label: "Skin & Beauty", share: 30, color: "bg-blue-400" },
+      { label: "Bridal/Academy", share: 15, color: "bg-purple-400" },
+      { label: "Product Sales", share: 10, color: "bg-green-400" },
+    ],
+    academyLeads: 0,
+    revenueVelocity: [65, 45, 75, 55, 85, 60, 95]
+  });
 
-  const stats = [
-    { label: "Net Revenue", value: "₹12,450", change: "+12.5%", trending: 'up', icon: IndianRupee, color: "text-green-400" },
-    { label: "Active Appointments", value: "18", change: "+5", trending: 'up', icon: Calendar, color: "text-primary" },
-    { label: "Growth Capital", value: "₹2,50,000", change: "+₹15k", trending: 'up', icon: Activity, color: "text-blue-400" },
-    { label: "Customer LTV", value: "₹4,200", change: "-2%", trending: 'down', icon: Star, color: "text-yellow-400" },
+  useEffect(() => {
+    fetchDashboardData();
+  }, [timeframe]);
+
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    
+    // 1. Get Paid Invoices for Revenue
+    const { data: invoices } = await supabase
+      .from('invoices')
+      .select('total, created_at')
+      .eq('status', 'Paid');
+
+    const totalRev = invoices?.reduce((acc, inv) => acc + Number(inv.total), 0) || 0;
+
+    // 2. Get Expenses for Growth Capital
+    const { data: expenses } = await supabase.from('expenses').select('amount');
+    const totalExp = expenses?.reduce((acc, exp) => acc + Number(exp.amount), 0) || 0;
+
+    // 3. Get Bookings
+    const { count: bookingsCount } = await supabase
+      .from('bookings')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'Confirmed');
+
+    // 4. Get Customer LTV & Loyalty
+    const { data: customers } = await supabase
+      .from('customers')
+      .select('total_spend, loyalty_level, status');
+
+    const avgLTV = customers?.length ? (customers.reduce((acc, c) => acc + Number(c.total_spend), 0) / customers.length) : 0;
+    
+    const loyalty = {
+      vip: customers?.filter(c => c.loyalty_level === 'VIP' || c.loyalty_level === 'Platinum').length || 0,
+      gold: customers?.filter(c => c.loyalty_level === 'Gold').length || 0,
+      silver: customers?.filter(c => c.loyalty_level === 'Silver').length || 0,
+      atRisk: customers?.filter(c => c.status === 'At-risk').length || 0
+    };
+
+    // 5. Academy Leads
+    const { count: leadCount } = await supabase
+      .from('leads')
+      .select('*', { count: 'exact', head: true })
+      .eq('interest', 'Academy');
+
+    setDashboardData(prev => ({
+      ...prev,
+      netRevenue: totalRev,
+      activeBookings: bookingsCount || 0,
+      growthCapital: totalRev - totalExp,
+      customerLTV: avgLTV,
+      loyaltyBreakdown: loyalty,
+      academyLeads: leadCount || 0,
+    }));
+
+    setLoading(false);
+  };
+
+  const statCards = [
+    { label: "Net Revenue", value: `₹${dashboardData.netRevenue.toLocaleString()}`, change: "+12.5%", trending: 'up', icon: IndianRupee, color: "text-green-400" },
+    { label: "Active Appointments", value: dashboardData.activeBookings.toString(), change: "+5", trending: 'up', icon: Calendar, color: "text-primary" },
+    { label: "Growth Capital", value: `₹${dashboardData.growthCapital.toLocaleString()}`, change: "+₹15k", trending: 'up', icon: Activity, color: "text-blue-400" },
+    { label: "Customer LTV", value: `₹${Math.round(dashboardData.customerLTV).toLocaleString()}`, change: "-2%", trending: 'down', icon: Star, color: "text-yellow-400" },
   ];
 
-  const categories = [
-    { label: "Hair Services", share: 45, color: "bg-primary" },
-    { label: "Skin & Beauty", share: 30, color: "bg-blue-400" },
-    { label: "Bridal/Academy", share: 15, color: "bg-purple-400" },
-    { label: "Product Sales", share: 10, color: "bg-green-400" },
-  ];
+  if (loading) {
+     return <div className="p-20 text-center"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div><p className="text-muted-foreground animate-pulse font-heading">Syncing Growth Intelligence...</p></div>;
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-heading text-foreground">Growth Strategic Desk</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Real-time business intelligence for AAR Salon & Academy.</p>
+          <p className="text-sm text-muted-foreground mt-1 font-medium italic opacity-70">Real-time business intelligence for AAR Salon & Academy.</p>
         </div>
-        <div className="flex items-center gap-2 bg-secondary/30 p-1.5 rounded-xl border border-border/20 backdrop-blur-md">
+        <div className="flex bg-secondary/30 p-1 rounded-xl border border-border/20 backdrop-blur-md">
           {["Today", "This Week", "This Month"].map((t) => (
-            <button 
+            <button
               key={t}
               onClick={() => setTimeframe(t)}
-              className={`px-5 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all duration-300 ${
-                timeframe === t ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "hover:bg-secondary text-muted-foreground"
+              className={`px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
+                timeframe === t ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-muted-foreground hover:bg-secondary"
               }`}
             >
               {t}
@@ -44,172 +116,163 @@ const GrowthCommandCenter = () => {
         </div>
       </div>
 
-      {/* Strategic Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <div key={stat.label} className="glass rounded-2xl p-6 border border-border/50 hover:border-primary/30 transition-all duration-500 group relative overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map((stat, i) => (
+          <div key={i} className="glass rounded-2xl p-6 border border-border/50 group hover:border-primary/30 transition-all duration-500 overflow-hidden relative">
             <div className="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
                <stat.icon className="w-24 h-24" />
             </div>
-            <div className="flex items-start justify-between mb-4 relative z-10">
-              <div className={`p-3 rounded-xl bg-secondary group-hover:bg-primary/10 transition-colors ${stat.color}`}>
+            <div className="flex justify-between items-start mb-4 relative z-10">
+              <div className={`p-3 rounded-xl bg-secondary/50 ${stat.color}`}>
                 <stat.icon className="w-5 h-5" />
               </div>
-              <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full ${
-                stat.trending === 'up' ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"
-              }`}>
-                {stat.trending === 'up' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+              <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full ${stat.trending === 'up' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
                 {stat.change}
+                {stat.trending === 'up' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
               </div>
             </div>
-            <p className="text-3xl font-bold text-foreground tracking-tight mb-1">{stat.value}</p>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{stat.label}</p>
+            <p className="text-3xl font-bold tracking-tight mb-1">{stat.value}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{stat.label}</p>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Growth Analytics */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="glass rounded-3xl p-8 border border-border/50 relative overflow-hidden h-[420px]">
-            <div className="flex items-center justify-between mb-8 relative z-10">
-              <div>
-                 <h3 className="font-heading text-xl">Revenue Velocity</h3>
-                 <p className="text-xs text-muted-foreground">Monitoring performance against monthly goals (₹5.5L Target)</p>
+        <div className="lg:col-span-2 glass rounded-3xl p-8 border border-border/50 relative overflow-hidden">
+          <div className="flex items-center justify-between mb-10 relative z-10">
+            <div>
+              <h3 className="text-xl font-heading text-foreground">Revenue Velocity</h3>
+              <p className="text-xs text-muted-foreground mt-1">Monitoring performance against monthly goals (₹5.5L Target)</p>
+            </div>
+            <Activity className="w-5 h-5 text-primary/40 animate-pulse" />
+          </div>
+          <div className="h-64 flex items-end justify-between gap-3 px-2 relative z-10">
+            {dashboardData.revenueVelocity.map((val, i) => (
+              <div key={i} className="flex-1 group relative h-full flex items-end">
+                <div 
+                  className="w-full bg-primary/10 rounded-t-xl group-hover:bg-primary/30 transition-all duration-700 relative overflow-hidden" 
+                  style={{ height: `${val}%` }}
+                >
+                  <div className="absolute inset-0 gold-gradient opacity-30 shadow-[0_0_25px_rgba(212,175,55,0.2)]" />
+                </div>
+                <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-popover px-3 py-1.5 rounded-lg text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap border border-border/50 shadow-2xl z-20">
+                  ₹{(val * 5000).toLocaleString()}
+                </div>
               </div>
-              <PieChart className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors cursor-pointer" />
-            </div>
-            
-            <div className="h-64 flex items-end justify-between gap-4 px-2 relative z-10">
-              {[40, 65, 45, 90, 55, 75, 85, 60, 95, 80, 70, 85].map((val, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-3 group">
-                  <div className="w-full relative h-[180px] flex items-end">
-                     <div 
-                       className="w-full bg-primary/10 rounded-t-xl group-hover:bg-primary/20 transition-all duration-500" 
-                       style={{ height: `${val}%` }} 
-                     />
-                     <div 
-                       className="absolute bottom-0 left-0 w-full gold-gradient rounded-t-xl transition-all duration-1000 delay-300 shadow-[0_0_20px_rgba(212,175,55,0.2)]" 
-                       style={{ height: `${val * 0.7}%` }} 
-                     />
-                  </div>
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase opacity-0 group-hover:opacity-100 transition-opacity">W{i+1}</span>
-                </div>
-              ))}
-            </div>
-            
-            {/* Legend */}
-            <div className="flex gap-6 mt-8 relative z-10">
-               <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full gold-gradient" />
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Completed Sales</span>
-               </div>
-               <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-primary/20" />
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Pending/Booked</span>
-               </div>
-            </div>
+            ))}
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-             <div className="glass rounded-2xl p-6 border border-border/50">
-                <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
-                   <Users className="w-4 h-4 text-primary" /> Loyalty Breakdown
-                </h4>
-                <div className="space-y-4">
-                   {[
-                      { label: "VIP (Platinum)", count: 24, percent: 12, color: "bg-primary" },
-                      { label: "Frequent (Gold)", count: 86, percent: 45, color: "bg-yellow-500" },
-                      { label: "New (Silver)", count: 42, percent: 22, color: "bg-slate-400" },
-                      { label: "At Risk", count: 15, percent: 8, color: "bg-red-400" },
-                   ].map(tier => (
-                      <div key={tier.label} className="space-y-1.5">
-                         <div className="flex justify-between text-[11px] font-bold">
-                            <span>{tier.label}</span>
-                            <span>{tier.count}</span>
-                         </div>
-                         <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                            <div className={`h-full ${tier.color} transition-all duration-1000`} style={{ width: `${tier.percent}%` }} />
-                         </div>
-                      </div>
-                   ))}
-                </div>
-             </div>
-
-             <div className="glass rounded-2xl p-6 border border-border/50">
-                <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
-                   <Target className="w-4 h-4 text-blue-400" /> Revenue by Category
-                </h4>
-                <div className="space-y-6">
-                   {categories.map(cat => (
-                      <div key={cat.label} className="flex items-center gap-4">
-                         <div className={`w-3 h-3 rounded-full ${cat.color}`} />
-                         <div className="flex-1">
-                            <div className="flex justify-between text-[11px] font-bold mb-1">
-                               <span>{cat.label}</span>
-                               <span>{cat.share}%</span>
-                            </div>
-                            <div className="h-1 bg-secondary/50 rounded-full">
-                               <div className={`h-full ${cat.color} rounded-full`} style={{ width: `${cat.share}%` }} />
-                            </div>
-                         </div>
-                      </div>
-                   ))}
-                </div>
-             </div>
-          </div>
-        </div>
-
-        {/* Growth Sidebars */}
-        <div className="space-y-6">
-          <div className="glass rounded-2xl p-6 border border-border/50">
-            <h3 className="font-heading text-lg mb-6 flex items-center gap-2">
-               <Zap className="w-5 h-5 text-primary" /> AI Growth Insights
-            </h3>
-            <div className="space-y-4">
-                <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 group hover:border-primary transition-all cursor-pointer">
-                   <p className="text-[10px] font-bold text-primary uppercase mb-2">Revenue Optimization</p>
-                   <p className="text-xs text-foreground/80 leading-relaxed mb-3">
-                      "Bridal Makeup" demand is up 40% for May. Launch an early booking offer to secure revenue now.
-                   </p>
-                   <button className="text-[10px] font-bold underline hover:no-underline">Deploy Campaign</button>
-                </div>
-
-                <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/20 group hover:border-blue-500 transition-all cursor-pointer">
-                   <p className="text-[10px] font-bold text-blue-400 uppercase mb-2">Staff Efficiency</p>
-                   <p className="text-xs text-foreground/80 leading-relaxed mb-3">
-                      Stylist "Rahul" has 100% occupancy but lower upsell rate (12%) compared to shop average (28%).
-                   </p>
-                   <button className="text-[10px] font-bold underline hover:no-underline">View Training Plan</button>
-                </div>
-
-                <div className="p-4 rounded-xl bg-yellow-500/5 border border-yellow-500/20 group hover:border-yellow-500 transition-all cursor-pointer">
-                   <p className="text-[10px] font-bold text-yellow-500 uppercase mb-2">Churn Prevention</p>
-                   <p className="text-xs text-foreground/80 leading-relaxed mb-3">
-                      12 VIP customers haven't visited in 45 days. Average return cycle is 30 days.
-                   </p>
-                   <button className="text-[10px] font-bold underline hover:no-underline">Send "Miss You" Gift</button>
-                </div>
-            </div>
+          <div className="flex justify-between mt-6 px-2">
+            {["W1", "W2", "W3", "W4", "W5", "W6", "W7"].map((d, i) => (
+              <span key={i} className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">{d}</span>
+            ))}
           </div>
           
-          <div className="gold-gradient rounded-3xl p-8 text-primary-foreground relative overflow-hidden group border border-white/20 shadow-2xl shadow-primary/20">
-             <div className="absolute top-0 right-0 p-3">
-                <ShieldCheck className="w-8 h-8 opacity-20" />
+          <div className="flex gap-6 mt-10 border-t border-border/10 pt-8 relative z-10">
+             <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full gold-gradient shadow-[0_0_10px_rgba(212,175,55,0.4)]" />
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Completed Sales</span>
              </div>
-             <div className="relative z-10">
-               <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-80 mb-2">Academy Integration</p>
-               <h4 className="text-2xl font-heading leading-tight mb-4">You have 8 high-intent leads for "Bridal Masterclass".</h4>
-               <p className="text-xs opacity-90 mb-6 leading-relaxed">
-                  Projected Revenue from this batch: ₹2,40,000. Follow up with 3 leads who clicked the SMS link.
-               </p>
-               <button className="bg-primary-foreground text-primary px-8 py-3.5 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:shadow-xl transition-all w-full md:w-auto">
-                 Convert to Students
-               </button>
+             <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-primary/20" />
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Pending/Booked</span>
              </div>
-             <BookOpen className="absolute -bottom-6 -right-6 w-32 h-32 opacity-10 group-hover:scale-110 transition-transform duration-700" />
           </div>
         </div>
+
+        <div className="space-y-6">
+          <div className="glass rounded-3xl p-6 border border-border/50 relative overflow-hidden h-full">
+             <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/5 rounded-full blur-3xl" />
+             <h3 className="text-lg font-heading flex items-center gap-2 mb-8 relative z-10">
+                <Zap className="w-5 h-5 text-primary" /> AI Growth Insights
+             </h3>
+             
+             <div className="space-y-4 relative z-10">
+                <div className="p-5 rounded-2xl bg-primary/5 border border-primary/20 hover:border-primary/40 transition-all duration-300 cursor-pointer group">
+                   <p className="text-[9px] font-bold text-primary uppercase tracking-[0.2em] mb-2">Revenue Optimization</p>
+                   <p className="text-xs text-foreground/80 leading-relaxed font-medium">"Bridal Makeup" demand is up 40% for May. Launch an early booking offer to secure revenue now.</p>
+                   <button className="mt-4 text-[10px] font-bold text-primary underline underline-offset-4 hover:no-underline group-hover:tracking-widest transition-all">Deploy Campaign</button>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-blue-500/5 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300 cursor-pointer group">
+                   <p className="text-[9px] font-bold text-blue-400 uppercase tracking-[0.2em] mb-2">Staff Efficiency</p>
+                   <p className="text-xs text-foreground/80 leading-relaxed font-medium">Stylist "Rahul" has 100% occupancy but lower upsell rate (12%) compared to shop average (28%).</p>
+                   <button className="mt-4 text-[10px] font-bold text-blue-400 underline underline-offset-4 hover:no-underline transition-all">View Training Plan</button>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-yellow-500/5 border border-yellow-500/20 hover:border-yellow-500/40 transition-all duration-300 cursor-pointer group">
+                   <p className="text-[9px] font-bold text-yellow-500 uppercase tracking-[0.2em] mb-2">Churn Prevention</p>
+                   <p className="text-xs text-foreground/80 leading-relaxed font-medium">{dashboardData.loyaltyBreakdown.atRisk} customers haven't visited in 45 days. Average return cycle is 30 days.</p>
+                   <button className="mt-4 text-[10px] font-bold text-yellow-500 underline underline-offset-4 hover:no-underline transition-all">Send "Miss You" Gift</button>
+                </div>
+             </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-4">
+         <div className="glass rounded-3xl p-8 border border-border/50">
+            <h3 className="text-lg font-heading flex items-center gap-3 mb-10">
+               <Users className="w-5 h-5 text-primary" /> Loyalty Breakdown
+            </h3>
+            <div className="space-y-8">
+               {[
+                 { label: "VIP (Platinum)", value: dashboardData.loyaltyBreakdown.vip, width: "75%", color: "bg-primary" },
+                 { label: "Frequent (Gold)", value: dashboardData.loyaltyBreakdown.gold, width: "60%", color: "bg-yellow-500" },
+                 { label: "New (Silver)", value: dashboardData.loyaltyBreakdown.silver, width: "35%", color: "bg-blue-400" },
+                 { label: "At Risk", value: dashboardData.loyaltyBreakdown.atRisk, width: "15%", color: "bg-red-400" },
+               ].map((item, i) => (
+                 <div key={i} className="group cursor-default">
+                    <div className="flex justify-between text-[11px] font-bold mb-3">
+                       <span className="text-muted-foreground uppercase tracking-widest">{item.label}</span>
+                       <span className="font-mono text-foreground">{item.value} Members</span>
+                    </div>
+                    <div className="h-2 w-full bg-secondary/50 rounded-full overflow-hidden border border-border/10">
+                       <div className={`h-full ${item.color} rounded-full transition-all duration-1000 shadow-lg`} style={{ width: item.width }} />
+                    </div>
+                 </div>
+               ))}
+            </div>
+         </div>
+
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="glass rounded-3xl p-8 border border-border/50 flex flex-col">
+               <h3 className="text-lg font-heading flex items-center gap-3 mb-10">
+                  <PieChart className="w-5 h-5 text-primary" /> Revenue Split
+               </h3>
+               <div className="space-y-6 flex-1 flex flex-col justify-center">
+                  {dashboardData.revenueByCategory.map((cat, i) => (
+                    <div key={i} className="flex flex-col gap-2 group cursor-default">
+                       <div className="flex items-center gap-3">
+                          <div className={`w-3 h-3 rounded-full ${cat.color} group-hover:scale-125 transition-transform`} />
+                          <span className="text-[10px] font-bold text-muted-foreground flex-1 uppercase tracking-widest">{cat.label}</span>
+                          <span className="text-xs font-bold font-mono">{cat.share}%</span>
+                       </div>
+                       <div className="h-0.5 bg-secondary/30 rounded-full overflow-hidden">
+                          <div className={`h-full ${cat.color} transition-all duration-700`} style={{ width: `${cat.share}%` }} />
+                       </div>
+                    </div>
+                  ))}
+               </div>
+            </div>
+
+            <div className="gold-gradient rounded-3xl p-8 text-primary-foreground relative overflow-hidden group shadow-2xl border border-white/20">
+               <div className="absolute -right-8 -bottom-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-all duration-1000">
+                  <BookOpen className="w-40 h-40" />
+               </div>
+               <div className="relative z-10 flex flex-col h-full">
+                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-8 shadow-inner border border-white/10">
+                     <ShieldCheck className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-80 mb-3">Target Acquisition</p>
+                  <h3 className="text-2xl font-heading mb-6 leading-[1.3]">You have {dashboardData.academyLeads} high-intent leads for the Academy.</h3>
+                  <div className="mt-auto">
+                    <button className="w-full bg-black/90 text-white py-5 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-black transition-all shadow-2xl hover:-translate-y-1 active:translate-y-0">
+                       Convert to Students
+                    </button>
+                  </div>
+               </div>
+            </div>
+         </div>
       </div>
     </div>
   );
