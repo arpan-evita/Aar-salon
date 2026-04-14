@@ -26,6 +26,17 @@ const CustomerCRM = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [customerInvoices, setCustomerInvoices] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  
+  // Add Customer State
+  const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({
+    full_name: "",
+    phone: "",
+    email: "",
+    notes: "",
+    status: "Active"
+  });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchCustomers();
@@ -40,6 +51,33 @@ const CustomerCRM = () => {
     
     if (data) setCustomers(data);
     setLoading(false);
+  };
+
+  const handleAddCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCustomer.full_name || !newCustomer.phone) {
+      toast.error("Name and Phone are required");
+      return;
+    }
+
+    setSubmitting(true);
+    const { error } = await supabase
+      .from('customers')
+      .insert([newCustomer]);
+
+    if (error) {
+      if (error.code === '23505') {
+        toast.error("Customer with this phone number already exists");
+      } else {
+        toast.error("Failed to add customer");
+      }
+    } else {
+      toast.success("Customer added to registry");
+      setIsAddSheetOpen(false);
+      setNewCustomer({ full_name: "", phone: "", email: "", notes: "", status: "Active" });
+      fetchCustomers();
+    }
+    setSubmitting(false);
   };
 
   const fetchCustomerDetails = async (customer: any) => {
@@ -80,7 +118,10 @@ const CustomerCRM = () => {
           <h2 className="text-2xl font-heading text-foreground">Master Customer CRM</h2>
           <p className="text-sm text-muted-foreground mt-1">Manage and track your 360-degree customer relationships.</p>
         </div>
-        <button className="gold-gradient text-primary-foreground px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-primary/20">
+        <button 
+          onClick={() => setIsAddSheetOpen(true)}
+          className="gold-gradient text-primary-foreground px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-primary/20"
+        >
           <Plus className="w-4 h-4" /> Add New Customer
         </button>
       </div>
@@ -389,6 +430,91 @@ const CustomerCRM = () => {
               </div>
             </div>
           )}
+        </SheetContent>
+      </Sheet>
+      {/* Add Customer Sheet */}
+      <Sheet open={isAddSheetOpen} onOpenChange={setIsAddSheetOpen}>
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto glass-strong border-l border-border/30 p-0 shadow-2xl">
+          <div className="flex flex-col h-full">
+            <div className="p-8 border-b border-border/10 bg-primary/5">
+              <SheetHeader className="text-left">
+                <SheetTitle className="text-2xl font-heading text-foreground">Register New Profile</SheetTitle>
+                <SheetDescription className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Initialize 360-degree customer index</SheetDescription>
+              </SheetHeader>
+            </div>
+
+            <form onSubmit={handleAddCustomer} className="p-8 space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Full Legal Name</label>
+                  <input 
+                    required
+                    value={newCustomer.full_name}
+                    onChange={(e) => setNewCustomer({...newCustomer, full_name: e.target.value})}
+                    placeholder="e.g. Primansh Agency" 
+                    className="w-full bg-secondary/30 border border-border/20 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none transition-all"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Contact Matrix (Phone)</label>
+                  <input 
+                    required
+                    value={newCustomer.phone}
+                    onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})}
+                    placeholder="+91 00000 00000" 
+                    className="w-full bg-secondary/30 border border-border/20 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none transition-all"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Electronic Mail</label>
+                  <input 
+                    type="email"
+                    value={newCustomer.email}
+                    onChange={(e) => setNewCustomer({...newCustomer, email: e.target.value})}
+                    placeholder="client@primansh.agency" 
+                    className="w-full bg-secondary/30 border border-border/20 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none transition-all"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Strategic Status</label>
+                  <select 
+                    value={newCustomer.status}
+                    onChange={(e) => setNewCustomer({...newCustomer, status: e.target.value})}
+                    className="w-full bg-secondary/30 border border-border/20 rounded-xl px-4 py-3 text-xs font-bold uppercase outline-none focus:border-primary/50 cursor-pointer"
+                  >
+                    <option value="Active">Active Intelligence</option>
+                    <option value="VIP">Executive VIP</option>
+                    <option value="Inactive">Dormant</option>
+                    <option value="At-risk">Churn Risk</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Profiling Notes</label>
+                  <textarea 
+                    value={newCustomer.notes}
+                    onChange={(e) => setNewCustomer({...newCustomer, notes: e.target.value})}
+                    placeholder="Enter customer traits, preferences or constraints..." 
+                    className="w-full bg-secondary/30 border border-border/20 rounded-xl px-4 py-3 text-sm min-h-[100px] focus:border-primary/50 outline-none transition-all resize-none italic"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-border/10 flex gap-4">
+                <button type="button" onClick={() => setIsAddSheetOpen(false)} className="flex-1 bg-background border border-border/20 py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-secondary transition-all">Cancel</button>
+                <button 
+                  disabled={submitting}
+                  type="submit" 
+                  className="flex-1 gold-gradient text-primary-foreground py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-xl shadow-primary/20"
+                >
+                  {submitting ? "Processing..." : "Register Profile"}
+                </button>
+              </div>
+            </form>
+          </div>
         </SheetContent>
       </Sheet>
     </div>
