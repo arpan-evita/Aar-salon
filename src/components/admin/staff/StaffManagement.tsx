@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
 import { 
   Users, UserCheck, Shield, Trash2, Plus, Mail, 
-  TrendingUp, IndianRupee, Clock, Award, CheckCircle2
+  TrendingUp, IndianRupee, Clock, Award, CheckCircle2,
+  Settings
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
