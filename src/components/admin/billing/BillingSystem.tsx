@@ -44,6 +44,7 @@ const BillingSystem = () => {
     fetchInitialData();
   }, [activeSubTab]);
 
+  const fetchInitialData = async () => {
     const { data: custData } = await supabase.from('customers').select('id, full_name');
     const { data: servData } = await supabase.from('services').select('id, title, price');
     const { data: staffData } = await supabase.from('profiles').select('id, full_name');
