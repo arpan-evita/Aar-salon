@@ -157,8 +157,16 @@ const BillingSystem = () => {
     setIsExpenseSheetOpen(true);
   };
 
+  const parseNumeric = (val: any) => {
+    if (typeof val === 'number') return val;
+    if (!val) return 0;
+    const cleaned = String(val).replace(/[^\d.-]/g, '');
+    const num = parseFloat(cleaned);
+    return isNaN(num) ? 0 : num;
+  };
+
   const calculateSubtotal = () => selectedItems.reduce((acc, item) => {
-    const price = Number(item.price) || 0;
+    const price = parseNumeric(item.price);
     const qty = Number(item.quantity) || 1;
     return acc + (price * qty);
   }, 0);
@@ -262,7 +270,7 @@ const BillingSystem = () => {
      const item = {
         id: `custom-${Date.now()}`,
         title: customItem.title,
-        price: Number(customItem.price) || 0,
+        price: parseNumeric(customItem.price),
         type: 'custom',
         quantity: 1,
         staff_id: ""
@@ -276,7 +284,7 @@ const BillingSystem = () => {
     if (existing) {
       setSelectedItems(selectedItems.map(i => i.id === item.id && i.type === type ? { ...i, quantity: (Number(i.quantity) || 1) + 1 } : i));
     } else {
-      setSelectedItems([...selectedItems, { ...item, type, price: Number(item.price) || 0, quantity: 1, staff_id: "" }]);
+      setSelectedItems([...selectedItems, { ...item, type, price: parseNumeric(item.price), quantity: 1, staff_id: "" }]);
     }
   };
 
