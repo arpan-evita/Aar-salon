@@ -34,6 +34,7 @@ const BillingSystem = () => {
   const [services, setServices] = useState<any[]>([]);
   const [staffList, setStaffList] = useState<any[]>([]);
   const [customItem, setCustomItem] = useState({ title: "", price: 0 });
+  const [gstRate, setGstRate] = useState(18);
 
   // Expense state
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
@@ -173,7 +174,7 @@ const BillingSystem = () => {
 
   const calculateTax = () => {
     const subtotal = calculateSubtotal();
-    return isNaN(subtotal) ? 0 : subtotal * 0.18;
+    return isNaN(subtotal) ? 0 : subtotal * (gstRate / 100);
   };
 
   const calculateTotal = () => {
@@ -717,8 +718,19 @@ const BillingSystem = () => {
                            <span>Base Subtotal</span>
                            <span>₹{calculateSubtotal().toLocaleString()}</span>
                         </div>
-                        <div className="flex justify-between text-xs font-medium text-muted-foreground">
-                           <span>GST Compliance (18%)</span>
+                        <div className="flex justify-between items-center text-xs font-medium text-muted-foreground">
+                           <div className="flex items-center gap-2">
+                             <span>GST Compliance</span>
+                             <div className="flex items-center gap-1 bg-background/50 border border-border/20 rounded-lg px-2 py-1">
+                                <input 
+                                  type="number" 
+                                  value={gstRate} 
+                                  onChange={(e) => setGstRate(Number(e.target.value))}
+                                  className="w-8 bg-transparent border-none outline-none text-[10px] font-bold text-primary text-center"
+                                />
+                                <span className="text-[10px] opacity-50">%</span>
+                             </div>
+                           </div>
                            <span>₹{calculateTax().toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between items-center pt-3 border-t border-primary/10">
