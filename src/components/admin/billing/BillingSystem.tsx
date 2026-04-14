@@ -15,6 +15,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
+import { generateInvoicePDF } from "@/utils/InvoicePDF";
 
 const BillingSystem = () => {
   const [activeSubTab, setActiveSubTab] = useState<"invoices" | "expenses">("invoices");
@@ -54,7 +55,7 @@ const BillingSystem = () => {
   }, [activeSubTab]);
 
   const fetchInitialData = async () => {
-    const { data: custData } = await supabase.from('customers').select('id, full_name');
+    const { data: custData } = await supabase.from('customers').select('id, full_name, phone');
     const { data: servData } = await supabase.from('services').select('id, title, price');
     const { data: staffData } = await supabase.from('profiles').select('id, full_name');
     if (custData) setCustomers(custData);
@@ -252,12 +253,42 @@ const BillingSystem = () => {
     if (itemsError) {
       toast.error("Failed to save invoice items.");
     } else {
-      toast.success(isGuestMode ? "Guest invoice generated!" : "Invoice finalized!");
+      // PDF & Messaging Integration
+      const customer = customers.find(c => c.id === finalCustomerId);
+      const custName = isAddingNewCustomer ? newCust.name : (customer?.full_name || "Walk-in Guest");
+      const custPhone = isAddingNewCustomer ? newCust.phone : (customer?.phone || "");
+
+      // 1. Generate PDF
+      generateInvoicePDF({
+        invoiceNo: invoice.invoice_no || `INV-${invoice.id.slice(0,8)}`,
+        date: new Date().toLocaleDateString(),
+        customerName: custName,
+        customerPhone: custPhone,
+        items: selectedItems,
+        subtotal: calculateSubtotal(),
+        gstRate: gstRate,
+        tax: calculateTax(),
+        total: calculateTotal()
+      });
+
+      // 2. Automate Messaging
+      if (custPhone) {
+         await supabase.from('messaging_logs').insert({
+            recipient_phone: custPhone,
+            message: `Hi ${custName}, thank you for visiting AAR Salon. Your professional GST invoice ${invoice.invoice_no} has been generated. Total: INR ${calculateTotal().toLocaleString()}`,
+            channel: 'WhatsApp',
+            status: 'Sent'
+         });
+         toast.success(`Invoice sent to ${custName} via WhatsApp!`);
+      }
+
+      toast.success(isGuestMode ? "Guest invoice generated!" : "Invoice finalized and sent!");
       setIsInvoiceSheetOpen(false);
       setSelectedItems([]);
       setSelectedCustomerId("");
       setIsGuestMode(false);
       setIsAddingNewCustomer(false);
+      setNewCust({ name: "", phone: "" });
       fetchFinancialData();
       fetchInitialData(); // Refresh customer list
     }
