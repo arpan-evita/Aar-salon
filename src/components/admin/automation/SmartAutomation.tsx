@@ -28,14 +28,33 @@ const SmartAutomation = () => {
   }, []);
 
   const fetchAutomations = async () => {
-    const initialAutomations = [
-      { id: '1', name: 'Appointment Confirmation', trigger: 'Immediately on book', type: 'WhatsApp/SMS', status: true, icon: Calendar, description: 'Send instant confirmation with date, time, and stylist details.' },
-      { id: '2', name: 'Post-Service Review', trigger: '2 Hours after visit', type: 'WhatsApp', status: true, icon: Star, description: 'Request Google Review and feedback after service completion.' },
-      { id: '3', name: 'Birthday Celebration', trigger: 'On Birthday morning', type: 'SMS', status: false, icon: Gift, description: 'Send a personalized wish with a 20% discount coupon.' },
-      { id: '4', name: 'Client Re-engagement', trigger: '30 Days of inactivity', type: 'WhatsApp', status: true, icon: RefreshCw, description: 'Automated "We Miss You" message for at-risk clients.' },
-      { id: '5', name: 'Payment Receipt', trigger: 'On Billing', type: 'Email/WA', status: true, icon: Zap, description: 'Instant GST invoice delivery to customer.' },
-    ];
-    setAutomations(initialAutomations);
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('automation_rules')
+      .select('*')
+      .order('created_at', { ascending: true });
+    
+    if (data && data.length > 0) {
+      // Map database icons based on rules
+      const mapped = data.map(rule => ({
+        ...rule,
+        status: rule.is_active,
+        trigger: rule.trigger_type.replace('_', ' '),
+        type: rule.channel,
+        icon: rule.trigger_type.includes('booking') ? Calendar : 
+              rule.trigger_type.includes('birthday') ? Gift : 
+              rule.trigger_type.includes('inactivity') ? RefreshCw : Zap,
+        description: rule.name
+      }));
+      setAutomations(mapped);
+    } else {
+      // Fallback if no rules exist yet
+      const initialAutomations = [
+        { id: '1', name: 'Appointment Confirmation', trigger_type: 'booking_confirmed', trigger: 'On book', channel: 'WhatsApp', is_active: true, status: true, icon: Calendar, message_template: 'Hi {{name}}, your appointment is confirmed.', description: 'Send instant confirmation on booking.' },
+        { id: '2', name: 'Post-Service Review', trigger_type: 'booking_completed', trigger: 'After visit', channel: 'WhatsApp', is_active: true, status: true, icon: Star, message_template: 'Hi {{name}}, how was your service?', description: 'Request feedback after completion.' },
+      ];
+      setAutomations(initialAutomations);
+    }
     setLoading(false);
   };
 

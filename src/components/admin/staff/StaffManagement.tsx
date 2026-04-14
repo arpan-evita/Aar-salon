@@ -7,6 +7,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import StaffPerformance from "./StaffPerformance";
 import {
   Sheet,
   SheetContent,
@@ -304,15 +305,14 @@ const StaffManagement = () => {
               </table>
            </div>
         </div>
+      ) : activeTab === 'performance' ? (
+        <StaffPerformance />
       ) : (
         <div className="glass rounded-2xl border border-border/50 overflow-hidden shadow-xl">
           <div className="p-4 border-b border-border/30 bg-secondary/10 flex flex-col md:flex-row gap-4 items-center justify-between">
             <h3 className="text-sm font-bold flex items-center gap-2">
-              <Activity className="w-4 h-4 text-primary" /> {activeTab === 'overview' ? 'Real-time Team Status' : 'Workforce Analytics'}
+              <Activity className="w-4 h-4 text-primary" /> Real-time Team Status
             </h3>
-            {activeTab === 'performance' && (
-              <p className="text-[11px] text-primary font-bold italic">Generated from live service invoices</p>
-            )}
           </div>
 
           <div className="divide-y divide-border/10">
@@ -350,46 +350,20 @@ const StaffManagement = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-8 flex-1 max-w-xl">
-                  {activeTab === 'performance' ? (
-                    <>
-                      <div className="space-y-1">
-                        <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">Commissions</p>
-                        <p className="text-base font-bold text-primary">₹{Math.round(s.total_commissions || 0).toLocaleString()}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">Generated</p>
-                        <p className="text-base font-bold text-foreground">₹{(s.generated_revenue || 0).toLocaleString()}</p>
-                      </div>
-                      <div className="hidden md:block space-y-1">
-                        <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">Efficiency</p>
-                        <div className="flex items-center gap-1.5 text-blue-400">
-                          <TrendingUp className="w-4 h-4" />
-                          <span className="text-base font-bold">92%</span>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="space-y-1">
-                        <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">Current Status</p>
-                        <p className={`text-sm font-bold ${s.is_available ? 'text-green-400' : 'text-muted-foreground'}`}>
-                           {s.is_available ? 'Station Active' : 'Offline / Rest'}
-                        </p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">Today's Revenue</p>
-                        <p className="text-base font-bold text-foreground">₹2,450</p>
-                      </div>
-                      <div className="hidden md:block space-y-1 text-right md:text-left">
-                        <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">Satisfaction</p>
-                        <div className="flex items-center justify-end md:justify-start gap-1 text-yellow-500">
-                          <StarIcon />
-                          <span className="text-sm font-bold">4.8</span>
-                        </div>
-                      </div>
-                    </>
-                  )}
+                <div className="grid grid-cols-2 md:grid-cols-2 gap-8 flex-1 max-w-xl">
+                  <div className="space-y-1">
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">Current Status</p>
+                    <p className={`text-sm font-bold ${s.is_available ? 'text-green-400' : 'text-muted-foreground'}`}>
+                       {s.is_available ? 'Station Active' : 'Offline / Rest'}
+                    </p>
+                  </div>
+                  <div className="space-y-1 text-right md:text-left">
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">Satisfaction</p>
+                    <div className="flex items-center justify-end md:justify-start gap-1 text-yellow-500">
+                      <StarIcon />
+                      <span className="text-sm font-bold">4.8</span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-3">

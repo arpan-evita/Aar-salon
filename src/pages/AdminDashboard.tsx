@@ -21,6 +21,8 @@ import LeadPipeline from "@/components/admin/leads/LeadPipeline";
 import ReviewsEngine from "@/components/admin/reviews/ReviewsEngine";
 import LoyaltyProgram from "@/components/admin/loyalty/LoyaltyProgram";
 import StaffManagement from "@/components/admin/staff/StaffManagement";
+import StaffPerformance from "@/components/admin/staff/StaffPerformance";
+import CampaignBuilder from "@/components/admin/automation/CampaignBuilder";
 import logo from "@/assets/logo.jpg";
 
 type TabGroup = {
@@ -58,6 +60,7 @@ const tabGroups: TabGroup[] = [
     label: "Growth Engine",
     items: [
       { id: "campaigns", label: "Campaigns", icon: Target },
+      { id: "automation", label: "Automation", icon: Zap },
       { id: "messaging", label: "Messages", icon: Mail },
       { id: "leads", label: "Leads", icon: TrendingUp },
       { id: "reviews", label: "Reviews", icon: Star },
@@ -283,8 +286,11 @@ const AdminDashboard = () => {
           {/* Inventory tab */}
           {activeTab === "inventory" && <InventoryControl />}
 
-          {/* Campaigns/Automation tab */}
-          {activeTab === "campaigns" && <SmartAutomation />}
+          {/* Campaigns tab */}
+          {activeTab === "campaigns" && <CampaignBuilder />}
+
+          {/* Automation tab */}
+          {activeTab === "automation" && <SmartAutomation />}
 
           {/* Messaging tab */}
           {activeTab === "messaging" && <MessagingHub />}

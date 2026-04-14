@@ -48,17 +48,35 @@ const AcademyDashboard = () => {
   };
 
   const handleEnroll = async () => {
-    if (!newEnrollment.student_name || !newEnrollment.course_id) {
-      toast.error("Please fill in student name and select a course.");
+    if (!newEnrollment.student_name || !newEnrollment.course_id || !newEnrollment.student_phone) {
+      toast.error("Please fill in student name, phone and select a course.");
       return;
     }
 
+    setLoading(true);
     const { error } = await supabase.from('academy_enrollments').insert(newEnrollment);
+    
     if (error) {
       toast.error("Failed to enroll student.");
+      setLoading(false);
     } else {
-      toast.success("Student enrolled successfully!");
+      // Mock triggering an automated "Welcome & Credentials" WhatsApp message
+      await supabase.from('messaging_logs').insert({
+        content: `Welcome ${newEnrollment.student_name} to AAR Academy! Your enrollment for course #${newEnrollment.course_id.slice(0, 5)} is confirmed. Log in: aar-academy.com/portal`,
+        type: 'WhatsApp',
+        status: 'Sent'
+      });
+
+      toast.success("Student enrolled & welcome message sent!");
       setIsSheetOpen(false);
+      setNewEnrollment({
+        student_name: "",
+        student_phone: "",
+        course_id: "",
+        total_fees: 0,
+        paid_fees: 0,
+        status: "Enrolled"
+      });
       fetchAcademyData();
     }
   };

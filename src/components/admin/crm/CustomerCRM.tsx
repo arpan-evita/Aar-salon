@@ -262,6 +262,28 @@ const CustomerCRM = () => {
                              Aar Salon & Academy
                           </div>
                         </div>
+
+                        <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-2xl border border-primary/20">
+                           <input 
+                             type="checkbox" 
+                             id="whatsapp_opt_in"
+                             checked={selectedCustomer.whatsapp_opt_in}
+                             onChange={async (e) => {
+                               const { error } = await supabase.from('customers').update({ 
+                                 whatsapp_opt_in: e.target.checked,
+                                 whatsapp_opt_in_at: e.target.checked ? new Date().toISOString() : null
+                               }).eq('id', selectedCustomer.id);
+                               if (!error) {
+                                 setSelectedCustomer({...selectedCustomer, whatsapp_opt_in: e.target.checked});
+                                 toast.success(e.target.checked ? "WhatsApp marketing enabled." : "WhatsApp marketing disabled.");
+                               }
+                             }}
+                             className="w-4 h-4 rounded border-border text-primary focus:ring-primary/50"
+                           />
+                           <label htmlFor="whatsapp_opt_in" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest cursor-pointer">
+                             WhatsApp Marketing Consent (GDPR/Compliance)
+                           </label>
+                        </div>
                       </div>
 
                       <div className="space-y-4">
