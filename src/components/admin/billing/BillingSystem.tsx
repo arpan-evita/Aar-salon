@@ -394,7 +394,7 @@ const BillingSystem = () => {
                     <tr><td colSpan={4} className="p-12 text-center"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div></td></tr>
                  ) : invoices.map((inv) => (
                    <tr key={inv.id} className="hover:bg-secondary/10 transition-colors group cursor-pointer">
-                     <td className="p-4 text-xs font-mono text-muted-foreground">#{inv.id.slice(0, 8)}</td>
+                     <td className="p-4 text-xs font-mono font-bold text-primary">#{inv.invoice_no || inv.id.slice(0, 8)}</td>
                      <td className="p-4">
                        <p className="text-xs font-bold text-foreground">{inv.customers?.full_name || 'Walk-in Client'}</p>
                        <p className="text-[9px] text-muted-foreground">{new Date(inv.created_at).toLocaleDateString()}</p>
