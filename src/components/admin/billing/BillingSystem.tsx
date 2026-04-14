@@ -245,7 +245,7 @@ const BillingSystem = () => {
       quantity: item.quantity,
       unit_price: item.price,
       total_price: item.price * item.quantity,
-      staff_id: item.staff_id || null
+      staff_id: item.staff_id && item.staff_id !== "" ? item.staff_id : null
     }));
 
     const { error: itemsError } = await supabase.from('invoice_items').insert(itemsToInsert);
@@ -305,7 +305,7 @@ const BillingSystem = () => {
         price: parseNumeric(customItem.price),
         type: 'custom',
         quantity: 1,
-        staff_id: ""
+        staff_id: null
      };
      setSelectedItems([...selectedItems, item]);
      setCustomItem({ title: "", price: 0 });
@@ -316,7 +316,7 @@ const BillingSystem = () => {
     if (existing) {
       setSelectedItems(selectedItems.map(i => i.id === item.id && i.type === type ? { ...i, quantity: (Number(i.quantity) || 1) + 1 } : i));
     } else {
-      setSelectedItems([...selectedItems, { ...item, type, price: parseNumeric(item.price), quantity: 1, staff_id: "" }]);
+      setSelectedItems([...selectedItems, { ...item, type, price: parseNumeric(item.price), quantity: 1, staff_id: null }]);
     }
   };
 
