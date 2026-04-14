@@ -28,6 +28,7 @@ const BillingSystem = () => {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
   const [customers, setCustomers] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
+  const [staffList, setStaffList] = useState<any[]>([]);
 
   // Expense state
   const [newExpense, setNewExpense] = useState({
@@ -43,11 +44,12 @@ const BillingSystem = () => {
     fetchInitialData();
   }, [activeSubTab]);
 
-  const fetchInitialData = async () => {
     const { data: custData } = await supabase.from('customers').select('id, full_name');
     const { data: servData } = await supabase.from('services').select('id, title, price');
+    const { data: staffData } = await supabase.from('profiles').select('id, full_name');
     if (custData) setCustomers(custData);
     if (servData) setServices(servData);
+    if (staffData) setStaffList(staffData);
   };
 
   const fetchFinancialData = async () => {
@@ -130,7 +132,8 @@ const BillingSystem = () => {
       item_name: item.title,
       quantity: item.quantity,
       unit_price: item.price,
-      total_price: item.price * item.quantity
+      total_price: item.price * item.quantity,
+      staff_id: item.staff_id || null
     }));
 
     const { error: itemsError } = await supabase.from('invoice_items').insert(itemsToInsert);
@@ -150,8 +153,12 @@ const BillingSystem = () => {
     if (existing) {
       setSelectedItems(selectedItems.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i));
     } else {
-      setSelectedItems([...selectedItems, { ...item, type, quantity: 1 }]);
+      setSelectedItems([...selectedItems, { ...item, type, quantity: 1, staff_id: "" }]);
     }
+  };
+
+  const updateItemStaff = (id: string, staffId: string) => {
+    setSelectedItems(selectedItems.map(i => i.id === id ? { ...i, staff_id: staffId } : i));
   };
 
   const removeItem = (id: string) => setSelectedItems(selectedItems.filter(i => i.id !== id));
@@ -363,32 +370,100 @@ const BillingSystem = () => {
       {/* New Invoice Sheet (Original behavior kept) */}
       <Sheet open={isInvoiceSheetOpen} onOpenChange={setIsInvoiceSheetOpen}>
          <SheetContent className="w-full sm:max-w-2xl overflow-y-auto glass-strong border-l border-border/30 p-0">
-           {/* ... (Original billing content implementation) */}
-           <div className="p-6">
-              <SheetHeader className="mb-8">
-                <SheetTitle className="text-2xl font-heading text-foreground">Generate New Bill</SheetTitle>
-              </SheetHeader>
-              <div className="space-y-6">
-                 <div>
-                    <label className="text-[10px] font-bold uppercase text-muted-foreground mb-2 block">Customer</label>
-                    <select value={selectedCustomerId} onChange={(e) => setSelectedCustomerId(e.target.value)} className="w-full bg-secondary/50 border border-border/30 rounded-xl px-4 py-3 text-sm focus:outline-none">
-                       <option value="">Select...</option>
-                       {customers.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
-                    </select>
-                 </div>
-                 <div className="h-64 overflow-y-auto no-scrollbar border border-border/10 rounded-xl p-3 space-y-2">
-                    {services.map(s => (
-                       <button key={s.id} onClick={() => addItem(s, 'service')} className="w-full flex justify-between p-2 rounded-lg hover:bg-primary/10 text-xs transition-all">
-                          <span>{s.title}</span>
-                          <span className="font-bold">₹{s.price}</span>
-                       </button>
-                    ))}
-                 </div>
-                 <div className="bg-secondary/10 rounded-2xl p-4 border border-border/20">
-                    <div className="flex justify-between text-sm font-bold mb-2"><span>Grand Total</span><span className="text-primary">₹{calculateTotal().toLocaleString()}</span></div>
-                    <button onClick={handleCreateInvoice} className="w-full gold-gradient py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-primary/20">Finalize Billing</button>
-                 </div>
-              </div>
+           <div className="flex flex-col h-full">
+            <div className="p-8">
+               <SheetHeader className="mb-8">
+                 <SheetTitle className="text-2xl font-heading text-foreground">Generate New Bill</SheetTitle>
+                 <SheetDescription>Assign services to staff members to track performance and commissions.</SheetDescription>
+               </SheetHeader>
+
+               <div className="space-y-6">
+                  <div>
+                     <label className="text-[10px] font-bold uppercase text-muted-foreground mb-2 block tracking-widest">Select Customer</label>
+                     <select 
+                        value={selectedCustomerId} 
+                        onChange={(e) => setSelectedCustomerId(e.target.value)} 
+                        className="w-full bg-secondary/50 border border-border/30 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all font-medium"
+                      >
+                        <option value="">Search or Select Customer...</option>
+                        {customers.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
+                     </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase text-muted-foreground mb-2 block tracking-widest">Available Services</label>
+                      <div className="h-64 overflow-y-auto no-scrollbar border border-border/10 rounded-2xl bg-secondary/10 p-2 space-y-1">
+                        {services.map(s => (
+                           <button 
+                             key={s.id} 
+                             onClick={() => addItem(s, 'service')} 
+                             className="w-full flex justify-between items-center p-3 rounded-xl hover:bg-primary/20 text-xs transition-all group border border-transparent hover:border-primary/20"
+                           >
+                              <span className="font-medium">{s.title}</span>
+                              <span className="font-bold text-primary group-hover:scale-110 transition-transform">₹{s.price}</span>
+                           </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold uppercase text-muted-foreground mb-2 block tracking-widest">Bill Summary ({selectedItems.length})</label>
+                       <div className="h-64 overflow-y-auto no-scrollbar border border-border/10 rounded-2xl bg-secondary/10 p-3 space-y-3">
+                          {selectedItems.length === 0 ? (
+                            <div className="h-full flex items-center justify-center text-[10px] text-muted-foreground italic text-center px-4">
+                              Select services from the left to start billing.
+                            </div>
+                          ) : selectedItems.map((item) => (
+                            <div key={`${item.id}-${item.type}`} className="p-3 rounded-xl bg-background/50 border border-border/20 space-y-2 group">
+                               <div className="flex justify-between items-start">
+                                  <span className="text-[11px] font-bold text-foreground leading-tight">{item.title}</span>
+                                  <button onClick={() => removeItem(item.id)} className="text-muted-foreground hover:text-red-400">
+                                     <Trash2 className="w-3 h-3" />
+                                  </button>
+                               </div>
+                               <select 
+                                 value={item.staff_id || ""} 
+                                 onChange={(e) => updateItemStaff(item.id, e.target.value)}
+                                 className="w-full bg-secondary/30 border border-border/20 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-primary/50"
+                               >
+                                  <option value="">Assign Stylist...</option>
+                                  {staffList.map(st => <option key={st.id} value={st.id}>{st.full_name}</option>)}
+                               </select>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-primary/5 rounded-3xl p-6 border border-primary/20 space-y-4 shadow-inner">
+                     <div className="space-y-2">
+                        <div className="flex justify-between text-xs font-medium text-muted-foreground">
+                           <span>Subtotal</span>
+                           <span>₹{calculateSubtotal().toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-xs font-medium text-muted-foreground">
+                           <span>GST (18%)</span>
+                           <span>₹{calculateTax().toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center pt-2 border-t border-primary/10">
+                           <span className="text-sm font-bold text-foreground">Total Payable</span>
+                           <span className="text-xl font-bold text-primary">₹{calculateTotal().toLocaleString()}</span>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+
+            <div className="mt-auto p-6 bg-secondary/10 border-t border-border/20">
+               <button 
+                  onClick={handleCreateInvoice} 
+                  disabled={!selectedCustomerId || selectedItems.length === 0}
+                  className="w-full gold-gradient text-primary-foreground py-5 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:shadow-2xl transition-all disabled:opacity-50"
+               >
+                 Authorize & Print Invoice
+               </button>
+            </div>
            </div>
          </SheetContent>
       </Sheet>
