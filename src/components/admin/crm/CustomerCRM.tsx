@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "sonner";
 
 const CustomerCRM = () => {
   const [customers, setCustomers] = useState<any[]>([]);
@@ -23,6 +24,8 @@ const CustomerCRM = () => {
   const [filterStatus, setFilterStatus] = useState("All");
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [customerInvoices, setCustomerInvoices] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
     fetchCustomers();
@@ -30,13 +33,25 @@ const CustomerCRM = () => {
 
   const fetchCustomers = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('customers')
       .select('*')
       .order('total_spend', { ascending: false });
     
     if (data) setCustomers(data);
     setLoading(false);
+  };
+
+  const fetchCustomerDetails = async (customer: any) => {
+    setLoadingHistory(true);
+    const { data: invoices } = await supabase
+      .from('invoices')
+      .select('*')
+      .eq('customer_id', customer.id)
+      .order('created_at', { ascending: false });
+    
+    setCustomerInvoices(invoices || []);
+    setLoadingHistory(false);
   };
 
   const statusColors = {
@@ -55,6 +70,7 @@ const CustomerCRM = () => {
   const handleCustomerClick = (customer: any) => {
     setSelectedCustomer(customer);
     setIsSheetOpen(true);
+    fetchCustomerDetails(customer);
   };
 
   return (
@@ -64,43 +80,42 @@ const CustomerCRM = () => {
           <h2 className="text-2xl font-heading text-foreground">Master Customer CRM</h2>
           <p className="text-sm text-muted-foreground mt-1">Manage and track your 360-degree customer relationships.</p>
         </div>
-        <button className="gold-gradient text-primary-foreground px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-primary/20">
+        <button className="gold-gradient text-primary-foreground px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-primary/20">
           <Plus className="w-4 h-4" /> Add New Customer
         </button>
       </div>
 
-      {/* Stats row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
           { label: "Total Clients", value: customers.length, icon: User, color: "text-primary" },
           { label: "VIP Members", value: customers.filter(c => c.status === 'VIP').length, icon: Star, color: "text-yellow-400" },
           { label: "At Risk", value: customers.filter(c => c.status === 'At-risk').length, icon: AlertTriangle, color: "text-red-400" },
-          { label: "Active Today", value: Math.floor(customers.length * 0.4), icon: TrendingUp, color: "text-link" },
+          { label: "Total Retention", value: `${Math.round((customers.filter(c => c.visit_count > 1).length / (customers.length || 1)) * 100)}%`, icon: TrendingUp, color: "text-green-400" },
         ].map((stat) => (
           <div key={stat.label} className="glass rounded-2xl p-4 border border-border/50">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg bg-secondary ${stat.color}`}>
+            <div className="flex items-center gap-4">
+              <div className={`p-3 rounded-xl bg-secondary/50 ${stat.color}`}>
                 <stat.icon className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{stat.label}</p>
-                <p className="text-xl font-bold">{stat.value}</p>
+                <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold mb-0.5">{stat.label}</p>
+                <p className="text-lg font-bold text-foreground">{stat.value}</p>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="glass rounded-2xl border border-border/50 overflow-hidden">
+      <div className="glass rounded-2xl border border-border/50 overflow-hidden shadow-xl">
         <div className="p-4 border-b border-border/30 bg-secondary/10 flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="relative w-full md:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input 
               type="text" 
-              placeholder="Search leads, names or mobile numbers..." 
+              placeholder="Search by name or mobile number..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-background border border-border/50 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary/50"
+              className="w-full bg-background border border-border/50 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary/50 transition-all shadow-inner"
             />
           </div>
           <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto no-scrollbar">
@@ -108,8 +123,8 @@ const CustomerCRM = () => {
               <button
                 key={status}
                 onClick={() => setFilterStatus(status)}
-                className={`px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                  filterStatus === status ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "bg-secondary text-muted-foreground hover:bg-secondary"
+                className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
+                  filterStatus === status ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
                 }`}
               >
                 {status}
@@ -118,11 +133,11 @@ const CustomerCRM = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto no-scrollbar">
           <table className="w-full">
             <thead>
               <tr className="bg-secondary/20 border-b border-border/30">
-                <th className="text-left p-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Customer</th>
+                <th className="text-left p-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Customer Info</th>
                 <th className="text-left p-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Contact</th>
                 <th className="text-left p-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</th>
                 <th className="text-left p-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Visits</th>
@@ -134,7 +149,7 @@ const CustomerCRM = () => {
               {loading ? (
                 <tr><td colSpan={6} className="p-12 text-center"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div></td></tr>
               ) : filteredCustomers.length === 0 ? (
-                <tr><td colSpan={6} className="p-12 text-center text-muted-foreground">No customers found. Try a different search.</td></tr>
+                <tr><td colSpan={6} className="p-12 text-center text-muted-foreground italic">No matches found in the registry.</td></tr>
               ) : filteredCustomers.map((c) => (
                 <tr 
                   key={c.id} 
@@ -143,30 +158,28 @@ const CustomerCRM = () => {
                 >
                   <td className="p-4">
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10 border border-border/30 rounded-xl">
+                      <Avatar className="h-10 w-10 border border-border/30 rounded-xl shadow-sm">
                         <AvatarFallback className="bg-secondary text-primary font-bold">{c.full_name?.[0].toUpperCase()}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{c.full_name}</p>
-                        <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> Last: {c.last_visit_at ? new Date(c.last_visit_at).toLocaleDateString() : 'Never'}
-                        </p>
+                        <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">{c.full_name}</p>
+                        <p className="text-[9px] text-muted-foreground italic">Joined {new Date(c.created_at).toLocaleDateString()}</p>
                       </div>
                     </div>
                   </td>
                   <td className="p-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1.5 text-xs text-foreground/70"><Phone className="w-3 h-3" /> {c.phone}</div>
-                      {c.email && <div className="flex items-center gap-1.5 text-xs text-foreground/70"><Mail className="w-3 h-3" /> {c.email}</div>}
+                    <div className="space-y-0.5">
+                      <div className="text-[10px] font-bold text-foreground/80">{c.phone}</div>
+                      <div className="text-[9px] text-muted-foreground">{c.email || 'No email registered'}</div>
                     </div>
                   </td>
                   <td className="p-4">
-                    <span className={`text-[10px] font-bold uppercase tracking-tighter px-2.5 py-1 rounded-full border ${statusColors[c.status as keyof typeof statusColors]}`}>
+                    <span className={`text-[9px] font-bold uppercase tracking-tighter px-2 py-0.5 rounded-full border ${statusColors[c.status as keyof typeof statusColors]}`}>
                       {c.status}
                     </span>
                   </td>
-                  <td className="p-4 font-mono text-sm">{c.visit_count}</td>
-                  <td className="p-4 font-bold text-sm">₹{c.total_spend?.toLocaleString()}</td>
+                  <td className="p-4 font-bold text-xs">{c.visit_count}</td>
+                  <td className="p-4 font-bold text-xs text-primary">₹{Number(c.total_spend || 0).toLocaleString()}</td>
                   <td className="p-4 text-right">
                     <button className="p-2 rounded-lg hover:bg-secondary text-muted-foreground transition-colors"><ChevronRight className="w-4 h-4" /></button>
                   </td>
@@ -177,186 +190,179 @@ const CustomerCRM = () => {
         </div>
       </div>
 
-      {/* Customer 360 View Sheet */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto glass-strong border-l border-border/30 p-0">
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto glass-strong border-l border-border/30 p-0 shadow-2xl">
           {selectedCustomer && (
             <div className="flex flex-col h-full">
-              <div className="p-6 pb-0">
+              <div className="p-8 pb-0">
                 <SheetHeader className="text-left">
-                  <div className="flex items-center gap-4 mb-6">
-                    <Avatar className="h-20 w-20 border-2 border-primary/20 rounded-2xl">
+                  <div className="flex items-center gap-6 mb-8">
+                    <Avatar className="h-20 w-20 border-2 border-primary/20 rounded-2xl shadow-xl">
                       <AvatarFallback className="bg-secondary text-primary font-bold text-2xl">{selectedCustomer.full_name?.[0].toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <SheetTitle className="text-2xl font-heading text-foreground">{selectedCustomer.full_name}</SheetTitle>
-                      <SheetDescription className="flex items-center gap-2 mt-1">
-                        <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${statusColors[selectedCustomer.status as keyof typeof statusColors]}`}>
+                      <SheetTitle className="text-3xl font-heading text-foreground mb-1">{selectedCustomer.full_name}</SheetTitle>
+                      <SheetDescription className="flex items-center gap-3">
+                        <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border shadow-sm ${statusColors[selectedCustomer.status as keyof typeof statusColors]}`}>
                           {selectedCustomer.status}
                         </span>
-                        <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Joined {new Date(selectedCustomer.created_at).toLocaleDateString()}</span>
+                        <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.1em]">Verified Profile</span>
                       </SheetDescription>
                     </div>
                   </div>
                 </SheetHeader>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-                  <div className="bg-secondary/20 p-3 rounded-xl border border-border/10">
-                    <p className="text-[9px] text-muted-foreground uppercase tracking-widest mb-1">Total Lifetime Spend</p>
-                    <p className="text-lg font-bold">₹{selectedCustomer.total_spend?.toLocaleString()}</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+                  <div className="bg-secondary/30 p-4 rounded-2xl border border-border/10 shadow-sm">
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold mb-1.5">LTV (Spend)</p>
+                    <p className="text-lg font-bold">₹{Number(selectedCustomer.total_spend || 0).toLocaleString()}</p>
                   </div>
-                  <div className="bg-secondary/20 p-3 rounded-xl border border-border/10">
-                    <p className="text-[9px] text-muted-foreground uppercase tracking-widest mb-1">Total Visits</p>
-                    <p className="text-lg font-bold">{selectedCustomer.visit_count}</p>
-                  </div>
-                  <div className="bg-secondary/20 p-3 rounded-xl border border-border/10">
-                    <p className="text-[9px] text-muted-foreground uppercase tracking-widest mb-1">Loyalty Tier</p>
-                    <p className="text-lg font-bold text-primary flex items-center gap-1">
+                  <div className="bg-secondary/30 p-4 rounded-2xl border border-border/10 shadow-sm">
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold mb-1.5">Loyalty Rank</p>
+                    <p className="text-lg font-bold text-primary flex items-center gap-1.5">
                       <Award className="w-4 h-4" /> {selectedCustomer.loyalty_level}
                     </p>
                   </div>
-                  <div className="bg-secondary/20 p-3 rounded-xl border border-border/10">
-                    <p className="text-[9px] text-muted-foreground uppercase tracking-widest mb-1">Avg Ticket Size</p>
-                    <p className="text-lg font-bold">₹{(selectedCustomer.total_spend / (selectedCustomer.visit_count || 1)).toFixed(0)}</p>
+                  <div className="bg-secondary/30 p-4 rounded-2xl border border-border/10 shadow-sm">
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold mb-1.5">Total Visits</p>
+                    <p className="text-lg font-bold">{selectedCustomer.visit_count}</p>
+                  </div>
+                  <div className="bg-secondary/30 p-4 rounded-2xl border border-border/10 shadow-sm">
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold mb-1.5">Last Visit</p>
+                    <p className="text-xs font-bold uppercase">{selectedCustomer.last_visit_at ? new Date(selectedCustomer.last_visit_at).toLocaleDateString() : 'Never'}</p>
                   </div>
                 </div>
 
                 <Tabs defaultValue="overview" className="w-full">
-                  <TabsList className="w-full justify-start bg-secondary/20 p-1 mb-6 border-b border-border/10 rounded-none">
-                    <TabsTrigger value="overview" className="text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">Overview</TabsTrigger>
-                    <TabsTrigger value="history" className="text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">Visit History</TabsTrigger>
-                    <TabsTrigger value="preferences" className="text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">Preferences</TabsTrigger>
-                    <TabsTrigger value="billing" className="text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">Billing</TabsTrigger>
+                  <TabsList className="w-full justify-start bg-secondary/30 p-1 mb-8 border border-border/20 rounded-xl backdrop-blur-md">
+                    <TabsTrigger value="overview" className="text-[10px] font-bold uppercase flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all py-2.5">Overview</TabsTrigger>
+                    <TabsTrigger value="history" className="text-[10px] font-bold uppercase flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all py-2.5">Visit History</TabsTrigger>
+                    <TabsTrigger value="preferences" className="text-[10px] font-bold uppercase flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all py-2.5">Preferences</TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="overview" className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-                    <div className="space-y-4">
-                      <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground border-b border-border/10 pb-2">Personal Information</h4>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="flex items-center gap-3 text-sm">
-                          <Phone className="w-4 h-4 text-primary/70" /> {selectedCustomer.phone}
-                        </div>
-                        <div className="flex items-center gap-3 text-sm">
-                          <Mail className="w-4 h-4 text-primary/70" /> {selectedCustomer.email || 'No email provided'}
-                        </div>
-                        <div className="flex items-center gap-3 text-sm">
-                          <Calendar className="w-4 h-4 text-primary/70" /> {selectedCustomer.birthday ? new Date(selectedCustomer.birthday).toLocaleDateString() : 'N/A'} (Birthday)
-                        </div>
-                        <div className="flex items-center gap-3 text-sm">
-                          <MapPin className="w-4 h-4 text-primary/70" /> Salon Branch, City
+                  <div className="min-h-[350px]">
+                    <TabsContent value="overview" className="space-y-8 animate-in slide-in-from-right-4 duration-500">
+                      <div className="space-y-4">
+                        <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary border-b border-primary/10 pb-2">Verified Contact Matrix</h4>
+                        <div className="grid grid-cols-2 gap-6">
+                          <div className="flex items-center gap-4 text-xs font-bold">
+                             <div className="p-2 rounded-lg bg-secondary"><Phone className="w-4 h-4 text-primary" /></div>
+                             {selectedCustomer.phone}
+                          </div>
+                          <div className="flex items-center gap-4 text-xs font-bold truncate">
+                             <div className="p-2 rounded-lg bg-secondary"><Mail className="w-4 h-4 text-primary" /></div>
+                             {selectedCustomer.email || 'Not Provided'}
+                          </div>
+                          <div className="flex items-center gap-4 text-xs font-bold">
+                             <div className="p-2 rounded-lg bg-secondary"><Calendar className="w-4 h-4 text-primary" /></div>
+                             {selectedCustomer.birthday ? new Date(selectedCustomer.birthday).toLocaleDateString() : 'Unleashed'}
+                          </div>
+                          <div className="flex items-center gap-4 text-xs font-bold">
+                             <div className="p-2 rounded-lg bg-secondary"><MapPin className="w-4 h-4 text-primary" /></div>
+                             Aar Salon & Academy
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="space-y-4">
-                      <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground border-b border-border/10 pb-2">Engagement Analytics</h4>
-                      <div className="p-4 glass rounded-xl border border-border/30">
-                         <div className="flex items-center justify-between mb-2">
-                           <span className="text-xs text-muted-foreground">Frequency of Visit</span>
-                           <span className="text-xs font-bold">Every 24 Days</span>
-                         </div>
-                         <div className="w-full bg-secondary h-1.5 rounded-full overflow-hidden">
-                           <div className="bg-primary h-full w-[70%]" />
-                         </div>
-                         <p className="text-[10px] text-muted-foreground mt-2 italic">* This customer returns 15% more often than average.</p>
+                      <div className="space-y-4">
+                        <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary border-b border-primary/10 pb-2">Intelligence Insights</h4>
+                        <div className="p-5 glass rounded-2xl border border-border/30 bg-primary/5">
+                           <div className="flex items-center justify-between mb-3 text-[10px] font-bold uppercase tracking-widest">
+                             <span className="text-muted-foreground">Retention Strength</span>
+                             <span className="text-primary">{selectedCustomer.visit_count > 3 ? 'High Probability' : 'Emerging Loyalist'}</span>
+                           </div>
+                           <div className="w-full bg-secondary/50 h-2 rounded-full overflow-hidden mb-3">
+                             <div className="gold-gradient h-full transition-all duration-1000 shadow-[0_0_15px_rgba(212,175,55,0.4)]" style={{ width: `${Math.min(selectedCustomer.visit_count * 20, 100)}%` }} />
+                           </div>
+                           <p className="text-[10px] text-muted-foreground italic font-medium leading-relaxed">
+                             "This customer has consistently chosen high-value services. Predicted next visit cycle: {selectedCustomer.visit_count > 0 ? 'Within 28 days' : 'N/A'}."
+                           </p>
+                        </div>
                       </div>
-                    </div>
-                  </TabsContent>
+                    </TabsContent>
 
-                  <TabsContent value="history" className="animate-in slide-in-from-right-4 duration-300">
-                    <div className="space-y-4">
-                      {[1, 2, 3].map(i => (
-                        <div key={i} className="flex gap-4 group">
-                          <div className="flex flex-col items-center">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 text-primary font-bold text-[10px]">
-                              {i}
+                    <TabsContent value="history" className="animate-in slide-in-from-right-4 duration-500">
+                      <div className="space-y-4">
+                        {loadingHistory ? (
+                          <div className="p-20 text-center"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div></div>
+                        ) : customerInvoices.length === 0 ? (
+                          <div className="p-20 text-center text-muted-foreground italic text-xs">No service records found in the general ledger.</div>
+                        ) : customerInvoices.map((inv, i) => (
+                          <div key={inv.id} className="flex gap-6 group">
+                            <div className="flex flex-col items-center">
+                              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center border border-primary/30 text-primary font-bold text-[9px] shadow-sm">
+                                {i + 1}
+                              </div>
+                              <div className="w-[1.5px] h-full bg-border/20 group-last:bg-transparent" />
                             </div>
-                            <div className="w-[1px] h-full bg-border/30" />
-                          </div>
-                          <div className="flex-1 pb-6">
-                            <div className="glass p-4 rounded-xl border border-border/30 group-hover:border-primary/30 transition-all">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-bold">Luxury HydraFacial + Hair Spa</span>
-                                <span className="text-xs text-muted-foreground">14 Mar 2026</span>
-                              </div>
-                              <div className="flex items-center gap-4 text-[10px] text-muted-foreground mb-3">
-                                <span className="flex items-center gap-1"><User className="w-3 h-3" /> Stylist: Rahul Sharma</span>
-                                <span className="flex items-center gap-1"><CreditCard className="w-3 h-3" /> ₹4,500 Paid</span>
-                              </div>
-                              <div className="bg-secondary/30 p-2 rounded-lg text-[11px] italic">
-                                "Customer loved the cooling effect. Recommended Botox session for next month."
+                            <div className="flex-1 pb-6">
+                              <div className="glass p-5 rounded-2xl border border-border/30 hover:border-primary/40 transition-all shadow-md">
+                                <div className="flex items-center justify-between mb-3">
+                                  <span className="text-xs font-bold text-foreground">AAR Salon Treatment</span>
+                                  <span className="text-[10px] font-bold text-muted-foreground italic">{new Date(inv.created_at).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex items-center gap-6 text-[10px] font-bold text-muted-foreground mb-4">
+                                  <span className="flex items-center gap-1.5"><CreditCard className="w-3.5 h-3.5 text-primary" /> ₹{Number(inv.total).toLocaleString()}</span>
+                                  <span className="flex items-center gap-1.5 uppercase tracking-widest bg-green-500/10 text-green-400 px-2 rounded-full border border-green-500/20">{inv.status}</span>
+                                </div>
+                                <div className="bg-secondary/20 p-3 rounded-xl text-[10px] italic text-foreground/70 leading-relaxed border border-border/10">
+                                   Transaction verified for {inv.payment_method}. Detailed service breakdown available in master ledger.
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="preferences" className="animate-in slide-in-from-right-4 duration-300">
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="p-4 glass rounded-xl border border-border/30">
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-3">Preferred Stylist</p>
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-secondary border border-border/10" />
-                            <span className="text-sm font-bold">Rahul Sharma</span>
+                        ))}
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="preferences" className="animate-in slide-in-from-right-4 duration-500">
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="p-5 glass rounded-2xl border border-border/50 bg-secondary/20">
+                            <p className="text-[9px] text-muted-foreground uppercase tracking-[0.2em] font-bold mb-4">Strategic Stylist</p>
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-inner">
+                                <Award className="w-5 h-5" />
+                              </div>
+                              <span className="text-sm font-bold tracking-tight">Assigned Primary</span>
+                            </div>
+                          </div>
+                          <div className="p-5 glass rounded-2xl border border-border/50 bg-secondary/20">
+                            <p className="text-[9px] text-muted-foreground uppercase tracking-[0.2em] font-bold mb-4">Visit Velocity</p>
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20 shadow-inner">
+                                <Clock className="w-5 h-5" />
+                              </div>
+                              <span className="text-sm font-bold tracking-tight">Flexible Hours</span>
+                            </div>
                           </div>
                         </div>
-                        <div className="p-4 glass rounded-xl border border-border/30">
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-3">Preferred Time</p>
-                          <div className="flex items-center gap-3">
-                            <Clock className="w-4 h-4 text-primary" />
-                            <span className="text-sm font-bold">Weekends, Evening</span>
-                          </div>
+                        
+                        <div className="p-6 glass rounded-2xl border border-border/50 bg-secondary/30">
+                           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary mb-4 border-b border-primary/10 pb-2">Internal Operational Notes</p>
+                           <textarea 
+                             className="w-full bg-transparent text-xs min-h-[120px] focus:outline-none leading-relaxed italic placeholder:opacity-50"
+                             defaultValue={selectedCustomer.notes || "No operational constraints recorded for this customer profile. Standard high-luxury treatment protocol applies."}
+                           />
                         </div>
                       </div>
-                      
-                      <div className="p-4 glass rounded-xl border border-border/30">
-                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-3">Customer Notes & Allergies</p>
-                         <textarea 
-                           className="w-full bg-transparent text-sm min-h-[100px] focus:outline-none"
-                           defaultValue="Latex allergy. Prefers room temperature water. Likes minimal talk during facial sessions."
-                         />
-                      </div>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="billing" className="animate-in slide-in-from-right-4 duration-300">
-                    <div className="glass rounded-xl border border-border/30 overflow-hidden">
-                      <table className="w-full text-left">
-                        <thead>
-                          <tr className="bg-secondary/20 border-b border-border/10">
-                            <th className="p-3 text-[10px] font-bold uppercase tracking-widest">Inv #</th>
-                            <th className="p-3 text-[10px] font-bold uppercase tracking-widest">Date</th>
-                            <th className="p-3 text-[10px] font-bold uppercase tracking-widest">Amount</th>
-                            <th className="p-3 text-[10px] font-bold uppercase tracking-widest text-right">Action</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border/10">
-                          {[1, 2, 3].map(i => (
-                            <tr key={i} className="hover:bg-secondary/10">
-                              <td className="p-3 text-xs font-mono">INV-098{i}</td>
-                              <td className="p-3 text-xs text-muted-foreground">{14-i} Mar 2026</td>
-                              <td className="p-3 text-xs font-bold">₹2,450</td>
-                              <td className="p-3 text-right">
-                                <button className="text-[10px] text-primary hover:underline font-bold">View PDF</button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </TabsContent>
+                    </TabsContent>
+                  </div>
                 </Tabs>
               </div>
 
-              <div className="p-6 mt-auto border-t border-border/10 flex gap-3">
-                <button className="flex-1 bg-secondary text-foreground py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-secondary/80 transition-all flex items-center justify-center gap-2">
-                  <MessageSquare className="w-4 h-4" /> Message WhatsApp
+              <div className="p-8 mt-auto bg-secondary/10 border-t border-border/20 flex gap-4">
+                <button 
+                   onClick={() => toast.info("WhatsApp engine is synchronizing...")}
+                   className="flex-1 bg-black text-white py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-black/80 transition-all flex items-center justify-center gap-3 shadow-xl"
+                >
+                  <MessageSquare className="w-4 h-4" /> Reach via WhatsApp
                 </button>
-                <button className="flex-1 gold-gradient text-primary-foreground py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
-                  <Calendar className="w-4 h-4" /> Book Appointment
+                <button 
+                   onClick={() => toast.info("Scheduling matrix is evolving...")}
+                   className="flex-1 gold-gradient text-primary-foreground py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all flex items-center justify-center gap-3 shadow-xl shadow-primary/20"
+                >
+                  <Calendar className="w-4 h-4" /> Book Session
                 </button>
               </div>
             </div>

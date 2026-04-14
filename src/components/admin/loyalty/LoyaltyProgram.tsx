@@ -26,22 +26,51 @@ const LoyaltyProgram = () => {
 
   const fetchLoyaltyData = async () => {
     setLoading(true);
-    // In a real app, fetch from 'membership_plans' and 'customers' (ordered by points)
-    const mockTiers = [
-      { id: '1', name: "Silver", color: "bg-slate-400", count: 142, points_needed: 1000, benefits: ["5% off everything", "Refined queue"] },
-      { id: '2', name: "Gold", color: "bg-yellow-500", count: 86, points_needed: 5000, benefits: ["10% off services", "Birthday Special Treat", "Priority Booking"] },
-      { id: '3', name: "Platinum", color: "bg-blue-400", count: 34, points_needed: 15000, benefits: ["15% off services", "Free Cleanup every 3 visits", "Personal Concierge"] },
-      { id: '4', name: "VIP Elite", color: "bg-primary", count: 12, points_needed: 50000, benefits: ["20% Flat Discount", "Free Valet", "Lifetime validity"] },
-    ];
     
+    // 1. Fetch Tier definitions
+    const { data: tiers } = await supabase
+      .from('membership_tiers')
+      .select('*')
+      .order('price', { ascending: true });
+
+    // 2. Fetch Customer counts per tier
     const { data: customers } = await supabase
       .from('customers')
-      .select('name, loyalty_points, last_visit')
-      .order('loyalty_points', { ascending: false })
-      .limit(5);
+      .select('loyalty_level, full_name, total_spend, last_visit_at')
+      .order('total_spend', { ascending: false });
 
-    setActiveTiers(mockTiers);
-    if (customers) setLoyalCustomers(customers);
+    // Calculate counts for UI
+    const tierCounts: Record<string, number> = {};
+    customers?.forEach(c => {
+      tierCounts[c.loyalty_level] = (tierCounts[c.loyalty_level] || 0) + 1;
+    });
+
+    const tierColors = {
+      'Silver': 'bg-slate-400',
+      'Gold': 'bg-yellow-500',
+      'Platinum': 'bg-blue-400',
+      'VIP': 'bg-primary'
+    };
+
+    const mappedTiers = (tiers || [
+      { id: '1', name: 'Silver', price: 0, benefits: ["5% off everything"] },
+      { id: '2', name: 'Gold', price: 5000, benefits: ["10% off services", "Birthday Special Treat"] },
+      { id: '3', name: 'Platinum', price: 15000, benefits: ["15% off services", "Priority Booking"] },
+      { id: '4', name: 'VIP', price: 50000, benefits: ["20% Flat Discount", "Free Valet"] }
+    ]).map(t => ({
+      ...t,
+      color: tierColors[t.name as keyof typeof tierColors] || 'bg-slate-400',
+      count: tierCounts[t.name] || 0
+    }));
+
+    setActiveTiers(mappedTiers);
+    if (customers) {
+      setLoyalCustomers(customers.slice(0, 5).map(c => ({
+        name: c.full_name,
+        loyalty_points: Math.floor(c.total_spend), // Using spend as points for now
+        last_visit: c.last_visit_at || new Date().toISOString()
+      })));
+    }
     setLoading(false);
   };
 
@@ -61,13 +90,15 @@ const LoyaltyProgram = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {activeTiers.map((tier, i) => (
+        {loading ? (
+          Array(4).fill(0).map((_, i) => <div key={i} className="glass rounded-2xl h-32 animate-pulse border border-border/50" />)
+        ) : activeTiers.map((tier, i) => (
           <div key={i} className="glass rounded-2xl p-6 border border-border/50 text-center relative overflow-hidden group hover:border-primary/40 transition-all">
-            <div className={`w-2 h-full absolute left-0 top-0 ${tier.color}`} />
+            <div className={`w-1.5 h-full absolute left-0 top-0 ${tier.color}`} />
             <h3 className="text-lg font-bold mb-1">{tier.name}</h3>
             <p className="text-3xl font-bold text-foreground mb-4">{tier.count}</p>
             <div className="flex flex-col gap-2">
-               <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Starts at {tier.points_needed} Points</p>
+               <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">Requirement: ₹{Number(tier.price).toLocaleString()}</p>
                <div className="flex justify-center gap-1 mt-2">
                   <span className="w-1 h-1 rounded-full bg-primary" />
                   <span className="w-1 h-1 rounded-full bg-primary opacity-50" />
@@ -88,7 +119,7 @@ const LoyaltyProgram = () => {
                   <div key={tier.id} className="glass rounded-2xl p-5 border border-border/50 hover:border-primary/30 transition-all group">
                      <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                           <div className={`w-8 h-8 rounded-lg ${tier.color} flex items-center justify-center text-white`}>
+                           <div className={`w-8 h-8 rounded-lg ${tier.color} flex items-center justify-center text-white shadow-lg`}>
                               <Award className="w-4 h-4" />
                            </div>
                            <h4 className="text-sm font-bold">{tier.name} Perks</h4>
@@ -96,8 +127,8 @@ const LoyaltyProgram = () => {
                         <button className="text-muted-foreground hover:text-primary"><Settings className="w-3.5 h-3.5" /></button>
                      </div>
                      <ul className="space-y-2">
-                        {tier.benefits.map((benefit: string, idx: number) => (
-                           <li key={idx} className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                        {(tier.benefits || []).map((benefit: string, idx: number) => (
+                           <li key={idx} className="flex items-center gap-2 text-[10px] text-muted-foreground font-medium">
                               <CheckCircle2 className="w-3 h-3 text-green-500" /> {benefit}
                            </li>
                         ))}
@@ -111,7 +142,7 @@ const LoyaltyProgram = () => {
             <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                <TrendingUp className="w-4 h-4 text-primary" /> Top Loyalists
             </h3>
-            <div className="glass rounded-2xl border border-border/50 overflow-hidden">
+            <div className="glass rounded-2xl border border-border/50 overflow-hidden shadow-xl">
                <div className="p-0">
                   {loyalCustomers.length === 0 ? (
                     <p className="p-8 text-center text-muted-foreground text-xs italic">Calculating membership rankings...</p>
@@ -119,34 +150,33 @@ const LoyaltyProgram = () => {
                     <div key={i} className="p-4 flex items-center justify-between hover:bg-secondary/10 border-b border-border/10 last:border-0 transition-colors">
                        <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                             i === 0 ? 'bg-yellow-500/20 text-yellow-500' : 'bg-secondary text-muted-foreground'
+                             i === 0 ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30' : 'bg-secondary text-muted-foreground border border-border/30'
                           }`}>
                              #{i + 1}
                           </div>
                           <div>
                              <p className="text-xs font-bold">{cust.name}</p>
-                             <p className="text-[9px] text-muted-foreground">Last visit: {new Date(cust.last_visit).toLocaleDateString()}</p>
+                             <p className="text-[9px] text-muted-foreground italic">Last: {new Date(cust.last_visit).toLocaleDateString()}</p>
                           </div>
                        </div>
                        <div className="text-right">
-                          <p className="text-xs font-bold text-primary">{cust.loyalty_points?.toLocaleString()} PTS</p>
+                          <p className="text-xs font-bold text-primary">₹{cust.loyalty_points?.toLocaleString()}</p>
                           <div className={`text-[8px] font-bold uppercase tracking-widest ${
                              cust.loyalty_points >= 15000 ? 'text-blue-400' : 'text-yellow-500'
                           }`}>
-                             {cust.loyalty_points >= 15000 ? 'Platinum' : 'Gold'}
+                             LVL {i + 1}
                           </div>
                        </div>
                     </div>
                   ))}
                </div>
                <div className="p-3 bg-secondary/20 text-center border-t border-border/10">
-                  <button className="text-[10px] font-bold uppercase tracking-widest text-primary hover:underline">View Leaderboard</button>
+                  <button className="text-[10px] font-bold uppercase tracking-widest text-primary hover:underline">View Global Leaderboard</button>
                </div>
             </div>
          </div>
       </div>
 
-      {/* New Membership Plan Sheet */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent className="w-full sm:max-w-xl overflow-y-auto glass-strong border-l border-border/30 p-0">
           <div className="flex flex-col h-full">
@@ -204,16 +234,16 @@ const LoyaltyProgram = () => {
 
                 <div className="p-4 bg-primary/10 border border-primary/30 rounded-2xl flex items-start gap-3">
                    <Star className="w-5 h-5 text-primary" />
-                   <p className="text-[10px] text-muted-foreground leading-relaxed italic">
-                     * Tiers are automatically calculated at 12 AM every day based on customer spending patterns over the last 12 months.
+                   <p className="text-[10px] text-muted-foreground leading-relaxed italic font-medium">
+                     * Tiers are automatically calculated based on real-time customer spending patterns. New plans will take effect for future transactions.
                    </p>
                 </div>
               </div>
             </div>
 
             <div className="mt-auto p-6 border-t border-border/10 bg-secondary/10 flex gap-4">
-               <button onClick={() => setIsSheetOpen(false)} className="flex-1 bg-background border border-border/50 text-foreground py-4 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-secondary transition-all">Cancel</button>
-               <button onClick={() => {toast.success("Membership plan created!"); setIsSheetOpen(false);}} className="flex-[2] gold-gradient text-primary-foreground py-4 rounded-xl text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+               <button onClick={() => setIsSheetOpen(false)} className="flex-1 bg-background border border-border/50 text-foreground py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-secondary transition-all">Cancel</button>
+               <button onClick={() => {toast.success("Membership plan created!"); setIsSheetOpen(false);}} className="flex-[2] gold-gradient text-primary-foreground py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
                  <CheckCircle2 className="w-4 h-4" /> Activate Plan
                </button>
             </div>
