@@ -112,9 +112,22 @@ const BillingSystem = () => {
     }
   };
 
-  const calculateSubtotal = () => selectedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-  const calculateTax = () => calculateSubtotal() * 0.18;
-  const calculateTotal = () => calculateSubtotal() + calculateTax();
+  const calculateSubtotal = () => selectedItems.reduce((acc, item) => {
+    const price = Number(item.price) || 0;
+    const qty = Number(item.quantity) || 1;
+    return acc + (price * qty);
+  }, 0);
+
+  const calculateTax = () => {
+    const subtotal = calculateSubtotal();
+    return isNaN(subtotal) ? 0 : subtotal * 0.18;
+  };
+
+  const calculateTotal = () => {
+    const subtotal = calculateSubtotal();
+    const tax = calculateTax();
+    return (isNaN(subtotal) ? 0 : subtotal) + (isNaN(tax) ? 0 : tax);
+  };
 
   const totalRevenue = invoices.reduce((acc, inv) => acc + Number(inv.total), 0);
   const totalExpenses = expenses.reduce((acc, exp) => acc + Number(exp.amount), 0);
@@ -204,7 +217,7 @@ const BillingSystem = () => {
      const item = {
         id: `custom-${Date.now()}`,
         title: customItem.title,
-        price: customItem.price,
+        price: Number(customItem.price) || 0,
         type: 'custom',
         quantity: 1,
         staff_id: ""
@@ -216,9 +229,9 @@ const BillingSystem = () => {
   const addItem = (item: any, type: string) => {
     const existing = selectedItems.find(i => i.id === item.id && i.type === type);
     if (existing) {
-      setSelectedItems(selectedItems.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i));
+      setSelectedItems(selectedItems.map(i => i.id === item.id && i.type === type ? { ...i, quantity: (Number(i.quantity) || 1) + 1 } : i));
     } else {
-      setSelectedItems([...selectedItems, { ...item, type, quantity: 1, staff_id: "" }]);
+      setSelectedItems([...selectedItems, { ...item, type, price: Number(item.price) || 0, quantity: 1, staff_id: "" }]);
     }
   };
 
