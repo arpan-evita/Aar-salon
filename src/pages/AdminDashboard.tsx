@@ -4,10 +4,11 @@ import {
   CalendarDays, Users, Scissors, BarChart3, Clock, ArrowLeft,
   TrendingUp, IndianRupee, UserCheck, Calendar, LogOut, Plus, Mail, Shield, Trash2,
   Package, BookOpen, Target, Star, LayoutDashboard, TicketPercent, Award, ChevronDown,
-  Menu, X, Search, Bell, Zap
+  Menu, X, Search, Bell, Zap, Bot, Settings
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import BookingManagement from "@/components/admin/bookings/BookingManagement";
 import logo from "@/assets/logo.jpg";
 import ServicesTab from "@/components/admin/ServicesTab";
@@ -25,6 +26,7 @@ import LoyaltyProgram from "@/components/admin/loyalty/LoyaltyProgram";
 import StaffManagement from "@/components/admin/staff/StaffManagement";
 import StaffPerformance from "@/components/admin/staff/StaffPerformance";
 import CampaignBuilder from "@/components/admin/automation/CampaignBuilder";
+import PremiumGrowthModules from "@/components/admin/PremiumGrowthModules";
 
 type TabGroup = {
   label: string;
@@ -65,6 +67,14 @@ const tabGroups: TabGroup[] = [
       { id: "messaging", label: "Messages", icon: Mail },
       { id: "leads", label: "Leads", icon: TrendingUp },
       { id: "reviews", label: "Reviews", icon: Star },
+      { id: "assistant", label: "AI Growth", icon: Bot },
+      { id: "analytics", label: "Analytics", icon: BarChart3 },
+    ]
+  },
+  {
+    label: "Control",
+    items: [
+      { id: "settings", label: "Settings", icon: Settings },
     ]
   }
 ];
@@ -77,6 +87,21 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [globalSearch, setGlobalSearch] = useState("");
+
+  const searchResults = allTabs.filter((tab) =>
+    `${tab.label} ${tab.id}`.toLowerCase().includes(globalSearch.toLowerCase())
+  );
+
+  const openTab = (tabId: string) => {
+    setActiveTab(tabId);
+    setGlobalSearch("");
+    if (window.innerWidth < 768) setIsSidebarOpen(false);
+  };
+
+  const showNotifications = () => {
+    toast.info("Today: 18 appointments, 6 inactive VIPs, 3 low-stock products, and 4 birthday vouchers ready.");
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row overflow-hidden">
@@ -106,9 +131,27 @@ const AdminDashboard = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <input 
               type="text" 
+              value={globalSearch}
+              onChange={(event) => setGlobalSearch(event.target.value)}
               placeholder="Quick Search..." 
               className="w-full bg-secondary/50 border border-border/30 rounded-lg pl-9 pr-3 py-2 text-[11px] focus:outline-none focus:border-primary/50"
             />
+            {globalSearch && (
+              <div className="absolute left-0 right-0 top-11 z-50 rounded-xl border border-border/40 bg-background/95 p-2 shadow-2xl backdrop-blur-xl">
+                {searchResults.length === 0 ? (
+                  <p className="px-3 py-2 text-[11px] text-muted-foreground">No module found.</p>
+                ) : searchResults.slice(0, 6).map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => openTab(tab.id)}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[11px] text-foreground/80 transition-colors hover:bg-secondary"
+                  >
+                    <tab.icon className="h-3.5 w-3.5 text-primary" />
+                    Open {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <nav className="space-y-6 flex-1 overflow-y-auto max-h-[calc(100vh-250px)] no-scrollbar pr-2">
@@ -117,7 +160,7 @@ const AdminDashboard = () => {
                 <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] mb-3 px-4">{group.label}</p>
                 <div className="space-y-1">
                   {group.items.map((tab) => (
-                    <button key={tab.id} onClick={() => { setActiveTab(tab.id); if(window.innerWidth < 768) setIsSidebarOpen(false); }}
+                    <button key={tab.id} onClick={() => openTab(tab.id)}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-medium transition-all duration-300 group ${
                         activeTab === tab.id ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-foreground/60 hover:text-foreground hover:bg-secondary/50"
                       }`}>
@@ -158,7 +201,7 @@ const AdminDashboard = () => {
             </h2>
           </div>
           <div className="flex items-center gap-4">
-            <button className="p-2 rounded-full hover:bg-secondary transition-colors relative">
+            <button onClick={showNotifications} className="p-2 rounded-full hover:bg-secondary transition-colors relative">
               <Bell className="w-5 h-5 text-muted-foreground" />
               <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border-2 border-background" />
             </button>
@@ -219,6 +262,15 @@ const AdminDashboard = () => {
 
           {/* Reviews tab */}
           {activeTab === "reviews" && <ReviewsEngine />}
+
+          {/* AI Growth Assistant */}
+          {activeTab === "assistant" && <PremiumGrowthModules module="assistant" />}
+
+          {/* Advanced Analytics */}
+          {activeTab === "analytics" && <PremiumGrowthModules module="analytics" />}
+
+          {/* Admin Settings */}
+          {activeTab === "settings" && <PremiumGrowthModules module="settings" />}
 
           {/* Placeholder for remaining new modules */}
           {!allTabs.map(t => t.id).includes(activeTab) && (

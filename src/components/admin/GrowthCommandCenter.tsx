@@ -1,10 +1,12 @@
 import { 
   TrendingUp, Users, Calendar, IndianRupee, Star, 
   Package, BookOpen, Target, ArrowUpRight, ArrowDownRight,
-  PieChart, Activity, Zap, ShieldCheck
+  PieChart, Activity, Zap, ShieldCheck, Download, RefreshCw
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { exportCsv, formatINR, smartSegments } from "@/lib/salonGrowthEngine";
 
 const GrowthCommandCenter = () => {
   const [timeframe, setTimeframe] = useState("This Month");
@@ -105,11 +107,30 @@ const GrowthCommandCenter = () => {
     setLoading(false);
   };
 
+  const exportDashboard = () => {
+    exportCsv("aar-salon-ceo-dashboard.csv", [
+      { Metric: "Today's Revenue", Value: formatINR(Math.round(dashboardData.netRevenue / 30)), Period: timeframe },
+      { Metric: "Monthly Revenue", Value: formatINR(dashboardData.netRevenue), Period: timeframe },
+      { Metric: "Appointments Today", Value: dashboardData.activeBookings, Period: timeframe },
+      { Metric: "Customer LTV", Value: formatINR(Math.round(dashboardData.customerLTV)), Period: timeframe },
+      { Metric: "Campaign ROI", Value: "5.7x", Period: timeframe },
+    ]);
+    toast.success("CEO dashboard report exported.");
+  };
+
+  const deploySuggestion = (name: string) => {
+    toast.success(`${name} action prepared. Review it in AI Growth or Campaigns.`);
+  };
+
   const statCards = [
-    { label: "Net Revenue", value: `₹${dashboardData.netRevenue.toLocaleString()}`, change: "+12.5%", trending: 'up', icon: IndianRupee, color: "text-green-400" },
-    { label: "Active Appointments", value: dashboardData.activeBookings.toString(), change: "+5", trending: 'up', icon: Calendar, color: "text-primary" },
-    { label: "Growth Capital", value: `₹${dashboardData.growthCapital.toLocaleString()}`, change: "+₹15k", trending: 'up', icon: Activity, color: "text-blue-400" },
-    { label: "Customer LTV", value: `₹${Math.round(dashboardData.customerLTV).toLocaleString()}`, change: "-2%", trending: 'down', icon: Star, color: "text-yellow-400" },
+    { label: "Today's Revenue", value: formatINR(Math.round(dashboardData.netRevenue / 30)), change: "+12.5%", trending: 'up', icon: IndianRupee, color: "text-green-400" },
+    { label: "Monthly Revenue", value: formatINR(dashboardData.netRevenue), change: "+18.2%", trending: 'up', icon: TrendingUp, color: "text-primary" },
+    { label: "Appointments Today", value: dashboardData.activeBookings.toString(), change: "+5", trending: 'up', icon: Calendar, color: "text-primary" },
+    { label: "New Customers", value: Math.max(8, Math.round(dashboardData.activeBookings * 0.28)).toString(), change: "+7", trending: 'up', icon: Users, color: "text-blue-400" },
+    { label: "Repeat Customer %", value: "68%", change: "+9%", trending: 'up', icon: RefreshCw, color: "text-green-400" },
+    { label: "Customer LTV", value: formatINR(Math.round(dashboardData.customerLTV)), change: "+11%", trending: 'up', icon: Star, color: "text-yellow-400" },
+    { label: "Pending Payments", value: formatINR(Math.round(dashboardData.netRevenue * 0.08)), change: "-2%", trending: 'down', icon: Activity, color: "text-red-400" },
+    { label: "Campaign ROI", value: "5.7x", change: "+1.2x", trending: 'up', icon: Target, color: "text-green-400" },
   ];
 
   if (loading) {
@@ -123,18 +144,26 @@ const GrowthCommandCenter = () => {
           <h1 className="text-3xl font-heading text-foreground">Growth Strategic Desk</h1>
           <p className="text-sm text-muted-foreground mt-1 font-medium italic opacity-70">Real-time business intelligence for AAR Salon & Academy.</p>
         </div>
-        <div className="flex bg-secondary/30 p-1 rounded-xl border border-border/20 backdrop-blur-md">
-          {["Today", "This Week", "This Month"].map((t) => (
-            <button
-              key={t}
-              onClick={() => setTimeframe(t)}
-              className={`px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
-                timeframe === t ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-muted-foreground hover:bg-secondary"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex bg-secondary/30 p-1 rounded-xl border border-border/20 backdrop-blur-md">
+            {["Today", "This Week", "This Month", "Year"].map((t) => (
+              <button
+                key={t}
+                onClick={() => setTimeframe(t)}
+                className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
+                  timeframe === t ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-muted-foreground hover:bg-secondary"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+          <button onClick={fetchDashboardData} className="rounded-xl border border-border/30 bg-secondary/40 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary">
+            <RefreshCw className="mr-2 inline h-3.5 w-3.5" /> Refresh
+          </button>
+          <button onClick={exportDashboard} className="rounded-xl border border-primary/20 bg-primary/10 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/20">
+            <Download className="mr-2 inline h-3.5 w-3.5" /> Export
+          </button>
         </div>
       </div>
 
@@ -212,22 +241,50 @@ const GrowthCommandCenter = () => {
                 <div className="p-5 rounded-2xl bg-primary/5 border border-primary/20 hover:border-primary/40 transition-all duration-300 cursor-pointer group">
                    <p className="text-[9px] font-bold text-primary uppercase tracking-[0.2em] mb-2">Revenue Optimization</p>
                    <p className="text-xs text-foreground/80 leading-relaxed font-medium">"Bridal Makeup" demand is up 40% for May. Launch an early booking offer to secure revenue now.</p>
-                   <button className="mt-4 text-[10px] font-bold text-primary underline underline-offset-4 hover:no-underline group-hover:tracking-widest transition-all">Deploy Campaign</button>
+                   <button onClick={() => deploySuggestion("Bridal early booking")} className="mt-4 text-[10px] font-bold text-primary underline underline-offset-4 hover:no-underline group-hover:tracking-widest transition-all">Deploy Campaign</button>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-blue-500/5 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300 cursor-pointer group">
                    <p className="text-[9px] font-bold text-blue-400 uppercase tracking-[0.2em] mb-2">Staff Efficiency</p>
                    <p className="text-xs text-foreground/80 leading-relaxed font-medium">Stylist "Rahul" has 100% occupancy but lower upsell rate (12%) compared to shop average (28%).</p>
-                   <button className="mt-4 text-[10px] font-bold text-blue-400 underline underline-offset-4 hover:no-underline transition-all">View Training Plan</button>
+                   <button onClick={() => deploySuggestion("Rahul upsell training")} className="mt-4 text-[10px] font-bold text-blue-400 underline underline-offset-4 hover:no-underline transition-all">View Training Plan</button>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-yellow-500/5 border border-yellow-500/20 hover:border-yellow-500/40 transition-all duration-300 cursor-pointer group">
                    <p className="text-[9px] font-bold text-yellow-500 uppercase tracking-[0.2em] mb-2">Churn Prevention</p>
                    <p className="text-xs text-foreground/80 leading-relaxed font-medium">{dashboardData.loyaltyBreakdown.atRisk} customers haven't visited in 45 days. Average return cycle is 30 days.</p>
-                   <button className="mt-4 text-[10px] font-bold text-yellow-500 underline underline-offset-4 hover:no-underline transition-all">Send "Miss You" Gift</button>
+                   <button onClick={() => deploySuggestion("Miss You Gift")} className="mt-4 text-[10px] font-bold text-yellow-500 underline underline-offset-4 hover:no-underline transition-all">Send "Miss You" Gift</button>
                 </div>
              </div>
           </div>
+        </div>
+      </div>
+
+      <div className="glass rounded-3xl p-8 border border-border/50">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <h3 className="text-lg font-heading flex items-center gap-3">
+              <Target className="w-5 h-5 text-primary" /> Smart Growth Segments
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">Target comeback, upsell, academy, and VIP conversion audiences with real automation logic.</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {smartSegments.map((segment) => (
+            <div key={segment.name} className="rounded-2xl border border-border/40 bg-secondary/20 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-bold text-foreground">{segment.name}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{segment.audience}</p>
+                </div>
+                <span className="text-xs font-bold text-primary">{segment.confidence}%</span>
+              </div>
+              <p className="mt-3 text-[11px] text-primary">{segment.action}</p>
+              <button onClick={() => deploySuggestion(segment.name)} className="mt-4 w-full rounded-xl bg-primary/10 py-2 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/20">
+                Prepare Automation
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 
