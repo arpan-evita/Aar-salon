@@ -277,6 +277,8 @@ const BillingSystem = () => {
             recipient_phone: custPhone,
             message: `Hi ${custName}, thank you for visiting AAR Salon. Your professional GST invoice ${invoice.invoice_no} has been generated. Total: INR ${calculateTotal().toLocaleString()}`,
             channel: 'WhatsApp',
+            type: 'WhatsApp',
+            content: `Hi ${custName}, thank you for visiting AAR Salon. Your professional GST invoice ${invoice.invoice_no} has been generated. Total: INR ${calculateTotal().toLocaleString()}`,
             status: 'Sent'
          });
          toast.success(`Invoice sent to ${custName} via WhatsApp!`);
