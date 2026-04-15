@@ -138,10 +138,10 @@ const AdminDashboard = () => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[11px] font-semibold text-foreground truncate">{user?.email}</p>
-              <p className="text-[9px] text-primary uppercase tracking-tighter font-medium">{roles.join(" • ")}</p>
+              <p className="text-[9px] text-primary uppercase tracking-tighter font-medium">{roles.join(" / ")}</p>
             </div>
           </div>
-          <button onClick={async () => { await signOut(); navigate("/login"); }}
+          <button onClick={async () => { await signOut(); navigate("/admin-login"); }}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-all">
             <LogOut className="w-3.5 h-3.5" /> Sign Out
           </button>

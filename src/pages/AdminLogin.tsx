@@ -32,7 +32,7 @@ const AdminLogin = () => {
         password,
         options: {
           data: { full_name: fullName },
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: `${window.location.origin}/admin-login`,
         },
       });
       if (error) setError(error.message);
@@ -127,7 +127,7 @@ const AdminLogin = () => {
 
         <div className="text-center mt-6">
           <Link to="/" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-            ← Back to Website
+            &lt;- Back to Website
           </Link>
         </div>
       </div>
