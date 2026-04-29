@@ -18,6 +18,9 @@ import {
   Users,
   Wand2,
   Zap,
+  Plus,
+  History,
+  Trash2,
   Calendar,
   AlertCircle,
   BarChart3,
@@ -248,7 +251,10 @@ const AIGrowthAssistant = () => {
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(true);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [loadingSessions, setLoadingSessions] = useState(true);
 
   const [data, setData] = useState({
     invoices: [] as any[],
@@ -262,16 +268,35 @@ const AIGrowthAssistant = () => {
 
   useEffect(() => {
     fetchEverything();
-    fetchChatHistory();
+    fetchSessions();
   }, []);
 
-  const fetchChatHistory = async () => {
+  const fetchSessions = async () => {
+    setLoadingSessions(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     const { data, error } = await supabase
+      .from('ai_growth_sessions')
+      .select('*')
+      .order('last_message_at', { ascending: false });
+
+    if (!error && data) {
+      setSessions(data);
+      if (data.length > 0 && !activeSessionId) {
+        setActiveSessionId(data[0].id);
+        fetchChatHistory(data[0].id);
+      }
+    }
+    setLoadingSessions(false);
+  };
+
+  const fetchChatHistory = async (sessionId: string) => {
+    setLoadingHistory(true);
+    const { data, error } = await supabase
       .from('ai_growth_chats')
       .select('*')
+      .eq('session_id', sessionId)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -280,6 +305,42 @@ const AIGrowthAssistant = () => {
       setHistory(data || []);
     }
     setLoadingHistory(false);
+  };
+
+  const createNewChat = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('ai_growth_sessions')
+      .insert({ user_id: user.id, title: 'New Strategy Session' })
+      .select()
+      .single();
+
+    if (!error && data) {
+      setSessions(prev => [data, ...prev]);
+      setActiveSessionId(data.id);
+      setHistory([]);
+      toast.success("New strategy session started.");
+    }
+  };
+
+  const switchSession = (sessionId: string) => {
+    setActiveSessionId(sessionId);
+    fetchChatHistory(sessionId);
+  };
+
+  const deleteSession = async (e: React.MouseEvent, sessionId: string) => {
+    e.stopPropagation();
+    const { error } = await supabase.from('ai_growth_sessions').delete().eq('id', sessionId);
+    if (!error) {
+      setSessions(prev => prev.filter(s => s.id !== sessionId));
+      if (activeSessionId === sessionId) {
+        setActiveSessionId(null);
+        setHistory([]);
+      }
+      toast.success("Session deleted.");
+    }
   };
 
   const fetchEverything = async () => {
@@ -425,10 +486,38 @@ const AIGrowthAssistant = () => {
       return;
     }
 
-    const newUserMsg = { role: 'user' as const, content: userMsg, user_id: user.id };
+    let sessionId = activeSessionId;
+    if (!sessionId) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: session } = await supabase
+          .from('ai_growth_sessions')
+          .insert({ user_id: user.id, title: userMsg.slice(0, 30) + (userMsg.length > 30 ? '...' : '') })
+          .select()
+          .single();
+        if (session) {
+          sessionId = session.id;
+          setActiveSessionId(sessionId);
+          setSessions(prev => [session, ...prev]);
+        }
+      }
+    }
+
+    if (!sessionId) return;
+
+    const newUserMsg = { 
+      role: 'user' as const, 
+      content: userMsg, 
+      user_id: user.id,
+      session_id: sessionId 
+    };
     setHistory(prev => [...prev, newUserMsg]);
     
     await supabase.from('ai_growth_chats').insert(newUserMsg);
+    await supabase.from('ai_growth_sessions').update({ 
+      last_message_at: new Date().toISOString(),
+      title: history.length === 0 ? userMsg.slice(0, 30) + (userMsg.length > 30 ? '...' : '') : undefined
+    }).eq('id', sessionId);
 
     const salonData = {
       revenue: { 
@@ -460,7 +549,12 @@ const AIGrowthAssistant = () => {
     const assistantContent = plan.summary + "\n\n" + plan.steps.map((s, i) => `${i+1}. ${s}`).join("\n\n");
 
     setTimeout(async () => {
-      const assistantMsg = { role: 'assistant' as const, content: assistantContent, user_id: user.id };
+      const assistantMsg = { 
+        role: 'assistant' as const, 
+        content: assistantContent, 
+        user_id: user.id,
+        session_id: sessionId 
+      };
       setHistory(prev => [...prev, assistantMsg]);
       await supabase.from('ai_growth_chats').insert(assistantMsg);
       setIsTyping(false);
@@ -505,19 +599,67 @@ const AIGrowthAssistant = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-10">
-            <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start mt-10">
+            {/* Sidebar for Sessions */}
+            <div className="lg:col-span-1 space-y-4">
+              <button 
+                onClick={createNewChat}
+                className="w-full h-12 flex items-center justify-center gap-2 border border-primary/30 rounded-xl bg-primary/5 text-primary text-xs font-bold uppercase tracking-widest hover:bg-primary/10 transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                New Chat
+              </button>
+              
+              <div className="space-y-2 max-h-[500px] overflow-y-auto scrollbar-hide pr-2">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 mb-2">History</p>
+                {loadingSessions ? (
+                  <div className="space-y-2 animate-pulse">
+                    {[1, 2, 3].map(i => <div key={i} className="h-10 bg-white/5 rounded-xl" />)}
+                  </div>
+                ) : sessions.length === 0 ? (
+                  <p className="text-[10px] text-muted-foreground px-2 italic">No history yet</p>
+                ) : (
+                  sessions.map((s) => (
+                    <div 
+                      key={s.id}
+                      onClick={() => switchSession(s.id)}
+                      className={`group relative flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${activeSessionId === s.id ? 'bg-primary/10 border-primary/30' : 'bg-white/5 border-transparent hover:border-white/10'}`}
+                    >
+                      <History className={`w-3.5 h-3.5 ${activeSessionId === s.id ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <span className={`text-[11px] font-medium truncate pr-6 ${activeSessionId === s.id ? 'text-foreground' : 'text-muted-foreground'}`}>
+                        {s.title}
+                      </span>
+                      <button 
+                        onClick={(e) => deleteSession(e, s.id)}
+                        className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-red-500/20 text-red-400 transition-all"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="lg:col-span-2 space-y-6">
               <div className="bg-background/40 backdrop-blur-md rounded-2xl border border-white/5 p-6 min-h-[400px] max-h-[600px] overflow-y-auto flex flex-col gap-4 scrollbar-hide">
                 {loadingHistory ? (
                   <div className="flex-1 flex items-center justify-center">
                     <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : !activeSessionId ? (
+                   <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                      <Plus className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">Select a session or start a new one to begin.</p>
                   </div>
                 ) : history.length === 0 ? (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
                     <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
                       <Bot className="w-8 h-8 text-muted-foreground" />
                     </div>
-                    <p className="text-sm text-muted-foreground">No conversation history. Ask ALI something to begin your growth strategy.</p>
+                    <p className="text-sm text-muted-foreground">New session started. Ask ALI something to begin your growth strategy.</p>
                   </div>
                 ) : (
                   history.map((msg, i) => (
