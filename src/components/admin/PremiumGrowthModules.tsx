@@ -611,32 +611,93 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
   };
 
   const handleAskAI = async () => {
-    if (!question && attachments.length === 0) return;
+    if (!question.trim() && attachments.length === 0) return;
+
     const userMsg = question;
     setQuestion("");
     setAttachments([]);
     setIsTyping(true);
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("Please log in to save chat history.");
+      setIsTyping(false);
+      return;
+    }
+
+    let sessionId = activeSessionId;
+
+    // 1. Create session if it doesn't exist
+    if (!sessionId) {
+      const { data: newSession, error: sError } = await supabase
+        .from('ai_growth_sessions')
+        .insert([{
+          user_id: user.id,
+          title: userMsg.slice(0, 30) || "New Strategy Session"
+        }])
+        .select()
+        .single();
+      
+      if (sError) {
+        console.error("Session creation error:", sError);
+        toast.error("Failed to create session");
+        setIsTyping(false);
+        return;
+      }
+      sessionId = newSession.id;
+      setActiveSessionId(sessionId);
+      fetchSessions();
+    }
 
     const newUserMsg = { 
       role: 'user', 
       content: userMsg || (attachments.length > 0 ? `Shared ${attachments.length} attachment(s)` : ""),
       metadata: { attachments: attachments.map(a => ({ name: a.file.name, type: a.file.type })) }
     };
-    setHistory(prev => [...prev, newUserMsg]);
+
+    const fullHistory = [...history, newUserMsg];
+
+    // Save User Message
+    await supabase.from('ai_growth_chats').insert([{
+      session_id: sessionId,
+      user_id: user.id,
+      role: 'user',
+      content: newUserMsg.content,
+      metadata: newUserMsg.metadata
+    }]);
+
+    setHistory(fullHistory);
 
     const salonData: SalonData = {
-      revenue: { current: analysis.currentRev, target: 700000, growth: 12 },
+      revenue: { 
+        current: analysis.currentRev, 
+        target: 700000, 
+        growth: 12,
+        gap: analysis.gap
+      },
       customers: { total: 1240, active: 850, atRisk: analysis.churnRisk, new: 45 },
       staff: { total: 8, active: 6, topPerformers: ["Rahul", "Sonia"] },
       services: { top: ["Haircut", "Botox"], underperforming: ["Beard Trim"] }
     };
 
-    const plan = await generateGrowthPlan(userMsg, salonData, history);
+    const plan = await generateGrowthPlan(userMsg, salonData, fullHistory);
     
-    setTimeout(() => {
-      setHistory(prev => [...prev, { role: 'assistant', content: plan.summary, metadata: plan }]);
-      setIsTyping(false);
-    }, 1500);
+    // Save Assistant Message
+    await supabase.from('ai_growth_chats').insert([{
+      session_id: sessionId,
+      user_id: user.id,
+      role: 'assistant',
+      content: plan.summary,
+      metadata: plan
+    }]);
+
+    // Update session timestamp
+    await supabase.from('ai_growth_sessions')
+      .update({ last_message_at: new Date().toISOString() })
+      .eq('id', sessionId);
+
+    setHistory(prev => [...prev, { role: 'assistant', content: plan.summary, metadata: plan }]);
+    setIsTyping(false);
   };
 
   const modes = [
@@ -672,7 +733,14 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
               <button onClick={() => setShowSidebar(false)} className="text-muted-foreground hover:text-gold"><PanelLeft className="w-4 h-4" /></button>
             </div>
 
-            <button onClick={() => {}} className="w-full h-11 bg-gold text-black rounded-xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 mb-8 hover:scale-105 transition-all shadow-lg shadow-gold/20">
+            <button 
+              onClick={() => {
+                setActiveSessionId(null);
+                setHistory([]);
+                setQuestion("");
+              }} 
+              className="w-full h-11 bg-gold text-black rounded-xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 mb-8 hover:scale-105 transition-all shadow-lg shadow-gold/20"
+            >
               <Plus className="w-4 h-4" /> New Chat
             </button>
 
@@ -681,7 +749,14 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-4">Recent Chats</p>
                 <div className="space-y-2">
                   {sessions.map(s => (
-                    <div key={s.id} onClick={() => setActiveSessionId(s.id)} className={`p-3 rounded-xl cursor-pointer text-xs transition-all border ${activeSessionId === s.id ? 'bg-gold/10 border-gold/30 text-gold' : 'hover:bg-white/5 border-transparent text-muted-foreground'}`}>
+                    <div 
+                      key={s.id} 
+                      onClick={() => {
+                        setActiveSessionId(s.id);
+                        fetchChatHistory(s.id);
+                      }} 
+                      className={`p-3 rounded-xl cursor-pointer text-xs transition-all border ${activeSessionId === s.id ? 'bg-gold/10 border-gold/30 text-gold' : 'hover:bg-white/5 border-transparent text-muted-foreground'}`}
+                    >
                       {s.title}
                     </div>
                   ))}

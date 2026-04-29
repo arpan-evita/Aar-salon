@@ -82,16 +82,22 @@ const REASONING_PILLARS = {
     "Bridge your gap by focusing on ticket size (AOV). A ₹500 upsell at the wash station has a 90% profit margin.",
     "Anchor your prices. Put your most expensive package first to make everything else look like a steal.",
     "Grand Slam Offers: Combine services into a bundle, add a free kit, and limit it to 50 people to create massive urgency."
+  ],
+  ACQUISITION: [
+    "For getting new clients, we need to focus on the 'Customer' pillar. I recommend a 'High-Value Lead Magnet'—offer a free 'Hair Health Consultation' on Instagram to build trust first.",
+    "Stop chasing new clients with discounts. Instead, show 'Before & After' transformations of your top services. It attracts high-intent spenders.",
+    "Target your local area with a 'VIP First-Timer Experience' package. It should feel like a premium invitation, not a promo."
   ]
 };
 
-const HUMANIZE_FRAGMENTS = [
-  "Hey! I've been looking at your latest salon data and comparing it to our ₹7L target.",
-  "Honestly, I think we have a real opportunity here to bridge that ₹{gap} gap.",
-  "I've been scanning your metrics, and here's a perspective you might not have considered.",
-  "Looking at how things are moving this week, I've put together a specific plan for you.",
-  "Based on our current revenue gap of ₹{gap}, we need to make some high-leverage moves."
-];
+const HUMANIZE_FRAGMENTS = {
+  scaling: "Looking at your goal to scale the business and bridge that ₹{gap} gap...",
+  team: "Thinking about your team performance and how we can hit that ₹7L target...",
+  retention: "I've been scanning your retention metrics—with a ₹{gap} gap, we need to keep every client we have...",
+  acquisition: "Regarding customer acquisition, I have a specific strategy to help you hit that ₹7L goal...",
+  revenue: "To bridge your ₹{gap} revenue gap, we need to look at your high-margin services...",
+  general: "I've been looking at your latest salon data and comparing it to our ₹7L target..."
+};
 
 const FOLLOW_UPS = [
   "Does that sound like something we should try this week?",
@@ -113,22 +119,25 @@ export const generateGrowthPlan = async (
   // ADVANCED CONTEXT DETECTION
   const fullHistoryText = (history.map(h => h.content.toLowerCase()).join(" ") + " " + query);
   
-  // 1. Determine Intent Scars (The "Context")
+  // 1. Determine Intent Scars
   const intents = {
-    scaling: query.includes("scale") || query.includes("system") || query.includes("sop") || fullHistoryText.includes("expand"),
-    team: query.includes("staff") || query.includes("team") || query.includes("stylist") || query.includes("employee") || query.includes("hire"),
-    retention: query.includes("retention") || query.includes("churn") || query.includes("loyalty") || query.includes("old client"),
-    upsell: query.includes("upsell") || query.includes("aov") || query.includes("ticket") || query.includes("more money"),
+    scaling: query.includes("scale") || query.includes("system") || query.includes("sop"),
+    team: query.includes("staff") || query.includes("team") || query.includes("stylist") || query.includes("employee"),
+    retention: query.includes("retention") || query.includes("churn") || query.includes("loyalty") || query.includes("old client") || query.includes("comeback"),
+    upsell: query.includes("upsell") || query.includes("aov") || query.includes("ticket"),
     botox: query.includes("botox") || query.includes("premium") || query.includes("high ticket"),
     bridal: query.includes("bridal") || query.includes("wedding"),
-    acquisition: query.includes("acquisition") || query.includes("new client") || query.includes("leads") || query.includes("marketing")
+    acquisition: query.includes("acquisition") || query.includes("new client") || query.includes("leads") || query.includes("marketing") || query.includes("attract") || query.includes("getting")
   };
 
-  // 2. Select Reasoning Pillar
+  // 2. Select Reasoning Pillar & Intro
   let pillarAdvice: string[] = [];
-  let intentName = "growth";
+  let intentName: keyof typeof HUMANIZE_FRAGMENTS = "general";
 
-  if (intents.scaling) {
+  if (intents.acquisition) {
+    pillarAdvice = [REASONING_PILLARS.ACQUISITION[0], REASONING_PILLARS.ACQUISITION[1]];
+    intentName = "acquisition";
+  } else if (intents.scaling) {
     pillarAdvice = [REASONING_PILLARS.SCALING[0], REASONING_PILLARS.SCALING[1]];
     intentName = "scaling";
   } else if (intents.team) {
@@ -137,22 +146,21 @@ export const generateGrowthPlan = async (
   } else if (intents.botox || intents.upsell) {
     pillarAdvice = [REASONING_PILLARS.REVENUE[0], REASONING_PILLARS.REVENUE[1]];
     intentName = "revenue";
-  } else if (intents.acquisition) {
-    pillarAdvice = [REASONING_PILLARS.CUSTOMERS[1], REASONING_PILLARS.REVENUE[2]];
-    intentName = "acquisition";
   } else if (intents.retention) {
     pillarAdvice = [REASONING_PILLARS.CUSTOMERS[0], REASONING_PILLARS.CUSTOMERS[2]];
     intentName = "retention";
   } else {
     pillarAdvice = [REASONING_PILLARS.SCALING[2], REASONING_PILLARS.TEAM[0]];
+    intentName = "general";
   }
 
-  // 3. Dynamic Response Construction (The "Synthesis")
-  const intro = HUMANIZE_FRAGMENTS[Math.floor(Math.random() * HUMANIZE_FRAGMENTS.length)].replace("{gap}", gap.toLocaleString());
+  // 3. Dynamic Response Construction
+  const introTemplate = HUMANIZE_FRAGMENTS[intentName] || HUMANIZE_FRAGMENTS.general;
+  const intro = introTemplate.replace("{gap}", gap.toLocaleString());
   const core = pillarAdvice.join(" ");
   const followUp = FOLLOW_UPS[Math.floor(Math.random() * FOLLOW_UPS.length)];
 
-  // 4. Special Contextual Injection (Service Level)
+  // 4. Special Contextual Injection
   let serviceBonus = "";
   if (query.includes("botox")) {
     serviceBonus = "\n\n**Service Tip:** Suggest an annual 'Maintenance' plan—4 sessions for ₹40k. It locks in that recurring revenue right away.";
