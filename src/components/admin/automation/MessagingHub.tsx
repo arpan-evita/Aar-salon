@@ -48,7 +48,32 @@ const MessagingHub = () => {
     if (selectedChat) {
       fetchChatHistory(selectedChat.id);
     }
-  }, [selectedChat]);
+
+    // Set up real-time subscription for new messages
+    const channel = supabase
+      .channel('realtime_messaging')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', table: 'messaging_logs' },
+        (payload) => {
+          console.log('New message received:', payload);
+          // 1. If the message belongs to the currently open chat, add it to history
+          if (selectedChat && payload.new.customer_id === selectedChat.id) {
+            setChatHistory(prev => {
+              if (prev.find(m => m.id === payload.new.id)) return prev;
+              return [...prev, payload.new];
+            });
+          }
+          // 2. Always refresh the sidebar to show the latest message
+          fetchConversations();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedChat?.id]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
