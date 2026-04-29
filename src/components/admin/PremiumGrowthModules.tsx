@@ -496,6 +496,7 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [mode, setMode] = useState<'strategy' | 'marketing' | 'crm' | 'finance' | 'staff' | 'academy'>('strategy');
   const [showSidebar, setShowSidebar] = useState(true);
+  const [showInsights, setShowInsights] = useState(true);
   const [attachments, setAttachments] = useState<{file: File, preview: string}[]>([]);
   const [isListening, setIsListening] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -696,8 +697,10 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
       .update({ last_message_at: new Date().toISOString() })
       .eq('id', sessionId);
 
-    setHistory(prev => [...prev, { role: 'assistant', content: plan.summary, metadata: plan }]);
-    setIsTyping(false);
+    setTimeout(() => {
+      setHistory(prev => [...prev, { role: 'assistant', content: plan.summary, metadata: plan }]);
+      setIsTyping(false);
+    }, 1500);
   };
 
   const modes = [
@@ -809,7 +812,9 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
               <Target className="w-3.5 h-3.5 text-gold" />
               <span className="text-[10px] font-bold text-gold uppercase tracking-widest">Target: ₹7.0L</span>
             </div>
-            <div className="w-5" />
+            <button onClick={() => setShowInsights(!showInsights)} className={`p-2 rounded-lg transition-all ${showInsights ? 'text-gold bg-gold/10' : 'text-muted-foreground hover:text-gold hover:bg-gold/5'}`}>
+              <PanelRight className="w-5 h-5" />
+            </button>
           </div>
         </header>
 
@@ -843,6 +848,25 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
                       <p key={idx}>{line}</p>
                     ))}
                   </div>
+
+                  {/* RICH COMPONENTS */}
+                  {msg.metadata?.metrics && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                      {msg.metadata.metrics.map((m: any, idx: number) => <MetricCard key={idx} metric={m} />)}
+                    </div>
+                  )}
+
+                  {msg.metadata?.strategies && (
+                    <div className="mt-4 space-y-3">
+                      {msg.metadata.strategies.map((s: any, idx: number) => <StrategyCard key={idx} strategy={s} />)}
+                    </div>
+                  )}
+
+                  {msg.metadata?.offers && (
+                    <div className="mt-4 space-y-3">
+                      {msg.metadata.offers.map((o: any, idx: number) => <OfferCard key={idx} offer={o} />)}
+                    </div>
+                  )}
 
                   {msg.metadata?.attachments && (
                     <div className="mt-3 flex gap-2">
@@ -940,6 +964,63 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
           </div>
         </div>
       </div>
+
+      {/* RIGHT INSIGHTS PANEL */}
+      <AnimatePresence>
+        {showInsights && (
+          <motion.div 
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 320, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            className="elite-insights-panel p-6 border-l border-gold/10 overflow-y-auto elite-scroll"
+          >
+            <div className="space-y-8">
+              <div>
+                <p className="text-[10px] font-bold text-gold uppercase tracking-[0.2em] mb-4">Business Pulse</p>
+                <div className="space-y-4">
+                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                    <p className="text-[10px] text-muted-foreground uppercase mb-1">Monthly Gap</p>
+                    <p className="text-2xl font-bold text-gold">₹{analysis?.gap?.toLocaleString()}</p>
+                    <div className="mt-3 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                      <div className="h-full bg-gold w-[74%]" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-4">Key Levers</p>
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    { label: 'Repeat Rate', value: `${analysis?.repeatRate}%`, trend: '+2%' },
+                    { label: 'Churn Risk', value: `${analysis?.churnRisk}%`, trend: '-1%' },
+                    { label: 'Empty Slots', value: analysis?.emptySlots, trend: 'High' },
+                  ].map((stat, idx) => (
+                    <div key={idx} className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+                      <div>
+                        <p className="text-[9px] text-muted-foreground uppercase">{stat.label}</p>
+                        <p className="text-sm font-bold text-foreground">{stat.value}</p>
+                      </div>
+                      <span className="text-[9px] font-bold text-green-400">{stat.trend}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-4">Quick Suggestions</p>
+                <div className="space-y-2">
+                  {['Reactivate 45-day churn', 'Push membership to VIPs', 'Flash Ritual campaign'].map(s => (
+                    <button key={s} className="w-full p-3 rounded-xl bg-gold/5 border border-gold/10 text-[11px] text-gold text-left hover:bg-gold/10 transition-all flex items-center justify-between group">
+                      {s} <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
