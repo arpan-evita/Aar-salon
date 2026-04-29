@@ -104,7 +104,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col md:flex-row overflow-hidden">
+    <div className="h-screen bg-background flex flex-col md:flex-row overflow-hidden">
       {/* Mobile Header */}
       <header className="md:hidden glass border-b border-border/30 p-4 flex items-center justify-between z-50">
         <Link to="/" className="flex items-center gap-2">
@@ -118,7 +118,7 @@ const AdminDashboard = () => {
 
       {/* Sidebar */}
       <aside className={`
-        fixed md:relative inset-0 z-40 w-64 glass-strong border-r border-border/30 flex flex-col transition-transform duration-300
+        fixed md:sticky top-0 h-screen z-40 w-64 glass-strong border-r border-border/30 flex flex-col transition-transform duration-300
         ${isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
       `}>
         <div className="p-6">
