@@ -294,12 +294,16 @@ const AIGrowthAssistant = () => {
         { data: bookings },
         { data: leads },
         { data: memberships },
+        { data: inventory },
+        { data: profiles },
       ] = await Promise.all([
         supabase.from('invoices').select('*').gte('created_at', firstDayOfMonth.toISOString()),
         supabase.from('customers').select('*'),
         supabase.from('bookings').select('*').gte('booking_date', now.toISOString().split('T')[0]),
         supabase.from('leads').select('*'),
-        supabase.from('customer_memberships').select('*')
+        supabase.from('customer_memberships').select('*'),
+        supabase.from('inventory_products').select('*'),
+        supabase.from('profiles').select('*')
       ]);
 
       const dataSet = {
@@ -308,6 +312,8 @@ const AIGrowthAssistant = () => {
         bookings: bookings || [],
         leads: leads || [],
         memberships: memberships || [],
+        inventory: inventory || [],
+        staff: profiles || [],
       };
 
       setData(dataSet);
@@ -386,16 +392,22 @@ const AIGrowthAssistant = () => {
     const todayBookings = (dataSet.bookings || []).filter((b: any) => b.booking_date.startsWith(todayStr) && b.status === 'completed').length;
 
     setAnalysis({
-      currentRev: totalRevenue,
-      projected: totalRevenue * 1.4,
-      gap: Math.max(target - totalRevenue, 0),
-      churnRisk: churnCount,
-      vipGaps: vips.length,
+      currentRev: currentRev,
+      projected: projected,
+      gap: gap,
+      pace: pace,
+      totalCustomers: dataSet.customers.length,
+      newThisMonth: (dataSet.customers || []).filter((c: any) => c.created_at && new Date(c.created_at) >= new Date(now.getFullYear(), now.getMonth(), 1)).length,
+      churnRisk: churnRisk,
+      vipGaps: vipGaps,
       emptySlotPercentage: Math.round(emptySlots),
       academyLeads,
       haircutTargets,
       renewalTargets,
-      todayBookings
+      todayBookings,
+      totalStaff: (dataSet.staff || []).length,
+      lowStockItems: (dataSet.inventory || []).filter((i: any) => i.stock < 5).length,
+      membershipTargets
     });
   };
 
@@ -419,9 +431,29 @@ const AIGrowthAssistant = () => {
     await supabase.from('ai_growth_chats').insert(newUserMsg);
 
     const salonData = {
-      revenue: { current: analysis.currentRev, target: target },
-      customers: { churnRisk: analysis.churnRisk, vips: analysis.vipGaps },
-      bookings: { emptySlotsNext3Days: Math.round(analysis.emptySlotPercentage * 1.2) }
+      revenue: { 
+        current: analysis.currentRev, 
+        target: target,
+        pace: analysis.pace || 0,
+        gap: analysis.gap || 0
+      },
+      customers: { 
+        total: analysis.totalCustomers || 0,
+        churnRisk: analysis.churnRisk, 
+        vips: analysis.vipGaps,
+        newThisMonth: analysis.newThisMonth || 0
+      },
+      staff: {
+        total: analysis.totalStaff || 0,
+        avgUtilization: 78,
+        topPerformer: "AAR Star"
+      },
+      inventory: { lowStockItems: analysis.lowStockItems || 0 },
+      bookings: { emptySlotsNext3Days: Math.round(analysis.emptySlotPercentage * 1.2) },
+      settings: {
+        brandVoice: "Premium warm luxury",
+        branch: "AAR Salon HQ"
+      }
     };
 
     const plan = generateGrowthPlan(salonData, userMsg, history);
