@@ -66,6 +66,36 @@ const KNOWLEDGE_BASE = {
       consultant: "Dr. Basesh Gala"
     }
   ],
+  ADVANCED_STRATEGY: [
+    {
+      condition: (d: SalonData) => d.revenue.current > 300000,
+      advice: "Deploy the '3S Formula' (Systems, Sales, Strategy). To exit 'Operator Mode', you must move from technical service to strategic leadership. Apply the 'Ansoff Matrix': Focus on 'Market Penetration' by increasing visit frequency of your existing 15% VIP base rather than just hunting new leads.",
+      title: "3S Formula Expansion",
+      impact: "High" as const,
+      consultant: "Business Growth Blueprint"
+    },
+    {
+      condition: (d: SalonData) => d.customers.total > 100,
+      advice: "Implement a 'Recurring Revenue Membership'. Move from transactional to contractual. Tier 1: 'Essential Glow' (1 service/mo), Tier 2: 'Elite Transformation' (Unlimited blowouts + priority booking). This stabilizes your 'Energy Vessel' and guarantees break-even by the 5th of every month.",
+      title: "Membership Model Deployment",
+      impact: "High" as const,
+      consultant: "LTV Optimization"
+    },
+    {
+      condition: (d: SalonData) => d.revenue.gap > 0,
+      advice: "Use the 'ERRC Framework': ELIMINATE low-margin services that drain time. REDUCE inventory wastage. RAISE your 'India 2' positioning. CREATE high-ticket 'Bundled Experiences' that solve a complete client problem (e.g., 'Wedding Ready' 6-month roadmap).",
+      title: "ERRC Profit Audit",
+      impact: "High" as const,
+      consultant: "Strategic Management"
+    },
+    {
+      condition: (d: SalonData) => d.staff.total > 3,
+      advice: "Audit your 'McKinsey 7-S' alignment. Is your 'Structure' (Staff hierarchy) supporting your 'Strategy' (High-end luxury)? If your 'Shared Values' aren't centered on 'Customer Delight', your systems will fail. Train your team in 'Consultative Selling' to increase ticket size by 30%.",
+      title: "McKinsey 7-S Alignment",
+      impact: "Medium" as const,
+      consultant: "Organizational Health"
+    }
+  ],
   MINDSET: [
     {
       condition: (d: SalonData) => d.revenue.current > 500000,
@@ -152,6 +182,7 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
     isRevenue: fullHistoryText.includes("revenue") || fullHistoryText.includes("money") || fullHistoryText.includes("target") || fullHistoryText.includes("gap"),
     isStaff: fullHistoryText.includes("staff") || fullHistoryText.includes("team") || fullHistoryText.includes("stylist") || fullHistoryText.includes("performance"),
     isMarketing: fullHistoryText.includes("marketing") || fullHistoryText.includes("ads") || fullHistoryText.includes("campaign"),
+    isAdvanced: fullHistoryText.includes("strategy") || fullHistoryText.includes("scale") || fullHistoryText.includes("growth") || fullHistoryText.includes("plan") || fullHistoryText.includes("advanced"),
     services: [] as string[]
   };
 
@@ -165,6 +196,7 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
     revenue: q.includes("revenue") || q.includes("money") || q.includes("target") || q.includes("income") || q.includes("profit") || q.includes("reach"),
     staff: q.includes("staff") || q.includes("team") || q.includes("stylist") || q.includes("employee") || q.includes("performance"),
     marketing: q.includes("marketing") || q.includes("ads") || q.includes("campaign") || q.includes("social"),
+    advanced: q.includes("strategy") || q.includes("scale") || q.includes("growth") || q.includes("blueprint") || q.includes("advanced"),
     service: ctx.services.some(s => q.includes(s))
   };
 
@@ -176,7 +208,23 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
 
   // 3. Response Routing Logic
 
-  // A. Specific Service & Offer Refinement (e.g. "what if we give one free haircut" followed by "how?")
+  // A. Advanced Business Strategy (NEW)
+  if (currentIntent.advanced || (isRefinement && ctx.isAdvanced)) {
+    return {
+      summary: `Analyzing your salon's growth trajectory through the '3S Formula' and 'ERRC Framework'. You are currently in the '${data.revenue.current < 200000 ? 'Survival' : 'Stability'}' phase, preparing for 'Scalability'.`,
+      steps: [
+        "STRATEGIC SHIFT: Move from a transactional model to a 'Recurring Revenue Membership'. Implementing a 2-tier membership (Basic vs Elite) will guarantee your overhead coverage by the 5th of every month.",
+        "PROFIT AUDIT: Apply the 'ERRC Framework'. ELIMINATE services with < 20% margin. RAISE your 'India 2' status by bundling high-ticket consultations with every technical service.",
+        `SYSTEMIZATION: Master the 'McKinsey 7-S'. Ensure your 'Staff' skills match your 'Luxury Strategy'. Train your team in 'Consultative Selling' to increase the average ticket size from ₹${(data.revenue.current/data.customers.total).toFixed(0)} to ₹${((data.revenue.current/data.customers.total)*1.3).toFixed(0)}.`
+      ],
+      projections: {
+        newRevenue: data.revenue.current * 0.45,
+        confidence: 95
+      }
+    };
+  }
+
+  // B. Specific Service & Offer Refinement (e.g. "what if we give one free haircut" followed by "how?")
   if ((currentIntent.service || (isRefinement && ctx.services.length > 0)) && ctx.isOffer) {
     const mainService = ctx.services[ctx.services.length - 1] || "service";
     return {
