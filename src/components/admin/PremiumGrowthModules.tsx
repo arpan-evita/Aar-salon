@@ -659,7 +659,7 @@ const AIGrowthAssistant = () => {
                      <p className="text-sm font-bold">VIP Opportunity</p>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                     {analysis.vipGaps} high-value customers (spent >₹15k) are currently idle. Recommend personal outreach with the VIP Loyalty Bonus campaign.
+                     {analysis.vipGaps} high-value customers (spent &gt;₹15k) are currently idle. Recommend personal outreach with the VIP Loyalty Bonus campaign.
                   </p>
                </div>
 
