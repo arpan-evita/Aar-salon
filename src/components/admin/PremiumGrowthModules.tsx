@@ -590,19 +590,7 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
   };
 
   const fetchEverything = async () => {
-    // ... logic remains same
-    const { data: invoices } = await supabase.from('invoices').select('*');
-    const { data: customers } = await supabase.from('customers').select('*');
-    const currentRev = invoices?.reduce((sum, i) => sum + Number(i.total), 0) || 0;
-    setAnalysis({
-      currentRev,
-      target: 700000,
-      gap: 700000 - currentRev,
-      repeatRate: 64,
-      churnRisk: 12,
-      emptySlots: 24,
-      vipClients: 42
-    });
+    // Only fetch sessions here, vitals are handled by parent
     setLoading(false);
   };
 
