@@ -763,8 +763,10 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
             {history.map((msg, i) => (
               <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                 <div className={msg.role === 'user' ? 'message-user' : 'message-ai'}>
-                  <div className="text-sm leading-relaxed prose prose-invert max-w-none">
-                    {msg.content}
+                  <div className="text-sm leading-relaxed prose prose-invert max-w-none space-y-4">
+                    {msg.content.split('\n').map((line, idx) => (
+                      <p key={idx}>{line}</p>
+                    ))}
                   </div>
 
                   {msg.metadata?.attachments && (
@@ -774,35 +776,6 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
                           📎 {att.name}
                         </div>
                       ))}
-                    </div>
-                  )}
-
-                  {msg.metadata && msg.metadata.intent && (
-                    <div className="mt-6 space-y-4">
-                      {msg.metadata.metrics && (
-                        <div className="grid grid-cols-2 gap-3">
-                          {msg.metadata.metrics.map((m: any, idx: number) => <MetricCard key={idx} metric={m} />)}
-                        </div>
-                      )}
-                      {msg.metadata.strategies && (
-                        <div className="space-y-3">
-                          <p className="text-[10px] font-bold text-gold uppercase tracking-widest px-1">Strategic Moves</p>
-                          {msg.metadata.strategies.map((s: any, idx: number) => <StrategyCard key={idx} strategy={s} />)}
-                        </div>
-                      )}
-                      {msg.metadata.offers && (
-                        <div className="space-y-3">
-                          <p className="text-[10px] font-bold text-gold uppercase tracking-widest px-1">Campaign Recommendations</p>
-                          {msg.metadata.offers.map((o: any, idx: number) => <OfferCard key={idx} offer={o} />)}
-                        </div>
-                      )}
-                      
-                      <div className="flex items-center gap-3 pt-4 border-t border-gold/10">
-                        <span className="text-[9px] text-muted-foreground uppercase font-bold">Confidence: <span className="text-gold">{msg.metadata.projections?.confidence}%</span></span>
-                        <div className="flex-1" />
-                        <button className="p-2 rounded-lg hover:bg-gold/10 text-muted-foreground hover:text-gold transition-colors"><Copy className="w-3.5 h-3.5" /></button>
-                        <button className="p-2 rounded-lg hover:bg-gold/10 text-muted-foreground hover:text-gold transition-colors"><Download className="w-3.5 h-3.5" /></button>
-                      </div>
                     </div>
                   )}
                 </div>
