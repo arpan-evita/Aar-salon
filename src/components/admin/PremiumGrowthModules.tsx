@@ -67,7 +67,8 @@ import {
   synthesizeAdvice, 
   generateGrowthPlan, 
   type SalonData,
-  type GrowthPlan
+  type GrowthPlan,
+  type SessionContext
 } from "@/lib/aarLocalIntelligence";
 
 type PremiumGrowthModulesProps = {
@@ -489,6 +490,7 @@ const ExecutiveVitalsDashboard = ({ analysis }: { analysis: any }) => {
 const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
   const [loading, setLoading] = useState(true);
   const [target, setTarget] = useState(700000);
+  const [ownerName, setOwnerName] = useState<string | undefined>(undefined);
   const [question, setQuestion] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
@@ -594,7 +596,23 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
   };
 
   const fetchEverything = async () => {
-    // Only fetch sessions here, vitals are handled by parent
+    // Fetch owner name from Supabase auth
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const name =
+          user.user_metadata?.full_name ||
+          user.user_metadata?.name ||
+          user.email?.split('@')[0] ||
+          undefined;
+        if (name) setOwnerName(name.split(' ')[0]); // first name only
+      }
+    } catch {}
+    // Fetch dynamic revenue target from salon settings (localStorage fallback)
+    try {
+      const saved = localStorage.getItem('ali_revenue_target');
+      if (saved) setTarget(parseInt(saved));
+    } catch {}
     setLoading(false);
   };
 
@@ -674,17 +692,23 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
 
     const salonData: SalonData = {
       revenue: { 
-        current: analysis.currentRev, 
-        target: 700000, 
+        current: analysis?.currentRev ?? 0, 
+        target, 
         growth: 12,
-        gap: analysis.gap
+        gap: analysis?.gap ?? target
       },
-      customers: { total: 1240, active: 850, atRisk: analysis.churnRisk, new: 45 },
+      customers: { total: 1240, active: 850, atRisk: analysis?.churnRisk ?? 0, new: 45 },
       staff: { total: 8, active: 6, topPerformers: ["Rahul", "Sonia"] },
       services: { top: ["Haircut", "Botox"], underperforming: ["Beard Trim"] }
     };
 
-    const plan = await generateGrowthPlan(userMsg, salonData, fullHistory);
+    const sessionCtx: SessionContext = {
+      ownerName,
+      revenueTarget: target,
+      currentMode: mode,
+    };
+
+    const plan = await generateGrowthPlan(userMsg, salonData, fullHistory, sessionCtx);
     
     // Save Assistant Message
     await supabase.from('ai_growth_chats').insert([{
@@ -750,7 +774,7 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
 
             <div className="flex items-center gap-2 bg-gold/10 border border-gold/20 px-3 py-2 rounded-xl mb-8">
               <Target className="w-3.5 h-3.5 text-gold" />
-              <span className="text-[10px] font-bold text-gold uppercase tracking-widest">Target: ₹7.0L</span>
+              <span className="text-[10px] font-bold text-gold uppercase tracking-widest">Target: ₹{(target / 100000).toFixed(1)}L</span>
             </div>
 
             <div className="space-y-6 flex-1 overflow-y-auto elite-scroll">
