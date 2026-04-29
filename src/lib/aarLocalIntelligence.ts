@@ -23,20 +23,20 @@ export type ALIRecommendation = {
 };
 
 // Internal Knowledge Base: Salon Industry Best Practices & Heuristics
-// Inspired by Dr. Basesh Gala (Systems/SOPs) and Rajiv Talreja (PACE/Scalability)
+// Infused with Rajiv Talreja's "Business Growth Blueprint" and Dr. Basesh Gala's "3S Framework"
 const KNOWLEDGE_BASE = {
   RETENTION: [
     {
       condition: (d: SalonData) => d.customers.churnRisk > (d.customers.total * 0.15),
-      advice: "Your retention bucket is leaking. Stop being an operator and start being a strategist. Activate the 'Loyalty Lockdown' protocol: Send personalized 'We Miss You' vouchers with a 48-hour expiry. Systemize this so it happens without your manual intervention.",
-      title: "Retention System Audit",
+      advice: "Your business is in the 'Diwali vs Diwala' trap—high income today, financial drought tomorrow. Stop being a 'Useless Son-in-law' to your own business and implement a Retention System. Your customers are screaming at the 'Bus Driver' because they don't have a destination. Lock down loyalty with automated vouchers before they board a competitor's bus.",
+      title: "Retention System Overhaul",
       impact: "High" as const,
-      consultant: "Dr. Basesh Gala"
+      consultant: "Rajiv Talreja"
     },
     {
       condition: (d: SalonData) => d.customers.vips > 0 && d.revenue.gap > 50000,
-      advice: "You are leaving money on the table. Your VIPs are your growth engine. Launch a 'Priority Access' campaign for premium services. In the P.A.C.E framework, this is your 'Attract' and 'Profit' lever combined.",
-      title: "High-Ticket Profit Lever",
+      advice: "Target the 'MAN' (Money, Authority, Need) within your top 10 lakh audience. Your VIPs have the Money and the Need—don't let them become 'Betal' ghosts on your shoulders by ignoring them. Use Perceptive Value Pricing to upsell premium memberships and fulfill your 'Trinity of Margin'.",
+      title: "VIP Revenue Logic",
       impact: "Medium" as const,
       consultant: "Rajiv Talreja"
     }
@@ -44,15 +44,15 @@ const KNOWLEDGE_BASE = {
   REVENUE: [
     {
       condition: (d: SalonData) => d.revenue.gap > 0 && d.bookings.emptySlotsNext3Days > 10,
-      advice: "Slots are expiring inventory. If you don't sell them today, the revenue is lost forever. Deploy 'Flash Fill' offers for the 1 PM - 4 PM window. This is raw 'Execution' efficiency.",
-      title: "Inventory Hygiene Check",
+      advice: "Empty slots are expiring inventory. If you don't fill them, you're wasting 'Fuel' in your bus. This is a failure of 'Execution' in the P.A.C.E framework. Deploy a 'Flash Fill' system for the 1 PM - 4 PM window immediately.",
+      title: "P.A.C.E Execution Audit",
       impact: "High" as const,
       consultant: "Rajiv Talreja"
     },
     {
       condition: (d: SalonData) => d.revenue.pace < (d.revenue.target / 30),
-      advice: "Your revenue velocity is sluggish. You need to master the 'Finance Pillar'. Bundle low-cost, high-value add-ons (Hair Spa + Trim) to spike your ATV (Average Transaction Value). Numbers don't lie, operators do.",
-      title: "Revenue Velocity Strategy",
+      advice: "You are suffering from 'Decision Fatigue' because you lack a Sales System. Numbers don't lie, operators do. Master the 'Finance Pillar' by bundling services to spike your ATV. Remember: Value - Margin = Targeted Cost. Don't just add profit, design it.",
+      title: "Revenue Velocity Pillar",
       impact: "High" as const,
       consultant: "Dr. Basesh Gala"
     }
@@ -60,9 +60,18 @@ const KNOWLEDGE_BASE = {
   STAFF: [
     {
       condition: (d: SalonData) => d.staff.avgUtilization < 60,
-      advice: "Your team is idling. Systems over Hustle! Pivot idle time into 'Academy Upskilling'. Use Neha or Rahul's downtime to train junior staff. Build a business that runs even when you aren't watching.",
-      title: "Operational Scalability",
+      advice: "Hiring random people for random jobs is a disaster. If you are the most intelligent person in this salon, you have already failed. Use the '6 R's'—Recruit with ASK clarity, then Review. If your team is idle, it's because your 'SOPs' are missing. Mentor + System + Team = Effortless Success.",
+      title: "6 R's Team Performance",
       impact: "Medium" as const,
+      consultant: "Rajiv Talreja"
+    }
+  ],
+  MINDSET: [
+    {
+      condition: (d: SalonData) => d.revenue.current > 500000,
+      advice: "You have the budget, but do you have the 'Energy Vessel'? If you feel a 'pinch in the heart' when investing in your business growth, your vessel is too small. Practice systemic kindness to yourself so you can lead a high-performance team.",
+      title: "Energy Vessel Expansion",
+      impact: "Low" as const,
       consultant: "Rajiv Talreja"
     }
   ]
@@ -80,10 +89,10 @@ export const synthesizeAdvice = (data: SalonData): ALIRecommendation[] => {
       if (rule.condition(data)) {
         recommendations.push({
           title: rule.title,
-          strategy: `${rule.consultant} says: ${rule.advice}`,
+          strategy: `${rule.consultant} Direct Insight: ${rule.advice}`,
           impact: rule.impact,
           difficulty: "Medium",
-          expectedROI: rule.impact === "High" ? "3X - 5X Growth" : "1.5X - 2X Profit",
+          expectedROI: rule.impact === "High" ? "Scalable Empire" : "Breakthrough Profit",
           source: "Data Pattern"
         });
       }
@@ -93,10 +102,10 @@ export const synthesizeAdvice = (data: SalonData): ALIRecommendation[] => {
   if (recommendations.length < 2) {
     recommendations.push({
       title: "SOP Standardization",
-      strategy: "Dr. Basesh Gala Insight: Standardize your service delivery. If your 'Haircut' feels different with every stylist, you don't have a business, you have a collection of freelancers. Implement SOPs today.",
+      strategy: "Dr. Basesh Gala says: Stop firefighting. If your service delivery depends on the mood of the stylist, you have a cage, not a business. Implement SOPs today to move from Operator to Visionary.",
       impact: "Medium",
       difficulty: "Easy",
-      expectedROI: "Long-term Scalability",
+      expectedROI: "Effortless Success",
       source: "Industry Benchmark"
     });
   }
@@ -113,17 +122,17 @@ export const generateGrowthPlan = (data: SalonData, query: string) => {
   
   if (query.toLowerCase().includes("reach") || query.toLowerCase().includes("target")) {
     return {
-      summary: `LISTEN CAREFULLY: To hit that ₹${(data.revenue.target/100000).toFixed(1)}L target, you need to stop firefighting and start leading. I've performed a 'P.A.C.E' audit on your ₹${data.revenue.gap.toLocaleString()} gap.`,
+      summary: `LISTEN CAREFULLY: To hit that ₹${(data.revenue.target/100000).toFixed(1)}L target, you must exit the 'Self-Employment Trap'. I've run a blueprint check on your ₹${data.revenue.gap.toLocaleString()} gap. Your goal is the 'Business Breakthrough'.`,
       steps: recs.map(r => r.strategy),
       projections: {
         newRevenue: data.revenue.gap * 1.05,
-        confidence: 88
+        confidence: 92
       }
     };
   }
 
   return {
-    summary: `System Check Complete. Your business is currently in 'Operator Mode'. Let's move you to 'Visionary Mode' with these data-driven pivots.`,
+    summary: `Your salon is currently in 'Firefighting Mode'. Let's move you to the 'AAR Empire' orbit with these system-driven pivots.`,
     steps: recs.slice(0, 3).map(r => r.strategy),
     projections: {
       newRevenue: 45000,
