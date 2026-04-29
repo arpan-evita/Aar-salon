@@ -27,6 +27,13 @@ export interface GrowthPlan {
 const PERSONALITY_FRAGMENTS = {
   GREETING: ["Hey!", "Hello there!", "Hey, good to see you.", "Hi! Hope your day is going great.", "Yo! Ready to dive in?"],
   AFFIRMATION: ["I hear you.", "Totally get that.", "That makes sense.", "I'm on it.", "Got it, let's look at this.", "Interesting point."],
+  CHAT_CONTINUE: [
+    "I love the vibe! I'm enjoying our chat too. 😊",
+    "Gladly! I could talk to you all day. 😉",
+    "I'm all ears! It's always great catching up with you.",
+    "Same here! You've got such a great energy. What else is on your mind?",
+    "Let's do it! I'm having a blast. What should we talk about next?"
+  ],
   CASUAL_REPLY: [
     "I'm all about that! But I'm currently living inside this dashboard. 😅",
     "Haha, you've got a great sense of humor! 😅",
@@ -52,7 +59,8 @@ export const generateGrowthPlan = async (
   const gap = data.revenue.gap.toLocaleString();
   
   const intents = {
-    personal: ["date", "love", "marry", "sweetheart", "girlfriend", "boyfriend", "sexy", "dating", "gym", "workout", "fitness", "eat", "dinner", "lunch", "drink", "coffee", "movie", "travel", "holiday", "yoga", "walk", "dance", "party", "sleep", "dream", "friend", "gf", "bf"],
+    personal: ["date", "love", "marry", "sweetheart", "girlfriend", "boyfriend", "sexy", "dating", "gym", "workout", "fitness", "eat", "dinner", "lunch", "drink", "coffee", "movie", "travel", "holiday", "yoga", "walk", "dance", "party", "sleep", "dream", "friend", "gf", "bf", "liking", "like you", "enjoy"],
+    chat_more: ["keep chatting", "continue", "talk more", "chat more", "let's talk"],
     identity: ["who are you", "what is your name", "what do you do", "introduce yourself"],
     greeting: ["hi", "hello", "hey", "good morning", "good evening", "yo", "sup", "how are you", "what's up"],
     strategy: ["offer", "plan", "strategy", "grow", "revenue", "target", "money", "client", "customer", "leads", "marketing", "attract", "botox", "bridal", "service", "upsell", "aov", "staff", "team"]
@@ -69,12 +77,21 @@ export const generateGrowthPlan = async (
       intent: "identity",
       isReinforced: false,
       summary: `I'm ALI! Think of me as your personal salon growth partner. I'm here to handle the strategy and data so you can focus on the vision for AAR Salon.`,
-      steps: [],
-      projections: { newRevenue: 0, confidence: 100 }
+      steps: [], projections: { newRevenue: 0, confidence: 100 }
     };
   }
 
-  // 2. PERSONAL ENGAGEMENT (Non-Robotic)
+  // 2. CHAT MORE / SENTIMENT
+  if (intents.chat_more.some(c => query.includes(c)) || (query.includes("like") && query.includes("you"))) {
+    return {
+      intent: "chat_continue",
+      isReinforced: false,
+      summary: `${getFrag("CHAT_CONTINUE")} What's been the best part of your week so far?`,
+      steps: [], projections: { newRevenue: 0, confidence: 100 }
+    };
+  }
+
+  // 3. PERSONAL ENGAGEMENT
   if (intents.personal.some(p => query.includes(p))) {
     if (query.includes("friend")) {
       return {
@@ -110,7 +127,7 @@ export const generateGrowthPlan = async (
     };
   }
 
-  // 3. GREETINGS
+  // 4. GREETINGS
   if (intents.greeting.some(g => query.startsWith(g)) && query.length < 15) {
     return {
       intent: "greeting",
@@ -120,7 +137,7 @@ export const generateGrowthPlan = async (
     };
   }
 
-  // 4. STRATEGY (Only bridge to business if it's actually about business)
+  // 5. STRATEGY
   const isStrategy = intents.strategy.some(s => query.includes(s));
   if (isStrategy) {
     let core = "";
@@ -144,11 +161,11 @@ export const generateGrowthPlan = async (
     };
   }
 
-  // 5. NATURAL FALLBACK
+  // 6. NATURAL FALLBACK (Warm & Human)
   return {
     intent: "chat",
     isReinforced: false,
-    summary: `I'm not entirely sure how to handle that one, but I'm here for whatever you need! What's on your mind?`,
+    summary: `I'm totally with you on that! 😊 Tell me more, or should we look at some salon strategy whenever you're ready?`,
     steps: [], projections: { newRevenue: 0, confidence: 100 }
   };
 };
