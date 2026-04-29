@@ -551,8 +551,12 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
     }
   };
 
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
   }, [history, isTyping]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -799,7 +803,7 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
         {/* HEADER REMOVED FOR MORE SPACE */}
 
         {/* CHAT AREA */}
-        <div className="flex-1 overflow-y-auto p-8 elite-scroll flex flex-col">
+        <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-8 elite-scroll flex flex-col">
           {history.length === 0 && (
             <div className="flex-1 flex flex-col items-center justify-center text-center max-w-lg mx-auto">
               <div className="w-20 h-20 rounded-full bg-gold/5 flex items-center justify-center mb-6 border border-gold/10">
