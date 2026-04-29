@@ -70,14 +70,6 @@ const HUMAN_INTROS = [
   "If I were in your shoes right now, knowing we have a ₹{gap} gap to hit ₹7L, I'd double down on what's working."
 ];
 
-const GREETINGS = [
-  "Hey there! How's everything going at AAR Salon today?",
-  "Hello! Ready to make some moves on that ₹7L target today?",
-  "Hey! Hope you're having a great day. How can I help you out today?",
-  "Hi! I've been scanning the latest metrics—everything's looking sharp. What's on your mind?",
-  "Hey! Good to see you. Ready to dive into some strategy or just checking in?"
-];
-
 const HUMAN_ADVICE = {
   ACQUISITION: [
     "Instead of burning money on broad ads, let's go for high-intent spenders. I'd launch a 'Signature Transformation' series on Instagram. Showcase the before-and-after of your Botox rituals. It's not just a service; it's a result people are willing to pay a premium for.",
@@ -119,31 +111,41 @@ export const generateGrowthPlan = async (
   const gapNum = data.revenue.gap || 0;
   const gap = gapNum.toLocaleString();
   
-  // 1. Detect Greeting
-  const isGreeting = ["hi", "hello", "hey", "good morning", "good evening", "yo"].includes(query);
-  
-  if (isGreeting) {
-    const greeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)].replace(/{gap}/g, gap);
+  // 1. Identity / Meta Detection
+  if (query.includes("who are you") || query.includes("what is your name")) {
+    return {
+      intent: "identity",
+      isReinforced: false,
+      summary: "I'm ALI, your private business consultant for AAR Salon. I'm here to help you hit that ₹7L revenue target through smart strategy, marketing, and systems.",
+      steps: [],
+      projections: { newRevenue: 0, confidence: 100 }
+    };
+  }
+
+  // 2. Greeting / Chat Detection
+  const greetings = ["hi", "hello", "hey", "good morning", "good evening", "yo", "sup", "how are you"];
+  if (greetings.some(g => query.startsWith(g)) && query.length < 15) {
     return {
       intent: "greeting",
       isReinforced: false,
-      summary: greeting,
+      summary: "Hey there! Ready to make some moves on that ₹7L target today, or do you have something else on your mind?",
       steps: [],
       projections: { newRevenue: 0, confidence: 100 }
     };
   }
 
-  // 2. Detect Small Talk / Meta
-  if (query.length < 10 && !query.includes("₹") && !query.includes("target")) {
+  // 3. Small Talk / Simple Questions
+  if (query.length < 20 && !query.includes("₹") && !query.includes("target") && !query.includes("revenue") && !query.includes("growth") && !query.includes("strategy")) {
     return {
       intent: "chat",
       isReinforced: false,
-      summary: "I'm here! What's on your mind regarding the salon today? We can talk strategy, marketing, or even just check how the team's doing.",
+      summary: `I'm just a consultant ready to help. What can I do for you right now?`,
       steps: [],
       projections: { newRevenue: 0, confidence: 100 }
     };
   }
 
+  // 4. Strategic Intent Detection
   const intents = {
     scaling: query.includes("scale") || query.includes("system") || query.includes("sop") || query.includes("expand"),
     team: query.includes("staff") || query.includes("team") || query.includes("stylist") || query.includes("employee") || query.includes("performance"),
@@ -151,7 +153,7 @@ export const generateGrowthPlan = async (
     upsell: query.includes("upsell") || query.includes("aov") || query.includes("ticket") || query.includes("bundle"),
     botox: query.includes("botox") || query.includes("filler") || query.includes("premium"),
     bridal: query.includes("bridal") || query.includes("wedding"),
-    acquisition: query.includes("acquisition") || query.includes("new client") || query.includes("leads") || query.includes("marketing") || query.includes("attract") || query.includes("customer")
+    acquisition: query.includes("acquisition") || query.includes("new client") || query.includes("leads") || query.includes("marketing") || query.includes("attract") || query.includes("customer") || query.includes("grow")
   };
 
   let advicePool: string[] = [];
@@ -172,9 +174,18 @@ export const generateGrowthPlan = async (
   } else if (intents.retention) {
     advicePool = [HUMAN_ADVICE.SCALING[1], HUMAN_ADVICE.ACQUISITION[2]];
     intentName = "retention";
+  } else if (intents.bridal) {
+    intentName = "marketing";
+    advicePool = [HUMAN_ADVICE.REVENUE[2]];
   } else {
-    advicePool = [HUMAN_ADVICE.REVENUE[2], HUMAN_ADVICE.TEAM[2]];
-    intentName = "general";
+    // If we have NO business intent, but the query is long, answer specifically if possible or give general bridge
+    return {
+      intent: "chat",
+      isReinforced: false,
+      summary: `I'm not exactly sure what you mean by that, but if it's about growing the salon, I'm all ears. Should we talk about revenue or your team?`,
+      steps: [],
+      projections: { newRevenue: 0, confidence: 100 }
+    };
   }
 
   const intro = HUMAN_INTROS[Math.floor(Math.random() * HUMAN_INTROS.length)].replace(/{gap}/g, gap);
@@ -183,9 +194,9 @@ export const generateGrowthPlan = async (
 
   let serviceBonus = "";
   if (query.includes("botox")) {
-    serviceBonus = "\n\n**Just a thought:** Botox is a high-trust service. I'd stop selling single sessions and move to an annual 'Youth Maintenance' plan. It secures our recurring revenue and keeps the client happy long-term.";
+    serviceBonus = "\n\n**Just a thought:** Botox is high-trust. Move to annual plans to lock in that recurring revenue.";
   } else if (query.includes("bridal")) {
-    serviceBonus = "\n\n**Pro tip:** Brides are buying 'Certainty'. Our strategy should be a 3-month 'Glow-Up Roadmap' that bundles everything. It's a much easier sell than individual appointments.";
+    serviceBonus = "\n\n**Pro tip:** Sell 'Certainty'. Bundle everything into a 3-month roadmap.";
   }
 
   const finalSummary = `${intro}\n\n${core}${serviceBonus}\n\n${followUp}`;
@@ -217,20 +228,20 @@ export const loadLearningPatterns = async (): Promise<LearningPattern[]> => {
 
 export const handleFeedback = async (
   intent: string,
-  strategyIntent: string,
+  strategy_intent: string,
   applied_strategy: string,
   feedback: number,
-  contextMetadata: any = {}
+  context_metadata: any = {}
 ) => {
   try {
     const { error } = await supabase
       .from('ai_growth_learning')
       .insert([{
         intent,
-        strategy_intent: strategyIntent,
+        strategy_intent: strategy_intent,
         applied_strategy: applied_strategy,
         feedback_score: feedback,
-        context_metadata: contextMetadata
+        context_metadata: context_metadata
       }]);
     
     if (error) throw error;
