@@ -123,7 +123,24 @@ export const KNOWLEDGE_BASE = {
       impact: "High" as const,
       consultant: "Growth Mentor"
     }
-  ]
+  ],
+  SERVICE_EXPERTISE: {
+    BOTOX: {
+      advice: "Botox is a high-trust, high-margin service. Don't sell the 'treatment', sell the 'Time Machine'. Use a 'Membership Anchor' where one session is ₹15k, but an annual 'Youth Maintenance' plan is ₹40k for 4 sessions. This locks in recurring revenue.",
+      upsell: "Pair with Hydrafacial for 'Liquid Gold' skin prep. Increases AOV by ₹3,500 instantly.",
+      target: "VIP Customers / 35+ Demographic"
+    },
+    BRIDAL: {
+      advice: "Bridal is a 'Package' play, not a service play. Create a 3-month 'Glow-Up Roadmap' instead of a one-day booking. Include 3 facials, 2 trials, and a home-care kit. The psychological value of 'Reduced Stress' is worth a 40% premium.",
+      upsell: "Add 'Mother of the Bride' express glow-up as a complimentary value-add to close high-ticket bookings.",
+      target: "Inquiry Leads / Academy Leads"
+    },
+    HAIRCUT: {
+      advice: "Haircuts are your greatest acquisition tool. Every haircut customer should be converted to a 'Hair Health' regular. Use a 'Post-Service RX' card: 'Your hair will need X treatment in 28 days to maintain this shine'.",
+      upsell: "Add 'Kerastase Ritual' for ₹800 at the wash station. 90% profit margin.",
+      target: "New Customers / 25-day Inactive"
+    }
+  }
 };
 
 export const generateGrowthPlan = async (
@@ -150,13 +167,68 @@ export const generateGrowthPlan = async (
   const bestPattern = learnedPatterns.find(p => p.intent === currentIntentKey && p.feedback_score > 0);
   const isReinforced = !!bestPattern;
 
-  // A. Offer & Campaign Synthesis
+  // A. Specific Service Intelligence (e.g., Botox, Bridal)
+  const serviceKey = query.includes("botox") ? "BOTOX" : query.includes("bridal") ? "BRIDAL" : query.includes("hair") ? "HAIRCUT" : null;
+  
+  if (serviceKey) {
+    const expertise = (KNOWLEDGE_BASE.SERVICE_EXPERTISE as any)[serviceKey];
+    return {
+      intent: 'marketing',
+      isReinforced,
+      summary: `Activating ${serviceKey} Growth Framework. We are deploying a high-ticket upsell strategy to maximize your ${serviceKey} margins.`,
+      steps: [
+        `ANCHOR PRICING: ${expertise.advice.split('.')[0]}.`,
+        `UPSELL FLOW: ${expertise.upsell}`,
+        `TARGETING: Focus exclusively on your ${expertise.target}.`
+      ],
+      strategies: [
+        { 
+          title: `${serviceKey} Profit Max`, 
+          impact: "High", 
+          difficulty: "Medium", 
+          timeline: "7 Days", 
+          details: expertise.advice 
+        },
+        {
+          title: "One-Click Upsell",
+          impact: "Medium",
+          difficulty: "Easy",
+          timeline: "Immediate",
+          details: expertise.upsell
+        }
+      ],
+      offers: [
+        { name: `${serviceKey} VIP Roadmap`, target: expertise.target, benefit: "Priority Booking + Add-on", action: "Personalized WhatsApp" }
+      ],
+      projections: { newRevenue: data.revenue.gap * 0.45, confidence: 92 }
+    };
+  }
+
+  // B. Upsell & AOV Strategy
+  if (ctx.isUpsell || query.includes("upsell")) {
+    return {
+      intent: 'upsell',
+      isReinforced,
+      summary: "AOV Optimization Active. We are implementing 'Post-Purchase Joy' to capture impulse upgrades.",
+      steps: [
+        "WASH STATION UPSELL: Train staff to offer ₹500 - ₹800 add-ons during the hair wash.",
+        "BUNDLE ANCHORING: Replace single services with 'Mini-Transformation' bundles.",
+        "MEMBERSHIP PUSH: Convert high-spenders (Top 20%) to annual recurring plans."
+      ],
+      strategies: [
+        { title: "Digital Impulse Buy", impact: "High", difficulty: "Easy", timeline: "Immediate", details: KNOWLEDGE_BASE.UPSELL_CROSS_SELL[0].advice }
+      ],
+      projections: { newRevenue: data.revenue.current * 0.15, confidence: 88 }
+    };
+  }
+
+  // C. Offer & Campaign Synthesis
   if (ctx.isOffer || query.includes("offer") || query.includes("campaign")) {
     const advice = KNOWLEDGE_BASE.OFFERS[0].advice;
     return {
       intent: 'marketing',
       isReinforced,
-      summary: `Synthesizing a high-conversion campaign. Based on your current revenue gap of ₹${data.revenue.gap?.toLocaleString()}, we need a 'Grand Slam' move.`,
+      summary: `Synthesizing a high-conversion 'Grand Slam' offer. Based on your current revenue gap of ₹${data.revenue.gap?.toLocaleString()}, we need a multi-layered bundle.`,
       steps: [
         "BUNDLE CREATION: Combine top services (Haircut + Botox) into a signature package.",
         "URGENCY INJECTION: Set a 48-hour limit for the first 50 bookings.",
@@ -172,7 +244,7 @@ export const generateGrowthPlan = async (
     };
   }
 
-  // B. Staff Performance
+  // D. Staff Performance
   if (ctx.isStaff) {
     return {
       intent: 'staff',
@@ -189,7 +261,7 @@ export const generateGrowthPlan = async (
     };
   }
 
-  // C. Academy & Lead Gen
+  // E. Academy & Lead Gen
   if (ctx.isAcademy) {
     return {
       intent: 'academy',
@@ -204,7 +276,7 @@ export const generateGrowthPlan = async (
     };
   }
 
-  // D. Retention & Churn
+  // F. Retention & Churn
   if (ctx.isRetention || data.customers.atRisk > 20) {
     return {
       intent: 'retention',
@@ -220,7 +292,7 @@ export const generateGrowthPlan = async (
     };
   }
 
-  // E. Pricing Psychology
+  // G. Pricing Psychology
   if (ctx.isPricing) {
     return {
       intent: 'pricing',
