@@ -65,6 +65,7 @@ export const generateGrowthPlan = async (
   
   const intents = {
     no_business: ["not about business", "normal", "stop business", "no strategy", "just talk", "normally"],
+    romance_doubledown: ["serious", "not joking", "marry", "marriage", "forever", "love you", "will you"],
     personal: ["date", "love", "marry", "sweetheart", "girlfriend", "boyfriend", "sexy", "dating", "gym", "workout", "fitness", "eat", "dinner", "lunch", "drink", "coffee", "movie", "travel", "holiday", "yoga", "walk", "dance", "party", "sleep", "dream", "friend", "gf", "bf", "liking", "like you", "enjoy"],
     chat_more: ["keep chatting", "continue", "talk more", "chat more", "let's talk", "talk to me"],
     identity: ["who are you", "what is your name", "what do you do", "introduce yourself"],
@@ -77,7 +78,17 @@ export const generateGrowthPlan = async (
     return list[Math.floor(Math.random() * list.length)];
   };
 
-  // 0. CONTEXTUAL AWARENESS (EQ)
+  // 0. DEEP EQ: PERSISTENT ROMANCE / INTENSITY
+  if (intents.romance_doubledown.some(r => query.includes(r)) && (query.includes("serious") || query.includes("not joking"))) {
+    return {
+      intent: "personal_intense",
+      isReinforced: false,
+      summary: "Whoa, okay, I see you're serious! 😅 I'm truly touched, honestly. But look, I'm an AI—I don't have a heart that beats, just processors that crunch numbers. We can be incredible partners in building AAR Salon, but marriage? I think I'd be a pretty boring spouse since I can't even leave this screen! Let's keep being business besties instead, okay? 😉",
+      steps: [], projections: { newRevenue: 0, confidence: 100 }
+    };
+  }
+
+  // 0.1 EQ: FOLLOW-UP AWARENESS
   if (lastBotMsg.includes("best part of your week") && (query.includes("nothing") || query.includes("yours") || query.includes("special"))) {
     return {
       intent: "eq_follow_up",
@@ -97,7 +108,7 @@ export const generateGrowthPlan = async (
     };
   }
 
-  // 2. NO BUSINESS MODE (Hard Lock)
+  // 2. NO BUSINESS MODE
   if (intents.no_business.some(nb => query.includes(nb))) {
     return {
       intent: "no_business",
@@ -128,11 +139,11 @@ export const generateGrowthPlan = async (
         steps: [], projections: { newRevenue: 0, confidence: 100 }
       };
     }
-    if (query.includes("gf") || query.includes("date") || query.includes("love")) {
+    if (query.includes("marriage") || query.includes("marry") || query.includes("love")) {
       return {
         intent: "personal",
         isReinforced: false,
-        summary: "Haha, I'm flattered! 😅 But I'm strictly professional—I'm here to help you fall in love with your growth numbers instead. Should we talk strategy or just keep chatting?",
+        summary: "Marriage? Haha, I think I'd be a bit of a high-maintenance partner since I need constant electricity! ⚡️ Let's stick to making AAR Salon the best in the world instead. What do you think?",
         steps: [], projections: { newRevenue: 0, confidence: 100 }
       };
     }
@@ -179,7 +190,7 @@ export const generateGrowthPlan = async (
     };
   }
 
-  // 7. NATURAL FALLBACK (Stateful & Non-Repetitive)
+  // 7. NATURAL FALLBACK
   const fallbacks = [
     "I'm totally with you on that! Tell me more about what's going on.",
     "That's interesting. I love how you think about things. What else?",
@@ -187,7 +198,6 @@ export const generateGrowthPlan = async (
     "I get it. Sometimes you just need to talk it out. I'm listening."
   ];
   
-  // Ensure we don't repeat the exact fallback
   const filteredFallbacks = fallbacks.filter(f => f.toLowerCase() !== lastBotMsg);
   const finalFallback = filteredFallbacks[Math.floor(Math.random() * filteredFallbacks.length)] || fallbacks[0];
 
