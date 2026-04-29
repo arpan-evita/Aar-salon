@@ -734,7 +734,7 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
               <Target className="w-3.5 h-3.5 text-gold" />
               <span className="text-[10px] font-bold text-gold uppercase tracking-widest">Target: ₹7.0L</span>
             </div>
-            {!showInsights && <button onClick={() => setShowInsights(true)} className="text-gold"><PanelRight className="w-5 h-5" /></button>}
+            <div className="w-5" />
           </div>
         </header>
 
