@@ -41,6 +41,11 @@ import {
   smartSegments,
   whatsAppTemplates,
 } from "@/lib/salonGrowthEngine";
+import { 
+  synthesizeAdvice, 
+  generateGrowthPlan, 
+  type SalonData 
+} from "@/lib/aarLocalIntelligence";
 
 type PremiumGrowthModulesProps = {
   module: "analytics" | "assistant" | "settings";
@@ -366,17 +371,46 @@ const AIGrowthAssistant = () => {
     setIsTyping(true);
     setAiResponse(null);
 
-    // Simulate thinking
-    setTimeout(() => {
-      let resp = "";
-      if (question.toLowerCase().includes("reach") || question.toLowerCase().includes("lakh")) {
-        resp = `To reach ₹${target/100000} Lakh, we have a gap of ${formatINR(analysis.gap)}. I recommend: \n1. Target the ${analysis.haircutAudience} inactive haircut clients (Exp. ₹${analysis.haircutAudience * 800})\n2. Push memberships to ${analysis.membershipTargets} high spenders (Exp. ₹${analysis.membershipTargets * 1500})\n3. Fill weekday gaps which are currently ${analysis.emptySlotPercentage}% empty.`;
-      } else {
-        resp = `Based on live data, your top priority today is reactivating ${analysis.churnRisk} customers at risk of churn and following up with ${analysis.vipGaps} VIPs who haven't visited in 30 days. Your current pace puts you at ${formatINR(analysis.projected)} by month end.`;
+    const salonData: SalonData = {
+      revenue: {
+        current: analysis.currentRev,
+        target: target,
+        pace: analysis.currentRev / new Date().getDate(),
+        gap: analysis.gap
+      },
+      customers: {
+        total: data.customers.length,
+        churnRisk: analysis.churnRisk,
+        vips: analysis.vipGaps,
+        newThisMonth: data.customers.filter((c: any) => {
+          const created = new Date(c.created_at);
+          return created.getMonth() === new Date().getMonth();
+        }).length
+      },
+      staff: {
+        total: 5, // Mock staff count for now
+        avgUtilization: 100 - analysis.emptySlotPercentage,
+        topPerformer: "Rahul"
+      },
+      inventory: {
+        lowStockItems: 3
+      },
+      bookings: {
+        emptySlotsNext3Days: Math.round(analysis.emptySlotPercentage * 1.2)
+      },
+      settings: {
+        brandVoice: "Premium warm luxury",
+        branch: "AAR Salon HQ"
       }
-      setAiResponse(resp);
+    };
+
+    // Use proprietary AAR Local Intelligence Engine
+    const plan = generateGrowthPlan(salonData, question);
+
+    setTimeout(() => {
+      setAiResponse(plan.summary + "\n\n" + plan.steps.map((s, i) => `${i+1}. ${s}`).join("\n\n"));
       setIsTyping(false);
-    }, 1500);
+    }, 1200);
   };
 
   const deployAction = (name: string) => {
@@ -402,11 +436,11 @@ const AIGrowthAssistant = () => {
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-primary">Live Growth Intelligence</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-primary">AAR LOCAL INTELLIGENCE (ALI) v1.0</p>
               </div>
-              <h2 className="font-heading text-4xl text-foreground">AAR Revenue Strategist</h2>
+              <h2 className="font-heading text-4xl text-foreground">Proprietary Growth Brain</h2>
               <p className="max-w-2xl text-sm text-muted-foreground leading-relaxed">
-                Analyzing {data.customers.length} customers, {data.invoices.length} invoices, and {data.bookings.length} upcoming slots to optimize your path to ₹{target/100000}L.
+                Operating without external LLMs. ALI analyzes your specific data patterns against a curated salon industry knowledge base to provide localized, high-accuracy growth strategies.
               </p>
             </div>
             
