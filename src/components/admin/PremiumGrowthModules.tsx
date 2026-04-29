@@ -273,7 +273,19 @@ const AIGrowthAssistant = () => {
   useEffect(() => {
     fetchEverything();
     fetchSessions();
+    loadLearningPatterns();
   }, []);
+
+  const loadLearningPatterns = async () => {
+    const { data, error } = await supabase
+      .from('ai_growth_learning')
+      .select('*')
+      .order('feedback_score', { ascending: false });
+
+    if (!error && data) {
+      setLearningPatterns(data);
+    }
+  };
 
   const fetchSessions = async () => {
     setLoadingSessions(true);
@@ -515,9 +527,9 @@ const AIGrowthAssistant = () => {
       user_id: user.id,
       session_id: sessionId 
     };
-    setHistory(prev => [...prev, newUserMsg]);
     
-    await supabase.from('ai_growth_chats').insert(newUserMsg);
+    const { data: savedUserMsg } = await supabase.from('ai_growth_chats').insert(newUserMsg).select().single();
+    setHistory(prev => [...prev, savedUserMsg || newUserMsg]);
     await supabase.from('ai_growth_sessions').update({ 
       last_message_at: new Date().toISOString(),
       title: history.length === 0 ? userMsg.slice(0, 30) + (userMsg.length > 30 ? '...' : '') : undefined
@@ -548,8 +560,8 @@ const AIGrowthAssistant = () => {
         branch: "AAR Salon HQ"
       }
     };
-
-    const plan = generateGrowthPlan(salonData, userMsg, history, learningPatterns);
+    const historyContent = history.map(h => `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.content}`).join("\n");
+    const plan = generateGrowthPlan(userMsg, salonData, historyContent, learningPatterns);
     const assistantContent = plan.summary + "\n\n" + plan.steps.map((s, i) => `${i+1}. ${s}`).join("\n\n");
 
     setTimeout(async () => {
@@ -561,7 +573,7 @@ const AIGrowthAssistant = () => {
         metadata: { 
           isReinforced: plan.isReinforced,
           intent: plan.intent,
-          salonSnapshot: salonData
+          salonSnapshot: analysis
         }
       };
       const { data: savedMsg } = await supabase.from('ai_growth_chats').insert(assistantMsg).select().single();
