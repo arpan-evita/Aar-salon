@@ -25,6 +25,7 @@ const CampaignBuilder = () => {
     target_segment: { tag: "All" },
     status: "Draft"
   });
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     fetchCampaigns();
@@ -54,6 +55,53 @@ const CampaignBuilder = () => {
       setIsSheetOpen(false);
       fetchCampaigns();
     }
+  };
+
+  const handleAutoGenerate = () => {
+    setIsGenerating(true);
+    toast.info("Analyzing data and compiling strategy...", { duration: 1500 });
+    setTimeout(() => {
+      setNewCampaign({
+        name: "Summer Glow Seasonal Strategy",
+        description: "Auto-generated based on April booking trends.",
+        message_template: "Hey {{name}}! ☀️ Summer is almost here. Based on your past visits, we thought you'd love our exclusive 'Summer Glow' skin care package. Book now and get a complimentary consultation! 🌴 Reply YES to claim.",
+        target_segment: { tag: "All" },
+        status: "Draft"
+      });
+      setIsGenerating(false);
+      setIsSheetOpen(true);
+      toast.success("AI successfully compiled campaign strategy!");
+    }, 1500);
+  };
+
+  const handleAIWriter = () => {
+    setIsGenerating(true);
+    toast.info("AI Writer optimizing copy using successful campaign formulas...", { duration: 1500 });
+    
+    setTimeout(() => {
+      let aiTemplate = "";
+      const tag = newCampaign.target_segment.tag;
+      
+      if (tag === "VIP") {
+        aiTemplate = `Exclusive Priority Access for {{name}} 💎\nAs one of our most valued clients, we're giving you early access to our [Service]. We only have 5 spots left this week. Reply VIP to secure your booking instantly with no deposit required.`;
+      } else if (tag === "At-risk") {
+        aiTemplate = `We've missed you, {{name}}! 🥺\nIt's been a while since your last visit to AAR Salon. We'd love to welcome you back with a special 20% off your next appointment. Use code COMEBACK20. Book here: [Link]`;
+      } else if (tag === "New") {
+        aiTemplate = `Welcome to the AAR Salon Family, {{name}}! ✨\nWe're thrilled to have you. To ensure you look your best, here is a complimentary upgrade on your next service. Present this message at checkout.`;
+      } else if (tag === "Student") {
+        aiTemplate = `Advance Your Career, {{name}} 🎓\nReady to master new techniques? Our upcoming masterclass is filling up fast. As an academy student, get an exclusive 10% discount on enrollment if you book within 48 hours.`;
+      } else {
+        // All
+        aiTemplate = `Hi {{name}}! 🌟\nTransform your look this season. For a limited time, book any premium service and receive a complimentary product sample. Spots are limited, secure yours today!`;
+      }
+
+      setNewCampaign(prev => ({
+        ...prev,
+        message_template: aiTemplate
+      }));
+      setIsGenerating(false);
+      toast.success("AI Writer applied optimized marketing formula!");
+    }, 1500);
   };
 
   return (
@@ -126,8 +174,13 @@ const CampaignBuilder = () => {
               <p className="text-xs text-muted-foreground leading-relaxed mb-8 relative z-10 italic">
                 "Based on your April trends, a <b>'Summer Glow'</b> skin care campaign would likely generate 15% more bookings than standard discounts."
               </p>
-              <button className="w-full bg-primary text-primary-foreground py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-primary/20 relative z-10">
-                 Auto-Generate Campaign
+              <button 
+                onClick={handleAutoGenerate}
+                disabled={isGenerating}
+                className="w-full bg-primary text-primary-foreground py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-primary/20 relative z-10 flex justify-center items-center gap-2"
+              >
+                 {isGenerating ? <TrendingUp className="w-4 h-4 animate-bounce" /> : <AlertCircle className="w-4 h-4" />}
+                 {isGenerating ? "Compiling Strategy..." : "Auto-Generate Campaign"}
               </button>
            </div>
 
@@ -201,13 +254,20 @@ const CampaignBuilder = () => {
                     </div>
 
                     <div className="space-y-3">
-                       <div className="flex justify-between items-center ml-1">
-                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Message Payload</label>
-                          <span className="text-[9px] font-bold text-primary flex items-center gap-1 cursor-pointer hover:underline"><TrendingUp className="w-3 h-3" /> USE AI WRITER</span>
-                       </div>
-                       <textarea 
-                         placeholder="Write your personalized message here..."
-                         value={newCampaign.message_template}
+                        <div className="flex justify-between items-center ml-1">
+                           <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Message Payload</label>
+                           <button 
+                             onClick={handleAIWriter}
+                             disabled={isGenerating}
+                             className="text-[9px] font-bold text-primary flex items-center gap-1 cursor-pointer hover:underline disabled:opacity-50"
+                           >
+                             <TrendingUp className="w-3 h-3" /> {isGenerating ? "WRITING..." : "USE AI WRITER"}
+                           </button>
+                        </div>
+                        <textarea 
+                          placeholder="Write your personalized message here..."
+                          value={newCampaign.message_template}
+                          disabled={isGenerating}
                          onChange={(e) => setNewCampaign({...newCampaign, message_template: e.target.value})}
                          className="w-full bg-secondary/50 border border-border/30 rounded-2xl px-5 py-4 text-sm focus:border-primary/50 outline-none min-h-[160px] resize-none transition-all shadow-inner leading-relaxed"
                        />

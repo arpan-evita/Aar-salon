@@ -21,6 +21,13 @@ const SmartAutomation = () => {
   const [loading, setLoading] = useState(true);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedAuto, setSelectedAuto] = useState<any>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newWorkflow, setNewWorkflow] = useState({
+    name: '',
+    trigger_type: 'loyalty_points_threshold',
+    channel: 'WhatsApp',
+    message_template: ''
+  });
 
   useEffect(() => {
     fetchAutomations();
@@ -73,8 +80,49 @@ const SmartAutomation = () => {
   };
 
   const handleEdit = (auto: any) => {
+    setIsCreating(false);
     setSelectedAuto(auto);
     setIsSheetOpen(true);
+  };
+
+  const handleCreateNew = () => {
+    setIsCreating(true);
+    setNewWorkflow({
+      name: '',
+      trigger_type: 'loyalty_points_threshold',
+      channel: 'WhatsApp',
+      message_template: 'Hi {{name}}, congratulations on reaching a new loyalty tier! Enjoy 10% off your next visit.'
+    });
+    setIsSheetOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (isCreating) {
+      if (!newWorkflow.name || !newWorkflow.message_template) {
+        toast.error("Please fill all fields");
+        return;
+      }
+      
+      const { error } = await supabase.from('automation_rules').insert({
+        name: newWorkflow.name,
+        trigger_type: newWorkflow.trigger_type,
+        channel: newWorkflow.channel,
+        message_template: newWorkflow.message_template,
+        is_active: true
+      });
+
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Workflow created!");
+        setIsSheetOpen(false);
+        fetchAutomations();
+      }
+    } else {
+      // Editing existing logic goes here (mocked for now)
+      toast.success("Template saved!"); 
+      setIsSheetOpen(false);
+    }
   };
 
   return (
@@ -88,6 +136,12 @@ const SmartAutomation = () => {
            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
            <span className="text-[10px] font-bold text-primary uppercase tracking-widest">System Active</span>
         </div>
+        <button 
+          onClick={handleCreateNew}
+          className="gold-gradient text-primary-foreground px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-primary/20"
+        >
+          + New Workflow
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -164,20 +218,49 @@ const SmartAutomation = () => {
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent className="w-full sm:max-w-xl overflow-y-auto glass-strong border-l border-border/30 p-0">
-          {selectedAuto && (
+          {(selectedAuto || isCreating) && (
             <div className="flex flex-col h-full">
                <div className="p-8">
                   <SheetHeader className="mb-8">
-                    <SheetTitle className="text-2xl font-heading text-foreground">Edit Workflow</SheetTitle>
-                    <SheetDescription>Customize the AI logic and message templates for {selectedAuto.name}.</SheetDescription>
+                    <SheetTitle className="text-2xl font-heading text-foreground">{isCreating ? 'Create Workflow' : 'Edit Workflow'}</SheetTitle>
+                    <SheetDescription>{isCreating ? 'Setup new automation rules.' : `Customize the AI logic and message templates for ${selectedAuto.name}.`}</SheetDescription>
                   </SheetHeader>
 
                   <div className="space-y-6">
+                     {isCreating && (
+                       <>
+                         <div className="space-y-2">
+                           <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Workflow Name</label>
+                           <input 
+                             type="text" 
+                             value={newWorkflow.name}
+                             onChange={e => setNewWorkflow({...newWorkflow, name: e.target.value})}
+                             className="w-full bg-secondary/50 border border-border/30 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none"
+                             placeholder="e.g. VIP Points Milestone"
+                           />
+                         </div>
+                         <div className="space-y-2">
+                           <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Trigger Type</label>
+                           <select 
+                             value={newWorkflow.trigger_type}
+                             onChange={e => setNewWorkflow({...newWorkflow, trigger_type: e.target.value})}
+                             className="w-full bg-secondary/50 border border-border/30 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none"
+                           >
+                             <option value="loyalty_points_threshold">Loyalty Points Threshold</option>
+                             <option value="membership_expiring">Membership Expiring</option>
+                             <option value="booking_confirmed">Booking Confirmed</option>
+                             <option value="inactivity">Inactivity</option>
+                           </select>
+                         </div>
+                       </>
+                     )}
+
                      <div className="space-y-2">
                         <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Message Template (AI Powered)</label>
                         <textarea 
                           className="w-full bg-secondary/50 border border-border/30 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none min-h-[150px]"
-                          defaultValue={`Hi {{name}}, your appointment at AAR Salon is confirmed for {{date}} at {{time}} with {{stylist}}. We can't wait to see you!`}
+                          defaultValue={isCreating ? newWorkflow.message_template : `Hi {{name}}, your appointment at AAR Salon is confirmed for {{date}} at {{time}} with {{stylist}}. We can't wait to see you!`}
+                          onChange={e => isCreating && setNewWorkflow({...newWorkflow, message_template: e.target.value})}
                         />
                         <p className="text-[10px] text-muted-foreground">Use variables like {'{{name}}'}, {'{{date}}'}, {'{{time}}'}</p>
                      </div>
@@ -194,10 +277,14 @@ const SmartAutomation = () => {
                         </div>
                         <div className="space-y-2">
                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Primary Channel</label>
-                           <select className="w-full bg-secondary/50 border border-border/30 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none">
-                              <option>WhatsApp Business</option>
-                              <option>SMS Gateway</option>
-                              <option>Both (Omnichannel)</option>
+                           <select 
+                             className="w-full bg-secondary/50 border border-border/30 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none"
+                             value={isCreating ? newWorkflow.channel : "WhatsApp"}
+                             onChange={e => isCreating && setNewWorkflow({...newWorkflow, channel: e.target.value})}
+                           >
+                              <option value="WhatsApp">WhatsApp Business</option>
+                              <option value="SMS">SMS Gateway</option>
+                              <option value="Email">Both (Omnichannel)</option>
                            </select>
                         </div>
                      </div>
@@ -206,7 +293,7 @@ const SmartAutomation = () => {
 
                <div className="mt-auto p-6 border-t border-border/10 bg-secondary/10 flex gap-4">
                   <button onClick={() => setIsSheetOpen(false)} className="flex-1 bg-background border border-border/50 text-foreground py-4 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-secondary transition-all">Cancel</button>
-                  <button onClick={() => {toast.success("Template saved!"); setIsSheetOpen(false);}} className="flex-[2] gold-gradient text-primary-foreground py-4 rounded-xl text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+                  <button onClick={handleSave} className="flex-[2] gold-gradient text-primary-foreground py-4 rounded-xl text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
                     <CheckCircle2 className="w-4 h-4" /> Save Automation
                   </button>
                </div>

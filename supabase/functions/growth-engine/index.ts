@@ -61,6 +61,53 @@ serve(async (req) => {
         targets = data || []
       }
 
+      else if (rule.trigger_type === 'membership_expiring') {
+        const daysToExpiry = rule.delay_days || 7
+        const targetDate = new Date()
+        targetDate.setDate(targetDate.getDate() + daysToExpiry)
+        const targetISO = targetDate.toISOString().split('T')[0]
+
+        // Fetch memberships expiring on the target date
+        const { data: expiringMemberships } = await supabaseClient
+          .from('customer_memberships')
+          .select('customer_id, end_date')
+          .eq('status', 'Active')
+          .eq('end_date', targetISO)
+
+        if (expiringMemberships && expiringMemberships.length > 0) {
+          const customerIds = expiringMemberships.map(m => m.customer_id)
+          const { data } = await supabaseClient
+            .from('customers')
+            .select('id, full_name, phone, whatsapp_opt_in')
+            .in('id', customerIds)
+            .eq('whatsapp_opt_in', true)
+          targets = data || []
+        }
+      }
+
+      else if (rule.trigger_type === 'loyalty_points_threshold') {
+        // Trigger for customers who recently reached a points milestone
+        // Ideally we'd track "already notified", but for simplicity here we just check if they exceed it
+        // We'll use rule.metadata to store the threshold if applicable, default to 1000
+        const threshold = rule.metadata?.threshold || 1000;
+        const { data } = await supabaseClient
+          .from('customers')
+          .select('id, full_name, phone, whatsapp_opt_in, loyalty_points')
+          .eq('whatsapp_opt_in', true)
+          .gte('loyalty_points', threshold)
+        
+        // In a real app, you must ensure you don't message them every day. 
+        // This requires checking messaging_logs to see if they already received this campaign.
+        const alreadySent = await supabaseClient
+          .from('messaging_logs')
+          .select('customer_id')
+          .eq('type', rule.channel)
+          .like('content', `%${rule.name}%`)
+
+        const sentIds = new Set((alreadySent.data || []).map(l => l.customer_id))
+        targets = (data || []).filter(c => !sentIds.has(c.id))
+      }
+
       // 3. Send Messages (Mock/Log)
       for (const target of targets) {
         // Simple template replacement

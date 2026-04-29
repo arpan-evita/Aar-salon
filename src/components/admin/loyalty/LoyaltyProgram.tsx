@@ -19,6 +19,12 @@ const LoyaltyProgram = () => {
   const [loyalCustomers, setLoyalCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+
+  // Form state
+  const [planName, setPlanName] = useState("");
+  const [planPrice, setPlanPrice] = useState("");
+  const [planValidity, setPlanValidity] = useState("365");
 
   useEffect(() => {
     fetchLoyaltyData();
@@ -72,6 +78,35 @@ const LoyaltyProgram = () => {
       })));
     }
     setLoading(false);
+  };
+
+  const handleCreatePlan = async () => {
+    if (!planName || !planPrice) {
+      toast.error("Please fill all required fields.");
+      return;
+    }
+
+    setIsCreating(true);
+    const { error } = await supabase.from("membership_tiers").insert({
+      name: planName,
+      price: Number(planPrice),
+      validity_days: Number(planValidity),
+      benefits: ["5% off everything", "Priority Booking"], // Default benefits for now
+      points_multiplier: 1.0
+    });
+
+    setIsCreating(false);
+
+    if (error) {
+      toast.error(`Error creating plan: ${error.message}`);
+    } else {
+      toast.success("Membership plan created!");
+      setIsSheetOpen(false);
+      fetchLoyaltyData(); // Refresh list
+      setPlanName("");
+      setPlanPrice("");
+      setPlanValidity("365");
+    }
   };
 
   return (
@@ -192,25 +227,33 @@ const LoyaltyProgram = () => {
                   <input 
                     type="text" 
                     placeholder="e.g. Diamond VIP"
+                    value={planName}
+                    onChange={(e) => setPlanName(e.target.value)}
                     className="w-full bg-secondary/50 border border-border/30 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Spend Milestone (₹)</label>
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Spend Milestone / Price (₹)</label>
                       <input 
                         type="number" 
-                        placeholder="25,000"
+                        placeholder="25000"
+                        value={planPrice}
+                        onChange={(e) => setPlanPrice(e.target.value)}
                         className="w-full bg-secondary/50 border border-border/30 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none"
                       />
                    </div>
                    <div className="space-y-2">
                       <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Validity (Days)</label>
-                      <select className="w-full bg-secondary/50 border border-border/30 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none">
-                         <option>365 Days</option>
-                         <option>Lifetime Access</option>
-                         <option>90 Days (Seasonal)</option>
+                      <select 
+                        value={planValidity}
+                        onChange={(e) => setPlanValidity(e.target.value)}
+                        className="w-full bg-secondary/50 border border-border/30 rounded-xl px-4 py-3 text-sm focus:border-primary/50 outline-none"
+                      >
+                         <option value="365">365 Days</option>
+                         <option value="9999">Lifetime Access</option>
+                         <option value="90">90 Days (Seasonal)</option>
                       </select>
                    </div>
                 </div>
@@ -243,8 +286,8 @@ const LoyaltyProgram = () => {
 
             <div className="mt-auto p-6 border-t border-border/10 bg-secondary/10 flex gap-4">
                <button onClick={() => setIsSheetOpen(false)} className="flex-1 bg-background border border-border/50 text-foreground py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-secondary transition-all">Cancel</button>
-               <button onClick={() => {toast.success("Membership plan created!"); setIsSheetOpen(false);}} className="flex-[2] gold-gradient text-primary-foreground py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
-                 <CheckCircle2 className="w-4 h-4" /> Activate Plan
+               <button disabled={isCreating} onClick={handleCreatePlan} className="flex-[2] gold-gradient text-primary-foreground py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+                 <CheckCircle2 className="w-4 h-4" /> {isCreating ? "Saving..." : "Activate Plan"}
                </button>
             </div>
           </div>
