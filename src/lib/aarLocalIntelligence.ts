@@ -112,6 +112,22 @@ const KNOWLEDGE_BASE = {
       consultant: "Alex Hormozi"
     }
   ],
+  AVATAR_ENGINE: [
+    {
+      condition: (d: SalonData) => d.customers.total > 50,
+      advice: "Apply the 'Lost Chapter' logic: Stop serving everyone. Your bottom 80% of customers are draining your energy. Survey your top 20% (VIPs) to find their 'Leading Indicators'. Do they work in tech? Are they married? Are they 'India 2' aspirational? Re-engineer your ads to speak ONLY to them.",
+      title: "Hormozi Avatar Focus",
+      impact: "High" as const,
+      consultant: "Alex Hormozi"
+    },
+    {
+      condition: (d: SalonData) => d.revenue.gap > 0,
+      advice: "Reverse-engineer your best customers' buying journey. What was the 'Trigger Event' that made them book their first ₹5,000+ service? Replicate that event for all new leads. Quality > Quantity. It's better to have 10 high-value leads than 100 'bottom-feeders' who complain about price.",
+      title: "Buying Process Reverse-Engineering",
+      impact: "High" as const,
+      consultant: "Alex Hormozi"
+    }
+  ],
   MINDSET: [
     {
       condition: (d: SalonData) => d.revenue.current > 500000,
@@ -199,6 +215,7 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
     isStaff: fullHistoryText.includes("staff") || fullHistoryText.includes("team") || fullHistoryText.includes("stylist") || fullHistoryText.includes("performance"),
     isMarketing: fullHistoryText.includes("marketing") || fullHistoryText.includes("ads") || fullHistoryText.includes("campaign"),
     isAdvanced: fullHistoryText.includes("strategy") || fullHistoryText.includes("scale") || fullHistoryText.includes("growth") || fullHistoryText.includes("plan") || fullHistoryText.includes("advanced") || fullHistoryText.includes("grand slam"),
+    isAvatar: fullHistoryText.includes("avatar") || fullHistoryText.includes("customer") || fullHistoryText.includes("lead") || fullHistoryText.includes("target audience") || fullHistoryText.includes("journey"),
     services: [] as string[]
   };
 
@@ -207,7 +224,7 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
   });
 
   // 2. Reinforcement Learning: Check if we have high-performing patterns for this intent
-  const currentIntentKey = ctx.isOffer ? 'offer' : ctx.isRevenue ? 'revenue' : ctx.isStaff ? 'staff' : 'general';
+  const currentIntentKey = ctx.isAvatar ? 'avatar' : ctx.isOffer ? 'offer' : ctx.isRevenue ? 'revenue' : ctx.isStaff ? 'staff' : 'general';
   const bestPattern = learnedPatterns.find(p => p.intent === currentIntentKey && p.feedback_score > 0);
   const isReinforced = !!bestPattern;
 
@@ -222,7 +239,25 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
 
   // 4. Response Routing Logic
 
-  // A. Alex Hormozi's Grand Slam Offer / Advanced Strategy
+  // A. Avatar & Lost Chapter Strategy
+  if (ctx.isAvatar || q.includes("lost chapter")) {
+    return {
+      intent: 'avatar',
+      isReinforced,
+      summary: `Deploying Alex Hormozi's 'Lost Chapter' Avatar Logic. We are shifting from 'Quantity' to 'High-Margin Quality'.`,
+      steps: [
+        "80/20 AUDIT: Your top 20% of customers bring in 80% of your revenue. Identify them today. What is their 'Leading Indicator'? (e.g., Are they busy professionals? Do they value time over price?)",
+        "REVERSE-ENGINEER: What was the 'Trigger Event' that made your best customer spend ₹${(data.revenue.current/data.customers.total*2).toFixed(0)}+? Replicate that experience for all new leads.",
+        "REPEL THE REST: Stop selling to anyone with a pulse. Be upfront about your requirements. Use your marketing to attract your 'Dream Avatar' and intentionally repel 'bottom-feeders' who drain your team's energy."
+      ],
+      projections: {
+        newRevenue: data.revenue.current * 0.40,
+        confidence: 92
+      }
+    };
+  }
+
+  // B. Alex Hormozi's Grand Slam Offer / Advanced Strategy
   if (ctx.isAdvanced || (q.includes("hormozi") || q.includes("grand slam"))) {
     return {
       intent: 'advanced',
