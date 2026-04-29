@@ -89,7 +89,7 @@ export const synthesizeAdvice = (data: SalonData): ALIRecommendation[] => {
       if (rule.condition(data)) {
         recommendations.push({
           title: rule.title,
-          strategy: `${rule.consultant} Expert Directive: ${rule.advice}`,
+          strategy: rule.advice,
           impact: rule.impact,
           difficulty: "Medium",
           expectedROI: rule.impact === "High" ? "Scalable Empire (500Cr Logic)" : "Vital Growth",
@@ -98,6 +98,29 @@ export const synthesizeAdvice = (data: SalonData): ALIRecommendation[] => {
       }
     });
   });
+
+  // Dynamic data-driven additions
+  if (data.bookings.emptySlotsNext3Days > 5) {
+    recommendations.push({
+      title: "Inventory Monetization",
+      strategy: `You have ${data.bookings.emptySlotsNext3Days} expiring slots in the next 72 hours. This is 'expiring inventory'. Deploy a 'Flash Fill' WhatsApp blast to your Top 50 repeat clients with a 15% 'Early Bird' loyalty bonus for tomorrow morning.`,
+      impact: "High",
+      difficulty: "Easy",
+      expectedROI: "Immediate Cashflow",
+      source: "Predictive Heuristic"
+    });
+  }
+
+  if (data.customers.churnRisk > 10) {
+    recommendations.push({
+      title: "Retention Recovery",
+      strategy: `${data.customers.churnRisk} of your regulars are at risk. They haven't visited in 45+ days. Stop the 'Accounting Void' and send a 'We Miss You' personalized video note via WhatsApp. Dr. Basesh Gala says: Relationships are your primary asset, not just hair and nails.`,
+      impact: "High",
+      difficulty: "Medium",
+      expectedROI: "Recovered Revenue",
+      source: "Data Pattern"
+    });
+  }
 
   if (recommendations.length < 2) {
     recommendations.push({
@@ -115,47 +138,98 @@ export const synthesizeAdvice = (data: SalonData): ALIRecommendation[] => {
 
 /**
  * Strategy Generator: Creates a cohesive plan based on multiple recommendations
- * Now accepts history for 'Contextual Memory'
+ * Now uses intent detection to be more "Human Consultant" like.
  */
 export const generateGrowthPlan = (data: SalonData, query: string, history: any[] = []) => {
   const recs = synthesizeAdvice(data);
-  const lowercaseQuery = query.toLowerCase();
+  const q = query.toLowerCase();
+
+  // Intent Detection
+  const isOffer = q.includes("offer") || q.includes("discount") || q.includes("promo") || q.includes("deal");
+  const isRevenue = q.includes("revenue") || q.includes("money") || q.includes("target") || q.includes("income") || q.includes("profit") || q.includes("reach");
+  const isStaff = q.includes("staff") || q.includes("team") || q.includes("stylist") || q.includes("employee") || q.includes("performance");
+  const isMarketing = q.includes("marketing") || q.includes("ads") || q.includes("campaign") || q.includes("social");
 
   // Reference memory if available
   const hadPreviousDiscussion = history.length > 0;
   const memoryContext = hadPreviousDiscussion 
-    ? `As we discussed earlier regarding ${history[history.length-1].content.slice(0, 30)}... ` 
+    ? `Continuing our analysis of ${history[history.length-1].content.slice(0, 30)}... ` 
     : "";
 
-  if (lowercaseQuery.includes("reach") || lowercaseQuery.includes("target")) {
+  // 1. Handle Offers/Promotions
+  if (isOffer) {
+    const offerAdvice = [];
+    if (data.bookings.emptySlotsNext3Days > 3) {
+      offerAdvice.push(`Since you have ${data.bookings.emptySlotsNext3Days} empty slots coming up, I recommend a 'Flash Fill' discount of 20% for any booking in the next 24 hours.`);
+    }
+    if (data.customers.churnRisk > 5) {
+      offerAdvice.push(`To address your ${data.customers.churnRisk} at-risk clients, let's create a 'Comeback Special': A complimentary deep conditioning treatment with any service above ₹1,000.`);
+    }
+    if (data.customers.vips > 0) {
+      offerAdvice.push(`For your ${data.customers.vips} VIPs, don't just give a discount. Give them 'Exclusive Access' to a new service trial.`);
+    }
+
     return {
-      summary: `${memoryContext}LISTEN CAREFULLY: To hit that ₹${(data.revenue.target/100000).toFixed(1)}L target, you must exit the 'Self-Employment Trap' and stop the 'Suicide Mission' of scaling without data. I've performed a 'Zero to 500Cr' blueprint check on your ₹${data.revenue.gap.toLocaleString()} gap.`,
-      steps: recs.map(r => r.strategy),
+      summary: `${memoryContext}To make a truly 'Great Offer', we must solve for your current bottlenecks. Based on your data, here is your 3-tier promotion strategy:`,
+      steps: offerAdvice.length > 0 ? offerAdvice : ["Create a 'Bundle & Save' offer for low-utilization services to increase ARPU."],
       projections: {
-        newRevenue: data.revenue.gap * 1.05,
+        newRevenue: data.customers.churnRisk * 800 + (data.bookings.emptySlotsNext3Days * 1200),
+        confidence: 88
+      }
+    };
+  }
+
+  // 2. Handle Revenue/Targets
+  if (isRevenue) {
+    return {
+      summary: `${memoryContext}LISTEN CAREFULLY: To hit that ₹${(data.revenue.target/100000).toFixed(1)}L target, we need to bridge a ₹${data.revenue.gap.toLocaleString()} gap. This isn't about working harder; it's about the 'Zero-Exit Mandate' and systems.`,
+      steps: [
+        `Focus on your ${data.customers.vips} VIPs—they are your 'Vital Solution'. Increasing their frequency by 10% closes 40% of your gap.`,
+        `Your pace is currently ${data.revenue.pace > 1 ? 'strong' : 'lagging'}. We need to shift from 'Push Product' to 'India 2' aspirational marketing immediately.`,
+        "Implement a weekly 'Accounting Void' check to ensure margins aren't leaking in your top services."
+      ],
+      projections: {
+        newRevenue: data.revenue.gap * 0.4,
         confidence: 94
       }
     };
   }
 
-  // Handle follow-up questions
-  if (hadPreviousDiscussion && (lowercaseQuery.includes("how") || lowercaseQuery.includes("elaborate") || lowercaseQuery.includes("explain"))) {
-     return {
-      summary: `You asked for more detail. Let's drill down. Based on our history, the bottleneck is your 'Pace'. You need to transition from 'Aunt' to 'Mother' in your people strategy.`,
+  // 3. Handle Staff
+  if (isStaff) {
+    return {
+      summary: `${memoryContext}Team performance is the 'Energy Vessel' of your salon. With an average utilization of ${data.staff.avgUtilization}%, you have room for growth without hiring.`,
       steps: [
-        "Master the 'Tongue' pillar: Script your checkout upsells.",
-        "Implement weekly 'Data Audits' to stop leakages.",
-        "Use Rajiv's '6 R's' to automate team reviews."
+        `Identify why your ${data.staff.topPerformer ? data.staff.topPerformer : 'top team members'} are succeeding and map their 'Tongue' pillar scripts for the rest of the team.`,
+        "Use Rajiv Talreja's '6 R's' (Remunerate, Review, Reward, etc.) to automate management. Stop being the 'Firefighter' in your business.",
+        "Preserve the 'Dua' of your laborers by investing in their skill mastery during the current downtime."
       ],
       projections: {
-        newRevenue: 15000,
+        newRevenue: 25000,
+        confidence: 82
+      }
+    };
+  }
+
+  // 4. Handle Marketing
+  if (isMarketing) {
+    return {
+      summary: `${memoryContext}Your marketing must move from 'Information' to 'Emotion'. You are selling luxury, not hair.`,
+      steps: [
+        "Stop boring ads. Use 'Kahania Bikti Hai' (Stories Sell) to showcase the transformation of your clients.",
+        `Leverage your ${data.customers.total} customer base. A referral program for your ${data.customers.vips} VIPs is 5x cheaper than new ads.`,
+        "Focus on the 'India 2' class—they have the money and the aspiration. Your brand voice must reflect their status."
+      ],
+      projections: {
+        newRevenue: 30000,
         confidence: 85
       }
     };
   }
 
+  // Default: General Growth Strategy
   return {
-    summary: `${memoryContext}Your business is currently a 'Push Product'. Let's turn it into a 'Vital Solution' for the 'India 2' class using the 'Janani vs Khaala' people strategy.`,
+    summary: `${memoryContext}I've analyzed your full operational stack. Your business is currently a 'Push Product'. Let's turn it into a 'Vital Solution' using the 'Janani vs Khaala' people strategy and systemized growth.`,
     steps: recs.slice(0, 3).map(r => r.strategy),
     projections: {
       newRevenue: 45000,
