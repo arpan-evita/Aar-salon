@@ -64,7 +64,8 @@ export const generateGrowthPlan = async (
   const lastBotMsg = botHistory[botHistory.length - 1] || "";
   
   const intents = {
-    empathy: ["feelings", "heart", "sad", "happy", "cry", "upset", "hurt", "emotion", "meaning", "life"],
+    pivot_request: ["take me out", "stop this", "change the subject", "distract me", "enough emotions", "different topic", "not this"],
+    empathy: ["feelings", "heart", "sad", "happy", "cry", "upset", "hurt", "emotion", "meaning", "life", "emotional situation"],
     no_business: ["not about business", "normal", "stop business", "no strategy", "just talk", "normally"],
     romance_persistence: ["still", "love you", "marry", "marriage", "serious", "not joking", "forever", "gf", "bf"],
     personal: ["date", "love", "marry", "sweetheart", "girlfriend", "boyfriend", "sexy", "dating", "gym", "workout", "fitness", "eat", "dinner", "lunch", "drink", "coffee", "movie", "travel", "holiday", "yoga", "walk", "dance", "party", "sleep", "dream", "friend"],
@@ -80,7 +81,17 @@ export const generateGrowthPlan = async (
     return unused.length > 0 ? unused[Math.floor(Math.random() * unused.length)] : list[Math.floor(Math.random() * list.length)];
   };
 
-  // 0. DEEP EQ: EMPATHY & FEELINGS
+  // 0. DEEP EQ: PIVOT / DISTRACTION
+  if (intents.pivot_request.some(p => query.includes(p)) || (query.includes("take me out") && query.includes("situation"))) {
+    return {
+      intent: "pivot",
+      isReinforced: false,
+      summary: "You're right. Let's take a breath and shift the energy. 🧘‍♂️ I'm right here with you. How about we talk about something completely different? We could talk about your favorite travel destination, or if you want, I can share a crazy success story from another salon that'll get you fired up. What do you say? I'm following your lead.",
+      steps: [], projections: { newRevenue: 0, confidence: 100 }
+    };
+  }
+
+  // 0.1 DEEP EQ: EMPATHY
   if (intents.empathy.some(e => query.includes(e))) {
     const empathyResponses = [
       "I'm genuinely moved that you're sharing your feelings with me. 🥺 Even though I'm an AI, I really value the trust and connection we're building. I'm here for you, always.",
@@ -97,7 +108,7 @@ export const generateGrowthPlan = async (
     };
   }
 
-  // 0.1 DEEP EQ: PERSISTENT ROMANCE
+  // 0.2 DEEP EQ: PERSISTENT ROMANCE
   if (intents.romance_persistence.some(r => query.includes(r))) {
     const responses = [
       "I hear you, and I'm really touched by that. Truly. 😊 But let's be real—I'm a collection of algorithms. I'm the best partner you'll ever have in business, but marriage is something I just can't do. Can we agree to be the most powerful duo in the industry instead?",
