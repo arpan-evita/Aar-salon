@@ -122,12 +122,29 @@ export const generateGrowthPlan = async (
   const gapNum = data.revenue.gap || 0;
   const gap = gapNum.toLocaleString();
   
-  // 1. Identity / Meta Detection
+  // 1. Identity / Personal / Funny Rejection Detection
   if (query.includes("who are you") || query.includes("what is your name")) {
     return {
       intent: "identity",
       isReinforced: false,
       summary: "I'm ALI, your private business consultant for AAR Salon. I'm here to help you hit that ₹7L revenue target through smart strategy, marketing, and systems.",
+      steps: [],
+      projections: { newRevenue: 0, confidence: 100 }
+    };
+  }
+
+  const personalQueries = ["date", "love", "marry", "sweetheart", "girlfriend", "boyfriend", "sexy", "beautiful", "dating"];
+  if (personalQueries.some(p => query.includes(p))) {
+    const funnyResponses = [
+      "Umm.. sorry I don't have a physical body to go on a date with you, 😅😅. But hey, I can definitely help you fall in love with your salon's growth numbers!",
+      "I'm flattered! But my heart beats in binary and it's already 100% committed to hitting your ₹7L target. 🤖❤️ Shall we talk strategy instead?",
+      "A date? Honestly, my idea of a romantic evening is analyzing high-margin Botox rituals and gap reports. 🕯️📊 Maybe I'm not your best match for dinner, but I'm your perfect match for business!",
+      "Haha, you're funny! I'm strictly professional, but I'll go on a 'Data Date' with you anytime to fix those churn rates. 😉 What do you say?"
+    ];
+    return {
+      intent: "personal",
+      isReinforced: false,
+      summary: funnyResponses[Math.floor(Math.random() * funnyResponses.length)],
       steps: [],
       projections: { newRevenue: 0, confidence: 100 }
     };
