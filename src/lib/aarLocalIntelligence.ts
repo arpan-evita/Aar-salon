@@ -171,17 +171,8 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
   // Check for refinement queries (e.g. "tell me more", "how?", "another option")
   const isRefinement = q.includes("more") || q.includes("how") || q.includes("elaborate") || q.includes("why") || q.includes("another") || q.includes("explain") || q.length < 15;
 
-  // 2. Memory Context Synthesis - Avoid prefixing "Continuing our analysis" if already present
-  let memorySummary = "";
-  if (history.length > 0) {
-    const topics = [];
-    if (ctx.isOffer) topics.push("promotions");
-    if (ctx.isRevenue) topics.push("revenue targets");
-    if (ctx.isStaff) topics.push("team performance");
-    if (ctx.services.length > 0) topics.push(ctx.services.join("/") + " services");
-
-    memorySummary = `Deepening our consult on your ${topics.join(", ")}. `;
-  }
+  // 2. Context Tracking (Silent)
+  const hadPreviousDiscussion = history.length > 0;
 
   // 3. Response Routing Logic
 
@@ -189,10 +180,10 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
   if ((currentIntent.service || (isRefinement && ctx.services.length > 0)) && ctx.isOffer) {
     const mainService = ctx.services[ctx.services.length - 1] || "service";
     return {
-      summary: `${memorySummary}Let's drill down into the 'Free ${mainService.toUpperCase()}' strategy. In the Dr. Basesh Gala 'Finance Pillar', we must avoid 'Suicide Scaling'.`,
+      summary: `Let's drill down into the 'Free ${mainService.toUpperCase()}' strategy. In the Dr. Basesh Gala 'Finance Pillar', we must avoid 'Suicide Scaling'.`,
       steps: [
         `ROI AUDIT: A free ${mainService} costs you ~₹${mainService === 'haircut' ? '250' : '800'} in variable labor. To break even, you MUST secure a re-booking on the spot.`,
-        "TACTIC: Instead of just 'Free', offer a 'Mystery Upgrade'. Tell them: 'Book your next visit now and your ${mainService} today is on us'. This locks in the LTV (Lifetime Value).",
+        `TACTIC: Instead of just 'Free', offer a 'Mystery Upgrade'. Tell them: 'Book your next visit now and your ${mainService} today is on us'. This locks in the LTV (Lifetime Value).`,
         `DATA LEVERAGE: You mentioned ${ctx.services.join(", ")}. Bundle them! A 'High-Value Package' is always better than a single free service.`
       ],
       projections: {
@@ -205,7 +196,7 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
   // B. Revenue & Growth Focus
   if (currentIntent.revenue || (isRefinement && ctx.isRevenue)) {
     return {
-      summary: `${memorySummary}Focusing on your ₹${(data.revenue.target/100000).toFixed(1)}L goal and the ₹${data.revenue.gap.toLocaleString()} gap:`,
+      summary: `Focusing on your ₹${(data.revenue.target/100000).toFixed(1)}L goal and the ₹${data.revenue.gap.toLocaleString()} gap:`,
       steps: [
         `Prioritize your ${data.customers.vips} VIPs. If you move them from 1 visit/month to 1.2 visits/month, your gap shrinks by 20% instantly.`,
         "Apply the 'Faster, Cheaper, Easier' framework. Is your booking link in your Instagram bio? If not, you're losing 'Fuel' every hour.",
@@ -229,7 +220,7 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
     }
     
     return {
-      summary: `${memorySummary}To maximize impact, we are using your 'Expiring Inventory' (${data.bookings.emptySlotsNext3Days} slots) as the anchor:`,
+      summary: `To maximize impact, we are using your 'Expiring Inventory' (${data.bookings.emptySlotsNext3Days} slots) as the anchor:`,
       steps: offerAdvice.length > 0 ? offerAdvice : ["Bundle your lowest utilization services into a 'Power Hour' package to boost mid-week ARPU."],
       projections: {
         newRevenue: 25000,
@@ -241,7 +232,7 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
   // D. Staff & Performance
   if (currentIntent.staff || (isRefinement && ctx.isStaff)) {
     return {
-      summary: `${memorySummary}Optimizing your 'Energy Vessel' (Team Utilization: ${data.staff.avgUtilization}%):`,
+      summary: `Optimizing your 'Energy Vessel' (Team Utilization: ${data.staff.avgUtilization}%):`,
       steps: [
         `Your top performer (${data.staff.topPerformer || 'Primary Stylist'}) is the benchmark. Record their consultation 'Tongue' scripts.`,
         "Implement Rajiv Talreja's '6 R's' system. Every Monday at 9 AM, review the previous week's 'Retail vs Service' ratios.",
@@ -256,7 +247,7 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
 
   // E. Default: General Growth Strategy (using history if available)
   return {
-    summary: `${memorySummary}I've analyzed your full operational stack. We are transitioning you from 'Push Product' to 'Vital Solution' logic.`,
+    summary: `I've analyzed your full operational stack. We are transitioning you from 'Push Product' to 'Vital Solution' logic.`,
     steps: recs.slice(0, 3).map(r => r.strategy),
     projections: {
       newRevenue: 45000,
