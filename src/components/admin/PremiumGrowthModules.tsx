@@ -30,7 +30,10 @@ import {
   TrendingDown,
   UserPlus,
   Rocket,
-  Star
+  Star,
+  ThumbsUp,
+  ThumbsDown,
+  BrainCircuit
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -250,6 +253,7 @@ const AIGrowthAssistant = () => {
   const [question, setQuestion] = useState("");
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [learningPatterns, setLearningPatterns] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -545,7 +549,7 @@ const AIGrowthAssistant = () => {
       }
     };
 
-    const plan = generateGrowthPlan(salonData, userMsg, history);
+    const plan = generateGrowthPlan(salonData, userMsg, history, learningPatterns);
     const assistantContent = plan.summary + "\n\n" + plan.steps.map((s, i) => `${i+1}. ${s}`).join("\n\n");
 
     setTimeout(async () => {
@@ -553,12 +557,43 @@ const AIGrowthAssistant = () => {
         role: 'assistant' as const, 
         content: assistantContent, 
         user_id: user.id,
-        session_id: sessionId 
+        session_id: sessionId,
+        metadata: { 
+          isReinforced: plan.isReinforced,
+          intent: plan.intent,
+          salonSnapshot: salonData
+        }
       };
-      setHistory(prev => [...prev, assistantMsg]);
-      await supabase.from('ai_growth_chats').insert(assistantMsg);
+      const { data: savedMsg } = await supabase.from('ai_growth_chats').insert(assistantMsg).select().single();
+      setHistory(prev => [...prev, savedMsg || assistantMsg]);
       setIsTyping(false);
+      
+      if (plan.isReinforced) {
+        toast.success("Strategy reinforced by previous learning patterns", {
+          icon: <BrainCircuit className="w-4 h-4 text-primary" />,
+          duration: 3000
+        });
+      }
     }, 1200);
+  };
+
+  const handleFeedback = async (messageId: string, score: number) => {
+    const msg = history.find(m => m.id === messageId);
+    if (!msg || !msg.metadata) return;
+
+    // Save pattern to reinforcement table
+    const { error } = await supabase.from('ai_growth_learning').insert({
+      intent: msg.metadata.intent,
+      context_data: msg.metadata.salonSnapshot,
+      query: history.find(h => h.role === 'user' && h.session_id === msg.session_id)?.content || "",
+      strategy_applied: msg.content,
+      feedback_score: score
+    });
+
+    if (!error) {
+      toast.success(score > 0 ? "ALI learned from this success!" : "ALI will adjust this strategy.");
+      loadLearningPatterns();
+    }
   };
 
   const deployAction = (actionType: string) => {
@@ -664,13 +699,40 @@ const AIGrowthAssistant = () => {
                     <p className="text-sm text-muted-foreground">New session started. Ask ALI something to begin your growth strategy.</p>
                   </div>
                 ) : (
-                  history.map((msg, i) => (
-                    <div key={i} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                   history.map((msg, i) => (
+                    <div key={msg.id || i} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-primary/20 text-primary' : 'bg-white/10 text-white'}`}>
                         {msg.role === 'user' ? <Users className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                       </div>
-                      <div className={`max-w-[85%] rounded-2xl p-4 text-sm leading-relaxed whitespace-pre-line ${msg.role === 'user' ? 'bg-primary/10 border border-primary/20' : 'bg-white/5 border border-white/10'}`}>
-                        {msg.content}
+                      <div className="flex flex-col gap-2 max-w-[85%]">
+                        <div className={`rounded-2xl p-4 text-sm leading-relaxed whitespace-pre-line relative group ${msg.role === 'user' ? 'bg-primary/10 border border-primary/20' : 'bg-white/5 border border-white/10'}`}>
+                          {msg.content}
+                          
+                          {msg.role === 'assistant' && (
+                            <div className="absolute -bottom-10 left-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                              <button 
+                                onClick={() => handleFeedback(msg.id, 1)}
+                                className="p-1.5 rounded-lg bg-white/5 hover:bg-green-500/20 text-muted-foreground hover:text-green-400 transition-all border border-white/5"
+                                title="Effective strategy"
+                              >
+                                <ThumbsUp className="w-3 h-3" />
+                              </button>
+                              <button 
+                                onClick={() => handleFeedback(msg.id, -1)}
+                                className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-muted-foreground hover:text-red-400 transition-all border border-white/5"
+                                title="Not relevant"
+                              >
+                                <ThumbsDown className="w-3 h-3" />
+                              </button>
+                              {msg.metadata?.isReinforced && (
+                                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/10 border border-primary/20 text-[9px] font-bold text-primary uppercase tracking-tighter">
+                                  <BrainCircuit className="w-2.5 h-2.5" />
+                                  Reinforced
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))

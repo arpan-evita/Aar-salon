@@ -87,13 +87,29 @@ const KNOWLEDGE_BASE = {
       title: "ERRC Profit Audit",
       impact: "High" as const,
       consultant: "Strategic Management"
+    }
+  ],
+  HORMOZI_OFFERS: [
+    {
+      condition: (d: SalonData) => true,
+      advice: "Apply the Hormozi 'Value Equation': Value = (Dream Outcome * Likelihood) / (Time Delay * Effort). Your offers must maximize the top and minimize the bottom. A discount just lowers the price; a 'Grand Slam Offer' increases the perceived value so much that price becomes irrelevant.",
+      title: "Value Equation Optimization",
+      impact: "High" as const,
+      consultant: "Alex Hormozi"
     },
     {
-      condition: (d: SalonData) => d.staff.total > 3,
-      advice: "Audit your 'McKinsey 7-S' alignment. Is your 'Structure' (Staff hierarchy) supporting your 'Strategy' (High-end luxury)? If your 'Shared Values' aren't centered on 'Customer Delight', your systems will fail. Train your team in 'Consultative Selling' to increase ticket size by 30%.",
-      title: "McKinsey 7-S Alignment",
-      impact: "Medium" as const,
-      consultant: "Organizational Health"
+      condition: (d: SalonData) => d.bookings.emptySlotsNext3Days > 5,
+      advice: "Create a 'Grand Slam Offer' for your empty slots. Don't just offer 20% off. Offer the 'Total Identity Reset' package: Haircut + Scalp Detox + Home Care Kit + 15-min Styling Lesson. Add Scarcity: 'Only 3 slots left for this transformation'. Add Urgency: 'Must book before 6 PM today'.",
+      title: "Grand Slam Slot Filling",
+      impact: "High" as const,
+      consultant: "Alex Hormozi"
+    },
+    {
+      condition: (d: SalonData) => d.customers.churnRisk > 10,
+      advice: "Use 'Risk Reversal'. For your at-risk clients, offer a '100% Satisfaction or your next 3 services are on us' guarantee. Hormozi says: If you aren't afraid of your guarantee, it's not strong enough. This eliminates the 'Perceived Risk' of returning to a salon they haven't visited in months.",
+      title: "Aggressive Risk Reversal",
+      impact: "High" as const,
+      consultant: "Alex Hormozi"
     }
   ],
   MINDSET: [
@@ -168,9 +184,9 @@ export const synthesizeAdvice = (data: SalonData): ALIRecommendation[] => {
 
 /**
  * Strategy Generator: Creates a cohesive plan based on multiple recommendations
- * Now uses FULL history scan to maintain context across the entire session.
+ * Now uses FULL history scan + LEARNED patterns + Alex Hormozi's frameworks.
  */
-export const generateGrowthPlan = (data: SalonData, query: string, history: any[] = []) => {
+export const generateGrowthPlan = (data: SalonData, query: string, history: any[] = [], learnedPatterns: any[] = []) => {
   const recs = synthesizeAdvice(data);
   const q = query.toLowerCase();
 
@@ -178,11 +194,11 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
   const fullHistoryText = history.map(h => h.content.toLowerCase()).join(" ") + " " + q;
   
   const ctx = {
-    isOffer: fullHistoryText.includes("offer") || fullHistoryText.includes("discount") || fullHistoryText.includes("promo") || fullHistoryText.includes("free"),
+    isOffer: fullHistoryText.includes("offer") || fullHistoryText.includes("discount") || fullHistoryText.includes("promo") || fullHistoryText.includes("free") || fullHistoryText.includes("deal"),
     isRevenue: fullHistoryText.includes("revenue") || fullHistoryText.includes("money") || fullHistoryText.includes("target") || fullHistoryText.includes("gap"),
     isStaff: fullHistoryText.includes("staff") || fullHistoryText.includes("team") || fullHistoryText.includes("stylist") || fullHistoryText.includes("performance"),
     isMarketing: fullHistoryText.includes("marketing") || fullHistoryText.includes("ads") || fullHistoryText.includes("campaign"),
-    isAdvanced: fullHistoryText.includes("strategy") || fullHistoryText.includes("scale") || fullHistoryText.includes("growth") || fullHistoryText.includes("plan") || fullHistoryText.includes("advanced"),
+    isAdvanced: fullHistoryText.includes("strategy") || fullHistoryText.includes("scale") || fullHistoryText.includes("growth") || fullHistoryText.includes("plan") || fullHistoryText.includes("advanced") || fullHistoryText.includes("grand slam"),
     services: [] as string[]
   };
 
@@ -190,112 +206,84 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
     if (fullHistoryText.includes(s)) ctx.services.push(s);
   });
 
-  // Determine the "Active Intent" (current query priority vs history)
-  const currentIntent = {
-    offer: q.includes("offer") || q.includes("discount") || q.includes("promo") || q.includes("deal") || q.includes("free"),
-    revenue: q.includes("revenue") || q.includes("money") || q.includes("target") || q.includes("income") || q.includes("profit") || q.includes("reach"),
-    staff: q.includes("staff") || q.includes("team") || q.includes("stylist") || q.includes("employee") || q.includes("performance"),
-    marketing: q.includes("marketing") || q.includes("ads") || q.includes("campaign") || q.includes("social"),
-    advanced: q.includes("strategy") || q.includes("scale") || q.includes("growth") || q.includes("blueprint") || q.includes("advanced"),
-    service: ctx.services.some(s => q.includes(s))
+  // 2. Reinforcement Learning: Check if we have high-performing patterns for this intent
+  const currentIntentKey = ctx.isOffer ? 'offer' : ctx.isRevenue ? 'revenue' : ctx.isStaff ? 'staff' : 'general';
+  const bestPattern = learnedPatterns.find(p => p.intent === currentIntentKey && p.feedback_score > 0);
+  const isReinforced = !!bestPattern;
+
+  // 3. Alex Hormozi's Value Equation Logic
+  const applyValueEquation = (offerTitle: string, outcome: string) => {
+    return {
+      equation: "Value = (Dream Outcome * Perceived Likelihood) / (Time Delay * Effort/Sacrifice)",
+      analysis: `Hormozi Analysis: Your '${offerTitle}' must maximize the '${outcome}' while minimizing 'Effort'.`,
+      tip: "Instead of discounting price, add 'Bonuses' that increase likelihood of success (like a home maintenance kit)."
+    };
   };
 
-  // Check for refinement queries (e.g. "tell me more", "how?", "another option")
-  const isRefinement = q.includes("more") || q.includes("how") || q.includes("elaborate") || q.includes("why") || q.includes("another") || q.includes("explain") || q.length < 15;
+  // 4. Response Routing Logic
 
-  // 2. Context Tracking (Silent)
-  const hadPreviousDiscussion = history.length > 0;
-
-  // 3. Response Routing Logic
-
-  // A. Advanced Business Strategy (NEW)
-  if (currentIntent.advanced || (isRefinement && ctx.isAdvanced)) {
+  // A. Alex Hormozi's Grand Slam Offer / Advanced Strategy
+  if (ctx.isAdvanced || (q.includes("hormozi") || q.includes("grand slam"))) {
     return {
-      summary: `Analyzing your salon's growth trajectory through the '3S Formula' and 'ERRC Framework'. You are currently in the '${data.revenue.current < 200000 ? 'Survival' : 'Stability'}' phase, preparing for 'Scalability'.`,
+      intent: 'advanced',
+      isReinforced,
+      summary: `Transitioning to Alex Hormozi's '$100M Offers' framework. We are moving from 'Commodity' to 'Category of One'.`,
       steps: [
-        "STRATEGIC SHIFT: Move from a transactional model to a 'Recurring Revenue Membership'. Implementing a 2-tier membership (Basic vs Elite) will guarantee your overhead coverage by the 5th of every month.",
-        "PROFIT AUDIT: Apply the 'ERRC Framework'. ELIMINATE services with < 20% margin. RAISE your 'India 2' status by bundling high-ticket consultations with every technical service.",
-        `SYSTEMIZATION: Master the 'McKinsey 7-S'. Ensure your 'Staff' skills match your 'Luxury Strategy'. Train your team in 'Consultative Selling' to increase the average ticket size from ₹${(data.revenue.current/data.customers.total).toFixed(0)} to ₹${((data.revenue.current/data.customers.total)*1.3).toFixed(0)}.`
+        "NAMING: Use the M-A-G-I-C Formula (Magnet, Avatar, Goal, Interval, Container). Instead of 'Haircut', call it the '6-Week Identity Transformation Blueprint'.",
+        "VALUE EQUATION: Increase the 'Dream Outcome'. Add a free 15-min styling masterclass and a 'Likelihood of Achievement' guarantee: 'If you don't look 5 years younger, we re-do it for free + give you a ₹1,000 credit'.",
+        "SCARCITY & URGENCY: Only 5 'Transformation' packages available this week for 'India 2' clients. This isn't a discount; it's an exclusive investment in their personal brand."
       ],
       projections: {
-        newRevenue: data.revenue.current * 0.45,
-        confidence: 95
+        newRevenue: data.revenue.current * 0.55,
+        confidence: 98
       }
     };
   }
 
-  // B. Specific Service & Offer Refinement (e.g. "what if we give one free haircut" followed by "how?")
-  if ((currentIntent.service || (isRefinement && ctx.services.length > 0)) && ctx.isOffer) {
+  // B. Specific Service & Offer Refinement (e.g. "free haircut")
+  if (ctx.services.length > 0 && ctx.isOffer) {
     const mainService = ctx.services[ctx.services.length - 1] || "service";
-    return {
-      summary: `Let's drill down into the 'Free ${mainService.toUpperCase()}' strategy. In the Dr. Basesh Gala 'Finance Pillar', we must avoid 'Suicide Scaling'.`,
-      steps: [
-        `ROI AUDIT: A free ${mainService} costs you ~₹${mainService === 'haircut' ? '250' : '800'} in variable labor. To break even, you MUST secure a re-booking on the spot.`,
-        `TACTIC: Instead of just 'Free', offer a 'Mystery Upgrade'. Tell them: 'Book your next visit now and your ${mainService} today is on us'. This locks in the LTV (Lifetime Value).`,
-        `DATA LEVERAGE: You mentioned ${ctx.services.join(", ")}. Bundle them! A 'High-Value Package' is always better than a single free service.`
-      ],
-      projections: {
-        newRevenue: 12000,
-        confidence: 85
-      }
-    };
-  }
-
-  // B. Revenue & Growth Focus
-  if (currentIntent.revenue || (isRefinement && ctx.isRevenue)) {
-    return {
-      summary: `Focusing on your ₹${(data.revenue.target/100000).toFixed(1)}L goal and the ₹${data.revenue.gap.toLocaleString()} gap:`,
-      steps: [
-        `Prioritize your ${data.customers.vips} VIPs. If you move them from 1 visit/month to 1.2 visits/month, your gap shrinks by 20% instantly.`,
-        "Apply the 'Faster, Cheaper, Easier' framework. Is your booking link in your Instagram bio? If not, you're losing 'Fuel' every hour.",
-        "Dr. Basesh Gala says: 'Persistence is your default operational state.' Don't stop the campaign until the target is met."
-      ],
-      projections: {
-        newRevenue: data.revenue.gap * 0.35,
-        confidence: 92
-      }
-    };
-  }
-
-  // C. General Offer Focus
-  if (currentIntent.offer || (isRefinement && ctx.isOffer)) {
-    const offerAdvice = [];
-    if (data.bookings.emptySlotsNext3Days > 3) {
-      offerAdvice.push(`FLASH FILL: You have ${data.bookings.emptySlotsNext3Days} gaps. 20% off for 'Last Minute' bookings via WhatsApp.`);
-    }
-    if (data.customers.churnRisk > 5) {
-      offerAdvice.push(`COMEBACK: Send a ₹500 'Welcome Back' credit to your ${data.customers.churnRisk} at-risk regulars.`);
-    }
+    const v = applyValueEquation(`Free ${mainService}`, "Identity Transformation");
     
     return {
-      summary: `To maximize impact, we are using your 'Expiring Inventory' (${data.bookings.emptySlotsNext3Days} slots) as the anchor:`,
-      steps: offerAdvice.length > 0 ? offerAdvice : ["Bundle your lowest utilization services into a 'Power Hour' package to boost mid-week ARPU."],
+      intent: 'offer',
+      isReinforced,
+      summary: `Analyzing your '${mainService.toUpperCase()}' offer through the Hormozi Value Equation:`,
+      steps: [
+        `${v.analysis}`,
+        `BONUS STACK: Don't just give it away. Stack it with a 'Risk Reversal' guarantee. 'Free ${mainService} if you aren't the most complimented person in the room by tomorrow'.`,
+        `EFFORT REDUCTION: Offer 'VIP Priority Lane' for these clients. If they have to wait 20 mins, the 'Effort/Sacrifice' part of the equation kills the value.`
+      ],
       projections: {
-        newRevenue: 25000,
+        newRevenue: 15000,
         confidence: 88
       }
     };
   }
 
-  // D. Staff & Performance
-  if (currentIntent.staff || (isRefinement && ctx.isStaff)) {
+  // C. Revenue & Growth Focus
+  if (ctx.isRevenue) {
     return {
-      summary: `Optimizing your 'Energy Vessel' (Team Utilization: ${data.staff.avgUtilization}%):`,
+      intent: 'revenue',
+      isReinforced,
+      summary: `Bridging the ₹${data.revenue.gap.toLocaleString()} gap using the 'Zero-Exit Mandate' and 'Ansoff Matrix' penetration:`,
       steps: [
-        `Your top performer (${data.staff.topPerformer || 'Primary Stylist'}) is the benchmark. Record their consultation 'Tongue' scripts.`,
-        "Implement Rajiv Talreja's '6 R's' system. Every Monday at 9 AM, review the previous week's 'Retail vs Service' ratios.",
-        "Preserve 'Dua': When the salon is empty, invest in training. Skill mastery is the only true security for your team."
+        bestPattern ? `LEARNED SUCCESS: ${bestPattern.strategy_applied.split('.')[0]}` : `Focus on your ${data.customers.vips} VIPs. Increase visit frequency via 'Exclusive Member-Only' nights.`,
+        "ERRC Profit Audit: ELIMINATE services that take > 90 mins but return < ₹1,500. CREATE 'Identity Packages' that bundle 4 services into one 3-hour luxury session.",
+        "Systems Scale: If you are still doing the haircuts, you are a technician, not a CEO. Use Rajiv Talreja's '3S Formula' to automate the 'Sales' pillar today."
       ],
       projections: {
-        newRevenue: 15000,
-        confidence: 80
+        newRevenue: data.revenue.gap * 0.45,
+        confidence: 94
       }
     };
   }
 
-  // E. Default: General Growth Strategy (using history if available)
+  // D. Default: General Growth Strategy
   return {
-    summary: `I've analyzed your full operational stack. We are transitioning you from 'Push Product' to 'Vital Solution' logic.`,
+    intent: 'general',
+    isReinforced,
+    summary: `I've analyzed your operational stack. We are deploying a 'Grand Slam' strategy to turn your salon into a 'Vital Solution'.`,
     steps: recs.slice(0, 3).map(r => r.strategy),
     projections: {
       newRevenue: 45000,
