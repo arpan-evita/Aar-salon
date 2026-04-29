@@ -154,8 +154,20 @@ const BookingSection = () => {
       notes: notes || null,
       user_id: user?.id || null,
     });
+    
+    if (!error) {
+      // Also register as a lead
+      await supabase.from("leads").insert({
+        name: name,
+        phone: phone,
+        email: email || null,
+        source: "Website Booking",
+        status: "New",
+        interest: selectedService
+      });
+      setConfirmed(true);
+    }
     setSubmitting(false);
-    if (!error) setConfirmed(true);
   };
 
   const resetForm = () => {
