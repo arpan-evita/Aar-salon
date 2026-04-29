@@ -739,10 +739,15 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
                 setHistory([]);
                 setQuestion("");
               }} 
-              className="w-full h-11 bg-gold text-black rounded-xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 mb-8 hover:scale-105 transition-all shadow-lg shadow-gold/20"
+              className="w-full h-11 bg-gold text-black rounded-xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 mb-4 hover:scale-105 transition-all shadow-lg shadow-gold/20"
             >
               <Plus className="w-4 h-4" /> New Chat
             </button>
+
+            <div className="flex items-center gap-2 bg-gold/10 border border-gold/20 px-3 py-2 rounded-xl mb-8">
+              <Target className="w-3.5 h-3.5 text-gold" />
+              <span className="text-[10px] font-bold text-gold uppercase tracking-widest">Target: ₹7.0L</span>
+            </div>
 
             <div className="space-y-6 flex-1 overflow-y-auto elite-scroll">
               <div>
@@ -791,27 +796,7 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
 
       {/* CENTER MAIN CHAT */}
       <div className="elite-main-chat">
-        {/* HEADER */}
-        <header className="h-20 border-b border-gold/10 flex items-center justify-between px-8 backdrop-blur-md sticky top-0 z-10">
-          <div className="flex items-center gap-4">
-            {!showSidebar && <button onClick={() => setShowSidebar(true)} className="text-gold mr-2"><PanelLeft className="w-5 h-5" /></button>}
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <h2 className="font-heading text-lg text-foreground">GrowthOS AI</h2>
-                <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              </div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Business Connected: AAR Salon</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-2 bg-gold/10 border border-gold/20 px-3 py-1.5 rounded-full">
-              <Target className="w-3.5 h-3.5 text-gold" />
-              <span className="text-[10px] font-bold text-gold uppercase tracking-widest">Target: ₹7.0L</span>
-            </div>
-            <div className="w-5" />
-          </div>
-        </header>
+        {/* HEADER REMOVED FOR MORE SPACE */}
 
         {/* CHAT AREA */}
         <div className="flex-1 overflow-y-auto p-8 elite-scroll flex flex-col">
