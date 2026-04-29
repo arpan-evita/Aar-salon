@@ -247,6 +247,8 @@ const AIGrowthAssistant = () => {
   const [question, setQuestion] = useState("");
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
 
   const [data, setData] = useState({
     invoices: [] as any[],
@@ -260,7 +262,25 @@ const AIGrowthAssistant = () => {
 
   useEffect(() => {
     fetchEverything();
+    fetchChatHistory();
   }, []);
+
+  const fetchChatHistory = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('ai_growth_chats')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error("Error fetching growth chats:", error);
+    } else {
+      setHistory(data || []);
+    }
+    setLoadingHistory(false);
+  };
 
   const fetchEverything = async () => {
     setLoading(true);
@@ -366,10 +386,26 @@ const AIGrowthAssistant = () => {
     });
   };
 
-  const handleAskAI = () => {
+  const handleAskAI = async () => {
     if (!question) return;
+    
+    const userMsg = question;
+    setQuestion("");
     setIsTyping(true);
-    setAiResponse(null);
+    
+    // 1. Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("Please sign in to use the AI Assistant");
+      setIsTyping(false);
+      return;
+    }
+
+    // 2. Add user message to local state & DB
+    const newUserMsg = { role: 'user' as const, content: userMsg, user_id: user.id };
+    setHistory(prev => [...prev, newUserMsg]);
+    
+    await supabase.from('ai_growth_chats').insert(newUserMsg);
 
     const salonData: SalonData = {
       revenue: {
@@ -388,7 +424,7 @@ const AIGrowthAssistant = () => {
         }).length
       },
       staff: {
-        total: 5, // Mock staff count for now
+        total: 5,
         avgUtilization: 100 - analysis.emptySlotPercentage,
         topPerformer: "Rahul"
       },
@@ -404,11 +440,14 @@ const AIGrowthAssistant = () => {
       }
     };
 
-    // Use proprietary AAR Local Intelligence Engine
-    const plan = generateGrowthPlan(salonData, question);
+    // Use proprietary AAR Local Intelligence Engine with history context
+    const plan = generateGrowthPlan(salonData, userMsg, history);
+    const assistantContent = plan.summary + "\n\n" + plan.steps.map((s, i) => `${i+1}. ${s}`).join("\n\n");
 
-    setTimeout(() => {
-      setAiResponse(plan.summary + "\n\n" + plan.steps.map((s, i) => `${i+1}. ${s}`).join("\n\n"));
+    setTimeout(async () => {
+      const assistantMsg = { role: 'assistant' as const, content: assistantContent, user_id: user.id };
+      setHistory(prev => [...prev, assistantMsg]);
+      await supabase.from('ai_growth_chats').insert(assistantMsg);
       setIsTyping(false);
     }, 1200);
   };
@@ -428,7 +467,6 @@ const AIGrowthAssistant = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20">
-      {/* 1. Main Command Center */}
       <div className="gold-gradient rounded-3xl p-[1.5px] shadow-2xl shadow-primary/20 relative overflow-hidden group">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(212,175,55,0.1),transparent)]" />
         <div className="rounded-3xl bg-background/95 p-6 md:p-10 relative">
@@ -443,76 +481,132 @@ const AIGrowthAssistant = () => {
                 Operating without external LLMs. ALI analyzes your specific data patterns against a curated salon industry knowledge base to provide localized, high-accuracy growth strategies.
               </p>
             </div>
-            
-            <div className="flex gap-4">
-              <div className="glass-strong border border-primary/20 rounded-2xl p-6 min-w-[200px]">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-1">Current Revenue</p>
-                <p className="text-3xl font-bold">{formatINR(analysis.currentRev)}</p>
-                <div className="mt-2 flex items-center gap-1 text-[10px] text-green-400">
-                  <TrendingUp className="w-3 h-3" /> Pace: {formatINR(analysis.projected)}
-                </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-10">
+            {/* Left Column: Memory & Response */}
+            <div className="space-y-6">
+              <div className="bg-background/40 backdrop-blur-md rounded-2xl border border-white/5 p-6 min-h-[400px] max-h-[600px] overflow-y-auto flex flex-col gap-4 scrollbar-hide">
+                {loadingHistory ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : history.length === 0 ? (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                      <Bot className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">No conversation history. Ask ALI something to begin your growth strategy.</p>
+                  </div>
+                ) : (
+                  history.map((msg, i) => (
+                    <div key={i} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-primary/20 text-primary' : 'bg-white/10 text-white'}`}>
+                        {msg.role === 'user' ? <Users className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                      </div>
+                      <div className={`max-w-[85%] rounded-2xl p-4 text-sm leading-relaxed whitespace-pre-line ${msg.role === 'user' ? 'bg-primary/10 border border-primary/20' : 'bg-white/5 border border-white/10'}`}>
+                        {msg.content}
+                      </div>
+                    </div>
+                  ))
+                )}
+                {isTyping && (
+                  <div className="flex gap-4">
+                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                      <Bot className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex gap-1">
+                      <div className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                      <div className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                      <div className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce" />
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="glass-strong border border-red-500/20 rounded-2xl p-6 min-w-[200px]">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-red-400 mb-1">Revenue Gap</p>
-                <p className="text-3xl font-bold">{formatINR(analysis.gap)}</p>
-                <p className="mt-2 text-[10px] text-muted-foreground">Needed for target</p>
+
+              <div className="relative">
+                <Input 
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAskAI()}
+                  placeholder="Ask Growth Brain about targets, retention, or systems..."
+                  className="h-16 pl-6 pr-32 bg-white/5 border-white/10 rounded-2xl focus:ring-primary/20"
+                />
+                <button 
+                  onClick={handleAskAI}
+                  disabled={isTyping}
+                  className="absolute right-2 top-2 h-12 px-6 bg-primary text-black font-bold rounded-xl hover:bg-primary/90 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  <Wand2 className="w-4 h-4" />
+                  Strategize
+                </button>
+              </div>
+            </div>
+
+            {/* Right Column: Key Opportunities (Static context based on analysis) */}
+            <div className="space-y-6">
+              <div className="bg-gradient-to-br from-primary/10 to-transparent p-1 rounded-3xl">
+                <div className="bg-[#0A0A0B] rounded-[calc(1.5rem-1px)] p-8 space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-heading text-xl text-foreground">Immediate Priorities</h3>
+                    <Sparkles className="w-5 h-5 text-primary" />
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {/* Priority 1 */}
+                    <div className="group bg-white/5 hover:bg-white/10 border border-white/10 p-5 rounded-2xl transition-all">
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center shrink-0">
+                          <AlertCircle className="w-5 h-5" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-bold">Retention Crisis</p>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            {analysis.churnRisk} customers haven't visited in 45 days. Projected loss: {formatINR(analysis.churnRisk * 1200)}.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Priority 2 */}
+                    <div className="group bg-white/5 hover:bg-white/10 border border-white/10 p-5 rounded-2xl transition-all">
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0">
+                          <Star className="w-5 h-5" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-bold">VIP Opportunity</p>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            {analysis.vipGaps} high-value customers (spent &gt;₹15k) are currently idle. Recommend personal outreach.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Priority 3 */}
+                    <div className="group bg-white/5 hover:bg-white/10 border border-white/10 p-5 rounded-2xl transition-all">
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+                          <Calendar className="w-5 h-5" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-bold">Slot Optimization</p>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            Your slots are {analysis.emptySlotPercentage}% empty on weekdays. Run a 'Flash Fill' promo.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button className="w-full h-14 border border-primary/20 hover:bg-primary/5 text-primary rounded-2xl font-bold transition-all flex items-center justify-center gap-2">
+                    <Download className="w-4 h-4" />
+                    Download Full Strategy PDF
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-
-          <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-3 items-end">
-             <div className="space-y-3">
-                <Label className="text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Monthly Target (₹)</Label>
-                <div className="relative">
-                   <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
-                   <Input 
-                      type="number"
-                      value={target}
-                      onChange={(e) => setTarget(Number(e.target.value))}
-                      className="bg-secondary/40 border-border/30 pl-11 py-6 text-lg font-bold rounded-2xl focus:ring-primary/20" 
-                   />
-                </div>
-             </div>
-             <div className="lg:col-span-2 space-y-3">
-                <Label className="text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Ask Growth Brain Anything</Label>
-                <div className="relative">
-                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                   <Input 
-                      placeholder="How can I reach ₹7 lakh? / What should I do today?" 
-                      value={question}
-                      onChange={(e) => setQuestion(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAskAI()}
-                      className="bg-secondary/40 border-border/30 pl-11 py-6 text-base rounded-2xl focus:ring-primary/20" 
-                   />
-                   <button 
-                      onClick={handleAskAI}
-                      disabled={isTyping}
-                      className="absolute right-2 top-2 bottom-2 gold-gradient px-6 rounded-xl text-[10px] font-bold uppercase tracking-widest text-primary-foreground hover:scale-[1.02] transition-transform disabled:opacity-50"
-                   >
-                      {isTyping ? "Thinking..." : "Strategize"}
-                   </button>
-                </div>
-             </div>
-          </div>
-
-          {aiResponse && (
-            <div className="mt-6 p-6 rounded-2xl bg-primary/5 border border-primary/10 animate-in fade-in slide-in-from-top-2 duration-500">
-               <div className="flex gap-4">
-                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                     <Bot className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="space-y-4 flex-1">
-                     <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">{aiResponse}</p>
-                     <div className="flex gap-2">
-                        <button className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
-                           <Wand2 className="w-3 h-3" /> Optimize Plan
-                        </button>
-                        <button className="text-[10px] font-bold text-muted-foreground hover:underline ml-4">Dismiss</button>
-                     </div>
-                  </div>
-               </div>
-            </div>
-          )}
         </div>
       </div>
 

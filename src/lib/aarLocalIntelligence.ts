@@ -115,14 +115,21 @@ export const synthesizeAdvice = (data: SalonData): ALIRecommendation[] => {
 
 /**
  * Strategy Generator: Creates a cohesive plan based on multiple recommendations
+ * Now accepts history for 'Contextual Memory'
  */
-export const generateGrowthPlan = (data: SalonData, query: string) => {
+export const generateGrowthPlan = (data: SalonData, query: string, history: any[] = []) => {
   const recs = synthesizeAdvice(data);
-  const persona = Math.random() > 0.5 ? "Dr. Basesh Gala" : "Rajiv Talreja";
-  
-  if (query.toLowerCase().includes("reach") || query.toLowerCase().includes("target")) {
+  const lowercaseQuery = query.toLowerCase();
+
+  // Reference memory if available
+  const hadPreviousDiscussion = history.length > 0;
+  const memoryContext = hadPreviousDiscussion 
+    ? `As we discussed earlier regarding ${history[history.length-1].content.slice(0, 30)}... ` 
+    : "";
+
+  if (lowercaseQuery.includes("reach") || lowercaseQuery.includes("target")) {
     return {
-      summary: `LISTEN CAREFULLY: To hit that ₹${(data.revenue.target/100000).toFixed(1)}L target, you must exit the 'Self-Employment Trap' and stop the 'Suicide Mission' of scaling without data. I've performed a 'Zero to 500Cr' blueprint check on your ₹${data.revenue.gap.toLocaleString()} gap.`,
+      summary: `${memoryContext}LISTEN CAREFULLY: To hit that ₹${(data.revenue.target/100000).toFixed(1)}L target, you must exit the 'Self-Employment Trap' and stop the 'Suicide Mission' of scaling without data. I've performed a 'Zero to 500Cr' blueprint check on your ₹${data.revenue.gap.toLocaleString()} gap.`,
       steps: recs.map(r => r.strategy),
       projections: {
         newRevenue: data.revenue.gap * 1.05,
@@ -131,8 +138,24 @@ export const generateGrowthPlan = (data: SalonData, query: string) => {
     };
   }
 
+  // Handle follow-up questions
+  if (hadPreviousDiscussion && (lowercaseQuery.includes("how") || lowercaseQuery.includes("elaborate") || lowercaseQuery.includes("explain"))) {
+     return {
+      summary: `You asked for more detail. Let's drill down. Based on our history, the bottleneck is your 'Pace'. You need to transition from 'Aunt' to 'Mother' in your people strategy.`,
+      steps: [
+        "Master the 'Tongue' pillar: Script your checkout upsells.",
+        "Implement weekly 'Data Audits' to stop leakages.",
+        "Use Rajiv's '6 R's' to automate team reviews."
+      ],
+      projections: {
+        newRevenue: 15000,
+        confidence: 85
+      }
+    };
+  }
+
   return {
-    summary: `Your business is currently a 'Push Product'. Let's turn it into a 'Vital Solution' for the 'India 2' class using the 'Janani vs Khaala' people strategy.`,
+    summary: `${memoryContext}Your business is currently a 'Push Product'. Let's turn it into a 'Vital Solution' for the 'India 2' class using the 'Janani vs Khaala' people strategy.`,
     steps: recs.slice(0, 3).map(r => r.strategy),
     projections: {
       newRevenue: 45000,
