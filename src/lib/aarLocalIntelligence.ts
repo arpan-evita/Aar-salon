@@ -62,6 +62,38 @@ export interface GrowthPlan {
   };
 }
 
+const EXPERT_PILLARS = {
+  ACQUISITION: [
+    "In the high-end salon industry, acquisition isn't about 'getting more feet in the door'—it's about attracting the top 10% of spenders in AAR Salon's local radius. I recommend we stop chasing new clients with discounts and instead launch a 'Signature Transformation' campaign on Instagram. We should showcase the specific results of your Botox and Bridal rituals, as these are your highest-trust services.",
+    "To hit our ₹7L target, every new lead must be treated as a high-ticket opportunity. I suggest using a 'Digital Consultation' magnet where potential clients can upload a photo for an expert skin or hair analysis. This builds professional authority before they even step into the salon, making them much more likely to book a premium ₹5k+ package rather than a basic haircut.",
+    "We need to focus on 'Mirror Marketing'. Your current VIPs are your best referral source. I suggest an exclusive 'Invitation Only' event where your top 20 clients can bring one friend for a complimentary 'Express Glow-up'. This ensures your new acquisitions are pre-vetted and have the same spending capacity as your best customers."
+  ],
+  SCALING: [
+    "To scale AAR Salon effectively, we must move from 'Operator Mode' to 'Systems Mode'. If your presence is required for the salon to function, you don't have a business—you have a job. We need to implement 'People-Independent' SOPs for every touchpoint, from the moment a lead clicks an ad to the post-service follow-up.",
+    "Scaling from one branch to many requires absolute consistency. We should start by standardizing your 'Client Consultation Flow'. Every stylist should follow the exact same 3-step diagnosis process. This ensures the AAR Salon 'Signature Experience' is identical, regardless of who is performing the service.",
+    "Systems are the only way to fill our ₹{gap} revenue gap without burning out your team. By automating the win-back and birthday flows, we ensure the business is working for you 24/7, allowing you to focus on high-level expansion strategy."
+  ],
+  TEAM_PERFORMANCE: [
+    "We need to shift your stylists from being technicians to 'Growth Partners'. Using the 'Performance' pillar of our growth model, we should reward team members who maintain a repeat customer rate of 75% or higher. These aren't just employees; they are the custodians of your revenue stability.",
+    "I've noticed some underutilization in the current floor schedule. We should implement a 'Dynamic Commission' model where stylists get a bonus for converting basic haircuts into 'Ritual Bundles' (e.g., Haircut + Kerastase + Home Care). This aligns their income directly with our ₹7L monthly goal.",
+    "The secret to a high-performing salon team is 'Continuous Education'. Not just in technical skills, but in 'Consultative Selling'. Your team shouldn't 'sell' products; they should 'prescribe' solutions. Every client should leave with a 28-day roadmap for their hair or skin health."
+  ],
+  REVENUE_MAXIMIZATION: [
+    "To bridge the ₹{gap} gap, we must focus on Average Order Value (AOV). The fastest way to do this is at the wash station. A ₹800 'Flash Treatment' takes zero extra time but has a 95% profit margin. If we convert just 30% of your daily traffic, we hit our targets significantly faster.",
+    "We need to implement 'Anchor Pricing' across your service menu. By placing a high-end ₹50k 'Full Restoration' package at the top, your ₹15k Botox and ₹8k Skin treatments look like incredible value. It’s a psychological move that shifts the client's mindset from 'cost' to 'investment'.",
+    "Grand Slam Offers are our best tool for rapid revenue recovery. I recommend a 'Bridal Glow-Up Roadmap'—a 3-month package that includes trials, facials, and a home-care kit. By bundling the stress-relief of 'Certainty' with the technical service, you can charge a 40% premium over single bookings."
+  ]
+};
+
+const HUMANIZE_FRAGMENTS = {
+  scaling: "Looking at AAR Salon's current operations and your goal to scale beyond the current floor limits...",
+  team: "Regarding your team's performance—to hit our ₹7L target, we need to move them into 'Growth Partner' roles...",
+  retention: "I've been analyzing our client retention data. With a ₹{gap} gap, we can't afford a single 'One-and-Done' visit...",
+  acquisition: "For our acquisition strategy, I've designed a high-leverage plan to attract premium spenders...",
+  revenue: "To maximize our revenue and bridge that ₹{gap} gap, we need to focus on our high-margin 'Signature Rituals'...",
+  general: "I've been scanning the latest metrics for AAR Salon and comparing them against our ₹7L growth roadmap..."
+};
+
 export const generateGrowthPlan = async (
   q: string, 
   data: SalonData, 
@@ -74,135 +106,65 @@ export const generateGrowthPlan = async (
   
   const intents = {
     scaling: query.includes("scale") || query.includes("system") || query.includes("sop") || query.includes("expand"),
-    team: query.includes("staff") || query.includes("team") || query.includes("stylist") || query.includes("employee"),
-    retention: query.includes("retention") || query.includes("churn") || query.includes("loyalty") || query.includes("comeback"),
+    team: query.includes("staff") || query.includes("team") || query.includes("stylist") || query.includes("employee") || query.includes("performance"),
+    retention: query.includes("retention") || query.includes("churn") || query.includes("loyalty") || query.includes("comeback") || query.includes("loyal"),
     upsell: query.includes("upsell") || query.includes("aov") || query.includes("ticket") || query.includes("bundle"),
     botox: query.includes("botox") || query.includes("filler") || query.includes("premium"),
-    bridal: query.includes("bridal") || query.includes("wedding"),
-    acquisition: query.includes("acquisition") || query.includes("new client") || query.includes("leads") || query.includes("marketing") || query.includes("attract") || query.includes("customer")
+    bridal: query.includes("bridal") || query.includes("wedding") || query.includes("bride"),
+    acquisition: query.includes("acquisition") || query.includes("new client") || query.includes("leads") || query.includes("marketing") || query.includes("attract") || query.includes("getting") || query.includes("customer")
   };
 
-  let summary = "";
-  let strategies: GrowthPlan['strategies'] = [];
-  let offers: GrowthPlan['offers'] = [];
-  let metrics: GrowthPlan['metrics'] = [];
-  let intentName = "growth";
+  let pillarAdvice: string[] = [];
+  let intentName: keyof typeof HUMANIZE_FRAGMENTS = "general";
 
-  // ACQUISITION / MARKETING
-  if (intents.acquisition || query.includes("marketing")) {
-    intentName = "marketing";
-    summary = `Based on our current revenue gap of ₹${gap.toLocaleString()}, I've designed a high-leverage acquisition plan to attract premium spenders to AAR Salon. We should stop chasing new clients with generic discounts and instead launch a 'Signature Transformation' campaign.`;
-    
-    strategies = [
-      {
-        title: "Signature Transformation Campaign",
-        impact: "High (₹1.2L+)",
-        difficulty: "Medium",
-        timeline: "14 Days",
-        details: "Showcase the specific results of your Botox and Bridal rituals on Instagram. Focus on the 'V-Shape' facial results to attract high-intent spenders."
-      },
-      {
-        title: "Digital Consultation Magnet",
-        impact: "Medium (₹45k+)",
-        difficulty: "Easy",
-        timeline: "7 Days",
-        details: "Implement a digital analysis where leads upload a photo for a skin/hair report. Builds authority before they ever step into the salon."
-      }
-    ];
+  if (intents.acquisition) {
+    pillarAdvice = [EXPERT_PILLARS.ACQUISITION[0], EXPERT_PILLARS.ACQUISITION[1]];
+    intentName = "acquisition";
+  } else if (intents.scaling) {
+    pillarAdvice = [EXPERT_PILLARS.SCALING[0], EXPERT_PILLARS.SCALING[1]];
+    intentName = "scaling";
+  } else if (intents.team) {
+    pillarAdvice = [EXPERT_PILLARS.TEAM_PERFORMANCE[0], EXPERT_PILLARS.TEAM_PERFORMANCE[1]];
+    intentName = "team";
+  } else if (intents.botox || intents.upsell || intents.revenue) {
+    pillarAdvice = [EXPERT_PILLARS.REVENUE_MAXIMIZATION[0], EXPERT_PILLARS.REVENUE_MAXIMIZATION[1]];
+    intentName = "revenue";
+  } else if (intents.retention) {
+    pillarAdvice = [EXPERT_PILLARS.TEAM_PERFORMANCE[0], EXPERT_PILLARS.ACQUISITION[2]];
+    intentName = "retention";
+  } else {
+    pillarAdvice = [EXPERT_PILLARS.SCALING[2], EXPERT_PILLARS.REVENUE_MAXIMIZATION[2]];
+    intentName = "general";
+  }
 
-    offers = [
-      {
-        name: "First-Timer Premium Glow",
-        target: "Local High-Spenders",
-        benefit: "₹2,500 off high-ticket ritual",
-        action: "Launch Instagram Ad"
-      }
-    ];
-  } 
-  // SCALING / SYSTEMS
-  else if (intents.scaling || query.includes("system")) {
-    intentName = "strategy";
-    summary = `To scale AAR Salon effectively, we must move from 'Operator Mode' to 'Systems Mode'. Your presence shouldn't be the bottleneck for revenue growth. I've outlined the core SOPs we need to implement to bridge the ₹${gap.toLocaleString()} gap.`;
-    
-    strategies = [
-      {
-        title: "Client Consultation SOP",
-        impact: "High (Systems)",
-        difficulty: "Medium",
-        timeline: "10 Days",
-        details: "Standardize the 3-step diagnosis process for every stylist. Ensures a consistent 'AAR Salon Experience' regardless of who is working."
-      },
-      {
-        title: "Automated Win-Back Flows",
-        impact: "Medium (₹35k+)",
-        difficulty: "Easy",
-        timeline: "3 Days",
-        details: "Set up background triggers for clients who haven't visited in 45 days. Fully automated via our WhatsApp integration."
-      }
-    ];
-  }
-  // TEAM / STAFF
-  else if (intents.team || query.includes("staff")) {
-    intentName = "staff";
-    summary = `Your team is the 'Employee' pillar of the PACE framework. To hit our ₹7L target, we need to shift them from technicians to growth partners. I've identified two key areas for performance improvement.`;
-    
-    metrics = [
-      { label: "Avg Stylist Utilization", value: "64%", change: "+5%", trend: "up" },
-      { label: "Upsell Conversion", value: "22%", change: "-3%", trend: "down" }
-    ];
+  const introTemplate = HUMANIZE_FRAGMENTS[intentName] || HUMANIZE_FRAGMENTS.general;
+  const intro = introTemplate.replace("{gap}", gap.toLocaleString());
+  const core = pillarAdvice.join("\n\n");
+  
+  const followUps = [
+    "Should we start by mapping out the 'Consultation SOP' for your top stylists this week?",
+    "Want me to check our current client database for the best candidates for this 'Invitation Only' event?",
+    "Shall I draft a social media roadmap for these 'Signature Transformation' stories?",
+    "Which of these moves should we prioritize first to bridge the current revenue gap?",
+    "Does this align with your vision for the AAR Salon brand experience?"
+  ];
+  const followUp = followUps[Math.floor(Math.random() * followUps.length)];
 
-    strategies = [
-      {
-        title: "Consultative Sales Training",
-        impact: "High (₹80k+)",
-        difficulty: "Medium",
-        timeline: "21 Days",
-        details: "Train staff to 'prescribe' solutions rather than 'sell' products. Every client leaves with a 28-day health roadmap."
-      }
-    ];
+  let serviceBonus = "";
+  if (query.includes("botox")) {
+    serviceBonus = "\n\n**Expert Note:** Botox is a trust-based service. I recommend we stop selling single sessions and transition to a 'Youth Maintenance' annual plan. It secures our recurring revenue and ensures the client gets the best long-term results.";
+  } else if (query.includes("bridal")) {
+    serviceBonus = "\n\n**Expert Note:** Brides are buying 'Certainty' and 'Peace of Mind'. Our strategy should be a 3-month 'Glow-Up Roadmap' that bundles all trials and treatments into one high-ticket package.";
   }
-  // BOTOX / PREMIUM
-  else if (intents.botox || query.includes("premium")) {
-    intentName = "strategy";
-    summary = `Botox and premium rituals are your highest-margin services. To bridge the ₹${gap.toLocaleString()} gap, we should stop selling single sessions and transition to 'Youth Maintenance' annual plans.`;
-    
-    offers = [
-      {
-        name: "Annual Youth Maintenance",
-        target: "VIP / 35+ Demographic",
-        benefit: "4 Sessions for ₹40k (Save ₹20k)",
-        action: "Send to VIPs"
-      }
-    ];
 
-    metrics = [
-      { label: "Botox Margin", value: "65%", change: "Industry Peak", trend: "up" }
-    ];
-  }
-  // DEFAULT
-  else {
-    summary = `Hey! I've been scanning the latest metrics for AAR Salon. We're currently about ₹${gap.toLocaleString()} away from our monthly target of ₹${data.revenue.target?.toLocaleString()}. I've put together a mixed strategy to bridge this gap through upselling and systems.`;
-    
-    strategies = [
-      {
-        title: "Wash-Station Ritual Upsell",
-        impact: "High (90% Profit)",
-        difficulty: "Easy",
-        timeline: "Immediate",
-        details: "Convert 30% of haircut clients to a ₹800 'Flash Ritual'. Takes 5 mins extra, massive revenue impact."
-      }
-    ];
-  }
+  const finalSummary = `${intro}\n\n${core}${serviceBonus}\n\n${followUp}`;
 
   return {
     intent: intentName,
     isReinforced: false,
-    summary,
+    summary: finalSummary,
     steps: [],
-    strategies,
-    offers,
-    metrics,
-    projections: { newRevenue: gap * 0.45, confidence: 92 }
+    projections: { newRevenue: gap * 0.40, confidence: 92 }
   };
 };
 
