@@ -69,41 +69,41 @@ export const KNOWLEDGE_BASE = {
       advice: "Try a 'Total Transformation Bundle'. Put your top 3 services together, give a 20% discount but throw in a free home care kit. It brings in quick cash and keeps people coming back.",
       title: "The Bundle Move",
       impact: "High" as const,
-      consultant: "Alex Hormozi"
+      consultant: "Strategy Engine"
     }
   ],
   MINDSET: [
     {
       condition: (d: SalonData) => d.revenue.current > 500000,
-      advice: "Rajiv Talreja says: Move from being a 'Self-Employed' operator to a 'Business Owner'. Stop focusing on technical skills and start focusing on the P-A-C-E system (Performance, Accounting, Customer, Employee). Your job isn't to cut hair; it's to build the person who cuts the hair.",
+      advice: "Think of your business as a system. Move from being an operator to a true owner. Focus on the P-A-C-E system (Performance, Accounting, Customer, Employee). Your primary job is to build the people who run the floor, not do the work yourself.",
       title: "CEO Identity Shift",
       impact: "High" as const,
-      consultant: "Rajiv Talreja"
+      consultant: "Strategy Engine"
     }
   ],
-  SCALING_GALA: [
+  SCALING: [
     {
       condition: (d: SalonData) => d.revenue.current > 0,
-      advice: "Dr. Basesh Gala Framework: To scale from 1 branch to 10, you need 'Systems that are People Independent'. If your salon stops when you leave, you don't have a business, you have a job. Focus on Standard Operating Procedures (SOPs) for every single customer touchpoint.",
+      advice: "To scale effectively, your business must be 'People Independent'. If the salon stops when you leave, you have a job, not a business. We need Standard Operating Procedures (SOPs) for every customer touchpoint.",
       title: "The Scaling Blueprint",
       impact: "High" as const,
-      consultant: "Dr. Basesh Gala"
+      consultant: "Strategy Engine"
     }
   ],
   SERVICE_EXPERTISE: {
     BOTOX: {
-      advice: "Gala's High-Margin Rule: Botox is your 'Premium Anchor'. Don't just sell one session; suggest an annual 'Youth Maintenance' plan. Maybe 4 sessions a year for ₹40k instead of ₹15k each. It's better for their results and better for your bank balance.",
-      upsell: "Pair with Hydrafacial for skin prep. It’s an easy ₹3,500 extra per client.",
+      advice: "Apply the High-Margin Rule: Botox is your premium anchor. Suggest an annual 'Maintenance' plan—4 sessions a year for ₹40k instead of ₹15k each. It locks in your recurring revenue.",
+      upsell: "Pair it with a Hydrafacial for skin prep. It’s an easy ₹3,500 extra per client and the results are night and day.",
       target: "VIPs and your 35+ crowd"
     },
     BRIDAL: {
-      advice: "Talreja's Customer Experience: Brides aren't buying makeup; they're buying 'Certainty'. Offer a 3-month Roadmap. Include trials and facials in one package. They’ll pay a 40% premium just for the peace of mind.",
-      upsell: "Throw in a free Mother of the Bride express service to close high-ticket bookings.",
+      advice: "Brides are looking for certainty, not just makeup. Offer a 3-month Roadmap including trials and facials. They’ll pay a significant premium for the peace of mind of having a system in place.",
+      upsell: "Offer a free 'Mother of the Bride' express service as a value-add to close high-ticket bookings.",
       target: "Any new bridal inquiries"
     },
     HAIRCUT: {
-      advice: "Talreja's Retention Rule: Every haircut is a lead for your high-margin services. Give them a 'Hair Health' card that tells them exactly when they need a treatment to keep the shine.",
-      upsell: "Suggest a quick ritual at the wash station for ₹800. 100% profit.",
+      advice: "The Retention Rule: Every haircut is a lead for your high-margin services. Use a 'Hair Health' card to show them exactly when they need a treatment to maintain the look.",
+      upsell: "Suggest a quick ritual at the wash station for ₹800. It’s 100% profit.",
       target: "Regulars"
     }
   }
@@ -134,23 +134,23 @@ export const generateGrowthPlan = async (
   const isReinforced = false;
   const gap = data.revenue.gap || 0;
 
-  // 1. Scaling & Systems (Dr. Basesh Gala Focus)
+  // 1. Scaling & Systems
   if (ctx.isScaling || query.includes("system")) {
-    const advice = KNOWLEDGE_BASE.SCALING_GALA[0].advice;
+    const advice = KNOWLEDGE_BASE.SCALING[0].advice;
     return {
       intent: 'growth',
       isReinforced,
-      summary: `I've been thinking about your goal of scaling. Dr. Basesh Gala always says: "Your business must be people-independent." \n\nRight now, we have a ₹${gap.toLocaleString()} gap, and the only way to fill it without burning out is to build SOPs. \n\n${advice}\n\nShall we start by mapping out your 'Customer Welcome' SOP to ensure every new lead is handled perfectly?`,
+      summary: `I've been looking at your numbers and your goal to scale. I firmly believe your business must become 'people-independent' to reach the next level. \n\nRight now, we have a ₹${gap.toLocaleString()} gap to bridge. The key isn't working harder, but building better SOPs. \n\n${advice}\n\nShall we start by mapping out your 'Customer Welcome' system to ensure every new lead is handled with 100% consistency?`,
       steps: [], projections: { newRevenue: gap * 0.50, confidence: 95 }
     };
   }
 
-  // 2. Performance & Team (Rajiv Talreja Focus)
+  // 2. Team & Performance
   if (ctx.isStaff || query.includes("team")) {
     return {
       intent: 'staff',
       isReinforced,
-      summary: `To bridge your ₹${gap.toLocaleString()} gap, we need to focus on your 'Employees'—the 'E' in Rajiv Talreja’s P-A-C-E system.\n\nYour current staff utilization seems to have room for growth. We need to shift them from being 'technicians' to 'growth partners'. \n\n**Action Move:** ${KNOWLEDGE_BASE.MINDSET[0].advice}\n\nDo you want me to look at which team members are hitting their retail targets and who needs coaching?`,
+      summary: `To bridge your ₹${gap.toLocaleString()} gap, we should focus on the 'Employees' pillar of our growth model. \n\nI think we have room to shift your team from being technicians to true growth partners. \n\n**My Recommendation:** ${KNOWLEDGE_BASE.MINDSET[0].advice}\n\nDo you want me to check which team members are hitting their targets and who might need a bit of coaching?`,
       steps: [], projections: { newRevenue: data.revenue.current * 0.15, confidence: 91 }
     };
   }
@@ -160,17 +160,18 @@ export const generateGrowthPlan = async (
     return {
       intent: 'marketing',
       isReinforced,
-      summary: `If we're talking acquisition, we need to look at 'Customer'—the 'C' in P-A-C-E. \n\nSince we have a ₹${gap.toLocaleString()} target, I'd suggest a 'High-Value Lead Magnet' on Instagram. Instead of just showing haircuts, show 'Success Stories' and offer a free 'Hair Health Consultation'. \n\nIt builds massive trust before they even step into the salon. Want to try a draft for a social media campaign?`,
+      summary: `For acquisition, we need to look at our 'Customer' pillar. \n\nWith our ₹${gap.toLocaleString()} target, I'd suggest a 'High-Value Lead Magnet' on social media. Instead of just showing haircuts, let's show 'Success Stories' and offer a free 'Hair Health Consultation'. \n\nIt builds trust before they even step into the salon. Want me to draft a quick social media campaign for this?`,
       steps: [], projections: { newRevenue: gap * 0.30, confidence: 85 }
     };
   }
 
   // 4. Botox / Specific Services
   if (query.includes("botox")) {
+    const expertise = KNOWLEDGE_BASE.SERVICE_EXPERTISE.BOTOX;
     return {
       intent: 'marketing',
       isReinforced,
-      summary: `I've been looking at your Botox numbers and that ₹${gap.toLocaleString()} gap. Honestly, we should stop selling Botox as just a one-time treatment.\n\nApplying Gala's High-Margin Rule: suggest an annual 'Youth Maintenance' plan. If you offer 4 sessions for ₹40k, you lock in recurring revenue right away. \n\nAlso, try suggesting a Hydrafacial for prep. It’s an easy ₹3,500 extra. Do you want me to help you figure out which VIPs to reach out to first?`,
+      summary: `I've been looking at your Botox numbers and that ₹${gap.toLocaleString()} gap. Honestly, we should stop selling Botox as just a one-time treatment.\n\nWe should use the 'High-Margin Rule' here: suggest an annual 'Maintenance' plan. If you offer 4 sessions for ₹40k, you lock in recurring revenue right away. \n\nAlso, try suggesting a Hydrafacial for prep—it's an easy extra ₹3,500. Want me to see which VIPs we should reach out to first?`,
       steps: [], projections: { newRevenue: gap * 0.45, confidence: 92 }
     };
   }
@@ -180,7 +181,7 @@ export const generateGrowthPlan = async (
     return {
       intent: 'marketing',
       isReinforced,
-      summary: `Let's build a 'Grand Slam' offer to bridge that ₹${gap.toLocaleString()} gap. \n\nI recommend a 'Total Transformation' bundle. We pick your top services, bundle them up, and give a 20% discount but throw in a free home care kit. \n\nI can help you write the WhatsApp message for this if you're ready to send it out to your at-risk clients. Want to see a draft?`,
+      summary: `Let's build a 'Grand Slam' offer to bridge that ₹${gap.toLocaleString()} gap. \n\nI recommend a 'Total Transformation' bundle: pick your top services, bundle them up, and throw in a free home care kit. It makes the value look huge. \n\nI can help you write the WhatsApp message for this if you're ready. Want to see a draft?`,
       steps: [], projections: { newRevenue: gap * 0.35, confidence: 88 }
     };
   }
@@ -189,7 +190,7 @@ export const generateGrowthPlan = async (
   return {
     intent: 'growth',
     isReinforced,
-    summary: `Hey! I've been scanning the latest data. We're currently about ₹${gap.toLocaleString()} away from our monthly target of ₹${data.revenue.target?.toLocaleString()}.\n\nApplying the Talreja mindset: the best thing you can do this week is move from being an operator to an owner. Focus on your systems and team coaching. \n\nWhere do you want to start today? We could look at your marketing, or maybe your team's retention numbers?`,
+    summary: `Hey! I've been scanning the latest data. We're currently about ₹${gap.toLocaleString()} away from our monthly target of ₹${data.revenue.target?.toLocaleString()}.\n\nThe best thing you can do this week is move from being an operator to an owner. Focus on your systems and coaching the team. \n\nWhere do you want to start today? We could look at your marketing, or maybe your team's retention numbers?`,
     steps: [], projections: { newRevenue: gap * 0.40, confidence: 82 }
   };
 };
