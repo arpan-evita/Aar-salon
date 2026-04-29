@@ -657,7 +657,9 @@ const AIGrowthAssistant = () => {
             )}
             <div ref={chatEndRef} />
           </div>
-             <div className="elite-input-container">
+        </div>
+
+        <div className="elite-input-container">
           <div className="max-w-4xl mx-auto space-y-4">
             {/* ATTACHMENT PREVIEW */}
             {attachments.length > 0 && (
