@@ -62,50 +62,37 @@ export interface GrowthPlan {
   };
 }
 
-const REASONING_PILLARS = {
-  SCALING: [
-    "To scale effectively, your business must be 'People Independent'. If the salon stops when you leave, you have a job, not a business.",
-    "The secret to moving from 1 to 10 branches is Standard Operating Procedures (SOPs) for every customer touchpoint.",
-    "Systems are the only way to fill your revenue gap without burning yourself or your team out."
-  ],
-  TEAM: [
-    "Move your staff from being 'technicians' to 'growth partners'. They should be the 'E' (Employee) pillar in your performance model.",
-    "Your job as an owner is to build the people who build the business, not to do the technical work yourself.",
-    "Reward stylists who maintain a 75%+ repeat rate—they are the backbone of your stable revenue."
-  ],
-  CUSTOMERS: [
-    "Every haircut is actually a lead for a higher-margin service. Never let a client leave without a 'Hair Health' roadmap.",
-    "Acquisition isn't about ads; it's about building trust. Show 'Success Stories' and offer 'Expert Consultations' rather than discounts.",
-    "Segment your VIPs and treat them like gold. One high-ticket annual maintenance plan is worth 10 one-off bookings."
-  ],
-  REVENUE: [
-    "Bridge your gap by focusing on ticket size (AOV). A ₹500 upsell at the wash station has a 90% profit margin.",
-    "Anchor your prices. Put your most expensive package first to make everything else look like a steal.",
-    "Grand Slam Offers: Combine services into a bundle, add a free kit, and limit it to 50 people to create massive urgency."
-  ],
+const EXPERT_PILLARS = {
   ACQUISITION: [
-    "For getting new clients, we need to focus on the 'Customer' pillar. I recommend a 'High-Value Lead Magnet'—offer a free 'Hair Health Consultation' on Instagram to build trust first.",
-    "Stop chasing new clients with discounts. Instead, show 'Before & After' transformations of your top services. It attracts high-intent spenders.",
-    "Target your local area with a 'VIP First-Timer Experience' package. It should feel like a premium invitation, not a promo."
+    "In the high-end salon industry, acquisition isn't about 'getting more feet in the door'—it's about attracting the top 10% of spenders in AAR Salon's local radius. I recommend we stop chasing new clients with discounts and instead launch a 'Signature Transformation' campaign on Instagram. We should showcase the specific results of your Botox and Bridal rituals, as these are your highest-trust services.",
+    "To hit our ₹7L target, every new lead must be treated as a high-ticket opportunity. I suggest using a 'Digital Consultation' magnet where potential clients can upload a photo for an expert skin or hair analysis. This builds professional authority before they even step into the salon, making them much more likely to book a premium ₹5k+ package rather than a basic haircut.",
+    "We need to focus on 'Mirror Marketing'. Your current VIPs are your best referral source. I suggest an exclusive 'Invitation Only' event where your top 20 clients can bring one friend for a complimentary 'Express Glow-up'. This ensures your new acquisitions are pre-vetted and have the same spending capacity as your best customers."
+  ],
+  SCALING: [
+    "To scale AAR Salon effectively, we must move from 'Operator Mode' to 'Systems Mode'. If your presence is required for the salon to function, you don't have a business—you have a job. We need to implement 'People-Independent' SOPs for every touchpoint, from the moment a lead clicks an ad to the post-service follow-up.",
+    "Scaling from one branch to many requires absolute consistency. We should start by standardizing your 'Client Consultation Flow'. Every stylist should follow the exact same 3-step diagnosis process. This ensures the AAR Salon 'Signature Experience' is identical, regardless of who is performing the service.",
+    "Systems are the only way to fill our ₹{gap} revenue gap without burning out your team. By automating the win-back and birthday flows, we ensure the business is working for you 24/7, allowing you to focus on high-level expansion strategy."
+  ],
+  TEAM_PERFORMANCE: [
+    "We need to shift your stylists from being technicians to 'Growth Partners'. Using the 'Performance' pillar of our growth model, we should reward team members who maintain a repeat customer rate of 75% or higher. These aren't just employees; they are the custodians of your revenue stability.",
+    "I've noticed some underutilization in the current floor schedule. We should implement a 'Dynamic Commission' model where stylists get a bonus for converting basic haircuts into 'Ritual Bundles' (e.g., Haircut + Kerastase + Home Care). This aligns their income directly with our ₹7L monthly goal.",
+    "The secret to a high-performing salon team is 'Continuous Education'. Not just in technical skills, but in 'Consultative Selling'. Your team shouldn't 'sell' products; they should 'prescribe' solutions. Every client should leave with a 28-day roadmap for their hair or skin health."
+  ],
+  REVENUE_MAXIMIZATION: [
+    "To bridge the ₹{gap} gap, we must focus on Average Order Value (AOV). The fastest way to do this is at the wash station. A ₹800 'Flash Treatment' takes zero extra time but has a 95% profit margin. If we convert just 30% of your daily traffic, we hit our targets significantly faster.",
+    "We need to implement 'Anchor Pricing' across your service menu. By placing a high-end ₹50k 'Full Restoration' package at the top, your ₹15k Botox and ₹8k Skin treatments look like incredible value. It’s a psychological move that shifts the client's mindset from 'cost' to 'investment'.",
+    "Grand Slam Offers are our best tool for rapid revenue recovery. I recommend a 'Bridal Glow-Up Roadmap'—a 3-month package that includes trials, facials, and a home-care kit. By bundling the stress-relief of 'Certainty' with the technical service, you can charge a 40% premium over single bookings."
   ]
 };
 
 const HUMANIZE_FRAGMENTS = {
-  scaling: "Looking at your goal to scale the business and bridge that ₹{gap} gap...",
-  team: "Thinking about your team performance and how we can hit that ₹7L target...",
-  retention: "I've been scanning your retention metrics—with a ₹{gap} gap, we need to keep every client we have...",
-  acquisition: "Regarding customer acquisition, I have a specific strategy to help you hit that ₹7L goal...",
-  revenue: "To bridge your ₹{gap} revenue gap, we need to look at your high-margin services...",
-  general: "I've been looking at your latest salon data and comparing it to our ₹7L target..."
+  scaling: "Looking at AAR Salon's current operations and your goal to scale beyond the current floor limits...",
+  team: "Regarding your team's performance—to hit our ₹7L target, we need to move them into 'Growth Partner' roles...",
+  retention: "I've been analyzing our client retention data. With a ₹{gap} gap, we can't afford a single 'One-and-Done' visit...",
+  acquisition: "For our acquisition strategy, I've designed a high-leverage plan to attract premium spenders...",
+  revenue: "To maximize our revenue and bridge that ₹{gap} gap, we need to focus on our high-margin 'Signature Rituals'...",
+  general: "I've been scanning the latest metrics for AAR Salon and comparing them against our ₹7L growth roadmap..."
 };
-
-const FOLLOW_UPS = [
-  "Does that sound like something we should try this week?",
-  "Shall we start mapping out the SOP for this together?",
-  "Want me to see which of your VIPs we should reach out to first?",
-  "Should I draft the WhatsApp message for this campaign?",
-  "What do you think? Which part of this should we prioritize?"
-];
 
 export const generateGrowthPlan = async (
   q: string, 
@@ -115,57 +102,59 @@ export const generateGrowthPlan = async (
 ): Promise<GrowthPlan> => {
   const query = q.toLowerCase();
   const gap = data.revenue.gap || 0;
-  
-  // ADVANCED CONTEXT DETECTION
   const fullHistoryText = (history.map(h => h.content.toLowerCase()).join(" ") + " " + query);
   
-  // 1. Determine Intent Scars
   const intents = {
-    scaling: query.includes("scale") || query.includes("system") || query.includes("sop"),
-    team: query.includes("staff") || query.includes("team") || query.includes("stylist") || query.includes("employee"),
-    retention: query.includes("retention") || query.includes("churn") || query.includes("loyalty") || query.includes("old client") || query.includes("comeback"),
-    upsell: query.includes("upsell") || query.includes("aov") || query.includes("ticket"),
-    botox: query.includes("botox") || query.includes("premium") || query.includes("high ticket"),
-    bridal: query.includes("bridal") || query.includes("wedding"),
-    acquisition: query.includes("acquisition") || query.includes("new client") || query.includes("leads") || query.includes("marketing") || query.includes("attract") || query.includes("getting")
+    scaling: query.includes("scale") || query.includes("system") || query.includes("sop") || query.includes("expand"),
+    team: query.includes("staff") || query.includes("team") || query.includes("stylist") || query.includes("employee") || query.includes("performance"),
+    retention: query.includes("retention") || query.includes("churn") || query.includes("loyalty") || query.includes("comeback") || query.includes("loyal"),
+    upsell: query.includes("upsell") || query.includes("aov") || query.includes("ticket") || query.includes("bundle"),
+    botox: query.includes("botox") || query.includes("filler") || query.includes("premium"),
+    bridal: query.includes("bridal") || query.includes("wedding") || query.includes("bride"),
+    acquisition: query.includes("acquisition") || query.includes("new client") || query.includes("leads") || query.includes("marketing") || query.includes("attract") || query.includes("getting") || query.includes("customer")
   };
 
-  // 2. Select Reasoning Pillar & Intro
   let pillarAdvice: string[] = [];
   let intentName: keyof typeof HUMANIZE_FRAGMENTS = "general";
 
   if (intents.acquisition) {
-    pillarAdvice = [REASONING_PILLARS.ACQUISITION[0], REASONING_PILLARS.ACQUISITION[1]];
+    pillarAdvice = [EXPERT_PILLARS.ACQUISITION[0], EXPERT_PILLARS.ACQUISITION[1]];
     intentName = "acquisition";
   } else if (intents.scaling) {
-    pillarAdvice = [REASONING_PILLARS.SCALING[0], REASONING_PILLARS.SCALING[1]];
+    pillarAdvice = [EXPERT_PILLARS.SCALING[0], EXPERT_PILLARS.SCALING[1]];
     intentName = "scaling";
   } else if (intents.team) {
-    pillarAdvice = [REASONING_PILLARS.TEAM[1], REASONING_PILLARS.TEAM[2]];
+    pillarAdvice = [EXPERT_PILLARS.TEAM_PERFORMANCE[0], EXPERT_PILLARS.TEAM_PERFORMANCE[1]];
     intentName = "team";
-  } else if (intents.botox || intents.upsell) {
-    pillarAdvice = [REASONING_PILLARS.REVENUE[0], REASONING_PILLARS.REVENUE[1]];
+  } else if (intents.botox || intents.upsell || intents.revenue) {
+    pillarAdvice = [EXPERT_PILLARS.REVENUE_MAXIMIZATION[0], EXPERT_PILLARS.REVENUE_MAXIMIZATION[1]];
     intentName = "revenue";
   } else if (intents.retention) {
-    pillarAdvice = [REASONING_PILLARS.CUSTOMERS[0], REASONING_PILLARS.CUSTOMERS[2]];
+    pillarAdvice = [EXPERT_PILLARS.TEAM_PERFORMANCE[0], EXPERT_PILLARS.ACQUISITION[2]];
     intentName = "retention";
   } else {
-    pillarAdvice = [REASONING_PILLARS.SCALING[2], REASONING_PILLARS.TEAM[0]];
+    pillarAdvice = [EXPERT_PILLARS.SCALING[2], EXPERT_PILLARS.REVENUE_MAXIMIZATION[2]];
     intentName = "general";
   }
 
-  // 3. Dynamic Response Construction
   const introTemplate = HUMANIZE_FRAGMENTS[intentName] || HUMANIZE_FRAGMENTS.general;
   const intro = introTemplate.replace("{gap}", gap.toLocaleString());
-  const core = pillarAdvice.join(" ");
-  const followUp = FOLLOW_UPS[Math.floor(Math.random() * FOLLOW_UPS.length)];
+  const core = pillarAdvice.join("\n\n");
+  
+  const followUps = [
+    "Should we start by mapping out the 'Consultation SOP' for your top stylists this week?",
+    "Want me to check our current client database for the best candidates for this 'Invitation Only' event?",
+    "Shall I draft a social media roadmap for these 'Signature Transformation' stories?",
+    "Which of these moves should we prioritize first to bridge the current revenue gap?",
+    "Does this align with your vision for the AAR Salon brand experience?"
+  ];
+  const followUp = followUps[Math.floor(Math.random() * followUps.length)];
 
-  // 4. Special Contextual Injection
   let serviceBonus = "";
   if (query.includes("botox")) {
-    serviceBonus = "\n\n**Service Tip:** Suggest an annual 'Maintenance' plan—4 sessions for ₹40k. It locks in that recurring revenue right away.";
+    serviceBonus = "\n\n**Expert Note:** Botox is a trust-based service. I recommend we stop selling single sessions and transition to a 'Youth Maintenance' annual plan. It secures our recurring revenue and ensures the client gets the best long-term results.";
   } else if (query.includes("bridal")) {
-    serviceBonus = "\n\n**Service Tip:** Offer a 3-month Roadmap. Brides pay a premium for 'Certainty' over just makeup.";
+    serviceBonus = "\n\n**Expert Note:** Brides are buying 'Certainty' and 'Peace of Mind'. Our strategy should be a 3-month 'Glow-Up Roadmap' that bundles all trials and treatments into one high-ticket package.";
   }
 
   const finalSummary = `${intro}\n\n${core}${serviceBonus}\n\n${followUp}`;
@@ -175,7 +164,7 @@ export const generateGrowthPlan = async (
     isReinforced: false,
     summary: finalSummary,
     steps: [],
-    projections: { newRevenue: gap * 0.40, confidence: 88 }
+    projections: { newRevenue: gap * 0.40, confidence: 92 }
   };
 };
 
