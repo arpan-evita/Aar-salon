@@ -62,52 +62,44 @@ export interface GrowthPlan {
   };
 }
 
-export const KNOWLEDGE_BASE = {
-  OFFERS: [
-    {
-      condition: (d: SalonData) => d.revenue.current < d.revenue.target * 0.8,
-      advice: "Try a 'Total Transformation Bundle'. Put your top 3 services together, give a 20% discount but throw in a free home care kit. It brings in quick cash and keeps people coming back.",
-      title: "The Bundle Move",
-      impact: "High" as const,
-      consultant: "Strategy Engine"
-    }
-  ],
-  MINDSET: [
-    {
-      condition: (d: SalonData) => d.revenue.current > 500000,
-      advice: "Think of your business as a system. Move from being an operator to a true owner. Focus on the P-A-C-E system (Performance, Accounting, Customer, Employee). Your primary job is to build the people who run the floor, not do the work yourself.",
-      title: "CEO Identity Shift",
-      impact: "High" as const,
-      consultant: "Strategy Engine"
-    }
-  ],
+const REASONING_PILLARS = {
   SCALING: [
-    {
-      condition: (d: SalonData) => d.revenue.current > 0,
-      advice: "To scale effectively, your business must be 'People Independent'. If the salon stops when you leave, you have a job, not a business. We need Standard Operating Procedures (SOPs) for every customer touchpoint.",
-      title: "The Scaling Blueprint",
-      impact: "High" as const,
-      consultant: "Strategy Engine"
-    }
+    "To scale effectively, your business must be 'People Independent'. If the salon stops when you leave, you have a job, not a business.",
+    "The secret to moving from 1 to 10 branches is Standard Operating Procedures (SOPs) for every customer touchpoint.",
+    "Systems are the only way to fill your revenue gap without burning yourself or your team out."
   ],
-  SERVICE_EXPERTISE: {
-    BOTOX: {
-      advice: "Apply the High-Margin Rule: Botox is your premium anchor. Suggest an annual 'Maintenance' plan—4 sessions a year for ₹40k instead of ₹15k each. It locks in your recurring revenue.",
-      upsell: "Pair it with a Hydrafacial for skin prep. It’s an easy ₹3,500 extra per client and the results are night and day.",
-      target: "VIPs and your 35+ crowd"
-    },
-    BRIDAL: {
-      advice: "Brides are looking for certainty, not just makeup. Offer a 3-month Roadmap including trials and facials. They’ll pay a significant premium for the peace of mind of having a system in place.",
-      upsell: "Offer a free 'Mother of the Bride' express service as a value-add to close high-ticket bookings.",
-      target: "Any new bridal inquiries"
-    },
-    HAIRCUT: {
-      advice: "The Retention Rule: Every haircut is a lead for your high-margin services. Use a 'Hair Health' card to show them exactly when they need a treatment to maintain the look.",
-      upsell: "Suggest a quick ritual at the wash station for ₹800. It’s 100% profit.",
-      target: "Regulars"
-    }
-  }
+  TEAM: [
+    "Move your staff from being 'technicians' to 'growth partners'. They should be the 'E' (Employee) pillar in your performance model.",
+    "Your job as an owner is to build the people who build the business, not to do the technical work yourself.",
+    "Reward stylists who maintain a 75%+ repeat rate—they are the backbone of your stable revenue."
+  ],
+  CUSTOMERS: [
+    "Every haircut is actually a lead for a higher-margin service. Never let a client leave without a 'Hair Health' roadmap.",
+    "Acquisition isn't about ads; it's about building trust. Show 'Success Stories' and offer 'Expert Consultations' rather than discounts.",
+    "Segment your VIPs and treat them like gold. One high-ticket annual maintenance plan is worth 10 one-off bookings."
+  ],
+  REVENUE: [
+    "Bridge your gap by focusing on ticket size (AOV). A ₹500 upsell at the wash station has a 90% profit margin.",
+    "Anchor your prices. Put your most expensive package first to make everything else look like a steal.",
+    "Grand Slam Offers: Combine services into a bundle, add a free kit, and limit it to 50 people to create massive urgency."
+  ]
 };
+
+const HUMANIZE_FRAGMENTS = [
+  "Hey! I've been looking at your latest salon data and comparing it to our ₹7L target.",
+  "Honestly, I think we have a real opportunity here to bridge that ₹{gap} gap.",
+  "I've been scanning your metrics, and here's a perspective you might not have considered.",
+  "Looking at how things are moving this week, I've put together a specific plan for you.",
+  "Based on our current revenue gap of ₹{gap}, we need to make some high-leverage moves."
+];
+
+const FOLLOW_UPS = [
+  "Does that sound like something we should try this week?",
+  "Shall we start mapping out the SOP for this together?",
+  "Want me to see which of your VIPs we should reach out to first?",
+  "Should I draft the WhatsApp message for this campaign?",
+  "What do you think? Which part of this should we prioritize?"
+];
 
 export const generateGrowthPlan = async (
   q: string, 
@@ -116,82 +108,66 @@ export const generateGrowthPlan = async (
   learnedPatterns: LearningPattern[] = []
 ): Promise<GrowthPlan> => {
   const query = q.toLowerCase();
+  const gap = data.revenue.gap || 0;
+  
+  // ADVANCED CONTEXT DETECTION
   const fullHistoryText = (history.map(h => h.content.toLowerCase()).join(" ") + " " + query);
   
-  const ctx = {
-    isRevenue: fullHistoryText.includes("revenue") || fullHistoryText.includes("sales") || fullHistoryText.includes("target") || fullHistoryText.includes("goal"),
-    isStaff: fullHistoryText.includes("staff") || fullHistoryText.includes("stylist") || fullHistoryText.includes("team") || fullHistoryText.includes("employee"),
-    isAcademy: fullHistoryText.includes("academy") || fullHistoryText.includes("student") || fullHistoryText.includes("course"),
-    isRetention: fullHistoryText.includes("retention") || fullHistoryText.includes("churn") || fullHistoryText.includes("loyalty") || fullHistoryText.includes("comeback"),
-    isUpsell: fullHistoryText.includes("upsell") || fullHistoryText.includes("cross-sell") || fullHistoryText.includes("aov") || fullHistoryText.includes("bundle"),
-    isPricing: fullHistoryText.includes("price") || fullHistoryText.includes("cost") || fullHistoryText.includes("discount") || fullHistoryText.includes("psychology"),
-    isOffer: fullHistoryText.includes("offer") || fullHistoryText.includes("campaign") || fullHistoryText.includes("promo") || fullHistoryText.includes("marketing"),
-    isVIP: fullHistoryText.includes("vip") || fullHistoryText.includes("premium") || fullHistoryText.includes("membership"),
-    isScaling: fullHistoryText.includes("scale") || fullHistoryText.includes("system") || fullHistoryText.includes("sop") || fullHistoryText.includes("growth"),
-    isAcquisition: fullHistoryText.includes("acquisition") || fullHistoryText.includes("new client") || fullHistoryText.includes("leads") || fullHistoryText.includes("marketing")
+  // 1. Determine Intent Scars (The "Context")
+  const intents = {
+    scaling: query.includes("scale") || query.includes("system") || query.includes("sop") || fullHistoryText.includes("expand"),
+    team: query.includes("staff") || query.includes("team") || query.includes("stylist") || query.includes("employee") || query.includes("hire"),
+    retention: query.includes("retention") || query.includes("churn") || query.includes("loyalty") || query.includes("old client"),
+    upsell: query.includes("upsell") || query.includes("aov") || query.includes("ticket") || query.includes("more money"),
+    botox: query.includes("botox") || query.includes("premium") || query.includes("high ticket"),
+    bridal: query.includes("bridal") || query.includes("wedding"),
+    acquisition: query.includes("acquisition") || query.includes("new client") || query.includes("leads") || query.includes("marketing")
   };
 
-  const isReinforced = false;
-  const gap = data.revenue.gap || 0;
+  // 2. Select Reasoning Pillar
+  let pillarAdvice: string[] = [];
+  let intentName = "growth";
 
-  // 1. Scaling & Systems
-  if (ctx.isScaling || query.includes("system")) {
-    const advice = KNOWLEDGE_BASE.SCALING[0].advice;
-    return {
-      intent: 'growth',
-      isReinforced,
-      summary: `I've been looking at your numbers and your goal to scale. I firmly believe your business must become 'people-independent' to reach the next level. \n\nRight now, we have a ₹${gap.toLocaleString()} gap to bridge. The key isn't working harder, but building better SOPs. \n\n${advice}\n\nShall we start by mapping out your 'Customer Welcome' system to ensure every new lead is handled with 100% consistency?`,
-      steps: [], projections: { newRevenue: gap * 0.50, confidence: 95 }
-    };
+  if (intents.scaling) {
+    pillarAdvice = [REASONING_PILLARS.SCALING[0], REASONING_PILLARS.SCALING[1]];
+    intentName = "scaling";
+  } else if (intents.team) {
+    pillarAdvice = [REASONING_PILLARS.TEAM[1], REASONING_PILLARS.TEAM[2]];
+    intentName = "team";
+  } else if (intents.botox || intents.upsell) {
+    pillarAdvice = [REASONING_PILLARS.REVENUE[0], REASONING_PILLARS.REVENUE[1]];
+    intentName = "revenue";
+  } else if (intents.acquisition) {
+    pillarAdvice = [REASONING_PILLARS.CUSTOMERS[1], REASONING_PILLARS.REVENUE[2]];
+    intentName = "acquisition";
+  } else if (intents.retention) {
+    pillarAdvice = [REASONING_PILLARS.CUSTOMERS[0], REASONING_PILLARS.CUSTOMERS[2]];
+    intentName = "retention";
+  } else {
+    pillarAdvice = [REASONING_PILLARS.SCALING[2], REASONING_PILLARS.TEAM[0]];
   }
 
-  // 2. Team & Performance
-  if (ctx.isStaff || query.includes("team")) {
-    return {
-      intent: 'staff',
-      isReinforced,
-      summary: `To bridge your ₹${gap.toLocaleString()} gap, we should focus on the 'Employees' pillar of our growth model. \n\nI think we have room to shift your team from being technicians to true growth partners. \n\n**My Recommendation:** ${KNOWLEDGE_BASE.MINDSET[0].advice}\n\nDo you want me to check which team members are hitting their targets and who might need a bit of coaching?`,
-      steps: [], projections: { newRevenue: data.revenue.current * 0.15, confidence: 91 }
-    };
-  }
+  // 3. Dynamic Response Construction (The "Synthesis")
+  const intro = HUMANIZE_FRAGMENTS[Math.floor(Math.random() * HUMANIZE_FRAGMENTS.length)].replace("{gap}", gap.toLocaleString());
+  const core = pillarAdvice.join(" ");
+  const followUp = FOLLOW_UPS[Math.floor(Math.random() * FOLLOW_UPS.length)];
 
-  // 3. Customer Acquisition
-  if (ctx.isAcquisition || query.includes("acquisition")) {
-    return {
-      intent: 'marketing',
-      isReinforced,
-      summary: `For acquisition, we need to look at our 'Customer' pillar. \n\nWith our ₹${gap.toLocaleString()} target, I'd suggest a 'High-Value Lead Magnet' on social media. Instead of just showing haircuts, let's show 'Success Stories' and offer a free 'Hair Health Consultation'. \n\nIt builds trust before they even step into the salon. Want me to draft a quick social media campaign for this?`,
-      steps: [], projections: { newRevenue: gap * 0.30, confidence: 85 }
-    };
-  }
-
-  // 4. Botox / Specific Services
+  // 4. Special Contextual Injection (Service Level)
+  let serviceBonus = "";
   if (query.includes("botox")) {
-    const expertise = KNOWLEDGE_BASE.SERVICE_EXPERTISE.BOTOX;
-    return {
-      intent: 'marketing',
-      isReinforced,
-      summary: `I've been looking at your Botox numbers and that ₹${gap.toLocaleString()} gap. Honestly, we should stop selling Botox as just a one-time treatment.\n\nWe should use the 'High-Margin Rule' here: suggest an annual 'Maintenance' plan. If you offer 4 sessions for ₹40k, you lock in recurring revenue right away. \n\nAlso, try suggesting a Hydrafacial for prep—it's an easy extra ₹3,500. Want me to see which VIPs we should reach out to first?`,
-      steps: [], projections: { newRevenue: gap * 0.45, confidence: 92 }
-    };
+    serviceBonus = "\n\n**Service Tip:** Suggest an annual 'Maintenance' plan—4 sessions for ₹40k. It locks in that recurring revenue right away.";
+  } else if (query.includes("bridal")) {
+    serviceBonus = "\n\n**Service Tip:** Offer a 3-month Roadmap. Brides pay a premium for 'Certainty' over just makeup.";
   }
 
-  // 5. Offers
-  if (ctx.isOffer || query.includes("offer")) {
-    return {
-      intent: 'marketing',
-      isReinforced,
-      summary: `Let's build a 'Grand Slam' offer to bridge that ₹${gap.toLocaleString()} gap. \n\nI recommend a 'Total Transformation' bundle: pick your top services, bundle them up, and throw in a free home care kit. It makes the value look huge. \n\nI can help you write the WhatsApp message for this if you're ready. Want to see a draft?`,
-      steps: [], projections: { newRevenue: gap * 0.35, confidence: 88 }
-    };
-  }
+  const finalSummary = `${intro}\n\n${core}${serviceBonus}\n\n${followUp}`;
 
-  // Default
   return {
-    intent: 'growth',
-    isReinforced,
-    summary: `Hey! I've been scanning the latest data. We're currently about ₹${gap.toLocaleString()} away from our monthly target of ₹${data.revenue.target?.toLocaleString()}.\n\nThe best thing you can do this week is move from being an operator to an owner. Focus on your systems and coaching the team. \n\nWhere do you want to start today? We could look at your marketing, or maybe your team's retention numbers?`,
-    steps: [], projections: { newRevenue: gap * 0.40, confidence: 82 }
+    intent: intentName,
+    isReinforced: false,
+    summary: finalSummary,
+    steps: [],
+    projections: { newRevenue: gap * 0.40, confidence: 88 }
   };
 };
 
