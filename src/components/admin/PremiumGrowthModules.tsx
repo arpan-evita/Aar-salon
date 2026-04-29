@@ -935,15 +935,43 @@ export default function PremiumGrowthModules({ module }: PremiumGrowthModulesPro
 
   useEffect(() => {
     const fetchBase = async () => {
+      // 1. Fetch Revenue
       const { data: inv } = await supabase.from('invoices').select('total');
-      const cur = inv?.reduce((s, i) => s + Number(i.total), 0) || 520000;
+      const cur = inv?.reduce((s, i) => s + Number(i.total), 0) || 0;
+      
+      // 2. Fetch Repeat Rate & Churn Risk
+      const { data: apps } = await supabase.from('appointments').select('customer_id, start_time');
+      const customerVisits: Record<string, number> = {};
+      const lastVisits: Record<string, Date> = {};
+      
+      apps?.forEach(app => {
+        customerVisits[app.customer_id] = (customerVisits[app.customer_id] || 0) + 1;
+        const appDate = new Date(app.start_time);
+        if (!lastVisits[app.customer_id] || appDate > lastVisits[app.customer_id]) {
+          lastVisits[app.customer_id] = appDate;
+        }
+      });
+
+      const totalCustomers = Object.keys(customerVisits).length;
+      const repeatCustomers = Object.values(customerVisits).filter(v => v > 1).length;
+      const calculatedRepeatRate = totalCustomers > 0 ? Math.round((repeatCustomers / totalCustomers) * 100) : 0;
+
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 45);
+      const churnedCount = Object.values(lastVisits).filter(d => d < thirtyDaysAgo).length;
+      const calculatedChurnRisk = totalCustomers > 0 ? Math.round((churnedCount / totalCustomers) * 100) : 0;
+
+      // 3. Fetch VIPs
+      const { data: vips } = await supabase.from('customers').select('id').eq('is_vip', true);
+      const vipCount = vips?.length || 0;
+
       setAnalysis({
         currentRev: cur,
-        gap: 700000 - cur,
-        repeatRate: 64,
-        churnRisk: 12,
-        emptySlots: 24,
-        vipClients: 42
+        gap: Math.max(0, 700000 - cur),
+        repeatRate: calculatedRepeatRate,
+        churnRisk: calculatedChurnRisk,
+        emptySlots: 18, // Simulated for now
+        vipClients: vipCount
       });
     };
     fetchBase();
