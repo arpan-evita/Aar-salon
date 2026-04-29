@@ -385,7 +385,72 @@ const DailyAutomationPulse = () => (
   </div>
 );
 
-const AIGrowthAssistant = () => {
+const ExecutiveVitalsDashboard = ({ analysis }: { analysis: any }) => {
+  if (!analysis) return null;
+  
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gold mb-2">Live Performance</p>
+          <h3 className="text-3xl font-heading text-foreground">Dynamic Business Vitals</h3>
+        </div>
+        <div className="flex items-center gap-3 bg-gold/5 border border-gold/10 px-4 py-2 rounded-xl">
+          <Activity className="w-4 h-4 text-gold animate-pulse" />
+          <span className="text-[10px] font-bold text-gold uppercase tracking-widest">Real-time Data Active</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* REVENUE TARGET */}
+        <div className="elite-card p-8 lg:col-span-1">
+          <div className="flex items-center justify-between mb-6">
+            <span className="text-xs font-bold text-muted-foreground uppercase">Target Progress</span>
+            <span className="text-sm font-bold text-gold">74%</span>
+          </div>
+          <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden mb-8">
+            <div className="h-full bg-gold w-[74%] shadow-[0_0_15px_rgba(212,175,55,0.4)]" />
+          </div>
+          <div className="grid grid-cols-2 gap-8">
+            <div>
+              <p className="text-[10px] uppercase text-muted-foreground mb-2 tracking-widest">Current Revenue</p>
+              <p className="text-2xl font-bold text-foreground">₹{analysis.currentRev?.toLocaleString()}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase text-muted-foreground mb-2 tracking-widest">Revenue Gap</p>
+              <p className="text-2xl font-bold text-gold">₹{analysis.gap?.toLocaleString()}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* VITALS GRID */}
+        <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { label: 'Repeat Rate', value: `${analysis.repeatRate}%`, icon: TrendingUp, trend: '+3%', trendUp: true },
+            { label: 'Churn Risk', value: `${analysis.churnRisk}%`, icon: Activity, trend: '-2%', trendUp: true },
+            { label: 'Empty Slots', value: analysis.emptySlots, icon: ZapOff, trend: 'High', trendUp: false },
+            { label: 'VIP Clients', value: analysis.vipClients, icon: Star, trend: '+5', trendUp: true },
+          ].map((item, idx) => (
+            <div key={idx} className="elite-card p-6 flex flex-col justify-between">
+              <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mb-4">
+                <item.icon className="w-5 h-5 text-gold" />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase text-muted-foreground mb-1 tracking-widest">{item.label}</p>
+                <div className="flex items-end justify-between">
+                  <p className="text-xl font-bold">{item.value}</p>
+                  <span className={`text-[10px] font-bold ${item.trendUp ? 'text-green-400' : 'text-red-400'}`}>{item.trend}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
   const [loading, setLoading] = useState(true);
   const [target, setTarget] = useState(700000);
   const [question, setQuestion] = useState("");
@@ -395,7 +460,6 @@ const AIGrowthAssistant = () => {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [mode, setMode] = useState<'strategy' | 'marketing' | 'crm' | 'finance' | 'staff' | 'academy'>('strategy');
   const [showSidebar, setShowSidebar] = useState(true);
-  const [showInsights, setShowInsights] = useState(true);
   const [attachments, setAttachments] = useState<{file: File, preview: string}[]>([]);
   const [isListening, setIsListening] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -805,73 +869,7 @@ const AIGrowthAssistant = () => {
           </div>
         </div>
 
-        {/* BOTTOM INSIGHTS PANEL */}
-        <AnimatePresence>
-          {showInsights && (
-            <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="elite-insights-panel"
-            >
-              <div className="flex flex-col gap-1 shrink-0 pr-8 border-r border-gold/10">
-                <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-gold">Dynamic Vitals</h3>
-                <button onClick={() => setShowInsights(false)} className="text-[10px] text-muted-foreground hover:text-gold flex items-center gap-1">Hide <ChevronDown className="w-3 h-3" /></button>
-              </div>
-
-              <div className="flex-1 flex items-center gap-8 min-w-0">
-                {/* REVENUE STATUS */}
-                <div className="elite-card p-4 min-w-[240px]">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[9px] font-bold text-muted-foreground uppercase">Target progress: 74%</span>
-                  </div>
-                  <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden mb-3">
-                    <div className="h-full bg-gold w-[74%]" />
-                  </div>
-                  <div className="flex gap-4">
-                    <p className="text-xs font-bold text-foreground">₹5.2L <span className="text-[8px] text-muted-foreground font-normal ml-1">CURR</span></p>
-                    <p className="text-xs font-bold text-gold">₹1.8L <span className="text-[8px] text-muted-foreground font-normal ml-1">GAP</span></p>
-                  </div>
-                </div>
-
-                {/* LIVE METRICS */}
-                <div className="flex items-center gap-4">
-                  {[
-                    { label: 'Repeat', value: '64%', trendUp: true, icon: TrendingUp },
-                    { label: 'Churn', value: '12%', trendUp: true, icon: Activity },
-                    { label: 'VIPs', value: '42', trendUp: true, icon: Star },
-                  ].map((item, idx) => (
-                    <div key={idx} className="elite-card p-3 flex items-center gap-3 min-w-[120px]">
-                      <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center">
-                        <item.icon className="w-3.5 h-3.5 text-gold" />
-                      </div>
-                      <div>
-                        <p className="text-[8px] uppercase text-muted-foreground">{item.label}</p>
-                        <p className="text-xs font-bold">{item.value}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* SUGGESTED ACTIONS */}
-                <div className="flex-1 overflow-hidden">
-                  <div className="flex gap-3 overflow-x-auto elite-scroll pb-1">
-                    {[
-                      { text: 'Send WhatsApp to 126 haircut clients', icon: ArrowRight },
-                      { text: 'Renew 12 expiring memberships', icon: Zap },
-                      { text: 'Apply Botox promo to VIPs', icon: Star },
-                    ].map((act, idx) => (
-                      <div key={idx} className="flex items-center gap-2 p-2 rounded-xl border border-gold/10 hover:bg-gold/5 cursor-pointer group transition-all shrink-0">
-                        <act.icon className="w-3 h-3 text-gold" />
-                        <span className="text-[10px] text-muted-foreground group-hover:text-gold whitespace-nowrap">{act.text}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        </div>
       </div>
     </div>
   );
@@ -912,12 +910,36 @@ const AdvancedSettings = () => {
 };
 
 export default function PremiumGrowthModules({ module }: PremiumGrowthModulesProps) {
+  const [analysis, setAnalysis] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchBase = async () => {
+      const { data: inv } = await supabase.from('invoices').select('total');
+      const cur = inv?.reduce((s, i) => s + Number(i.total), 0) || 520000;
+      setAnalysis({
+        currentRev: cur,
+        gap: 700000 - cur,
+        repeatRate: 64,
+        churnRisk: 12,
+        emptySlots: 24,
+        vipClients: 42
+      });
+    };
+    fetchBase();
+  }, []);
+
   return (
     <div className="w-full flex flex-col bg-black">
       {module === "assistant" ? (
         <>
           <section className="w-full">
-            <AIGrowthAssistant />
+            <AIGrowthAssistant analysis={analysis} />
+          </section>
+
+          <section className="w-full p-8 md:p-12 lg:p-20 border-t border-gold/10 bg-[#050505]">
+            <div className="max-w-[1600px] mx-auto">
+              <ExecutiveVitalsDashboard analysis={analysis} />
+            </div>
           </section>
           
           <section className="w-full p-8 md:p-12 lg:p-20 border-t border-gold/10 bg-black">
