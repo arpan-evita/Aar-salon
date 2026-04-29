@@ -65,7 +65,7 @@ export const generateGrowthPlan = async (
   
   // DYNAMIC INTENT MAPPING
   const intents = {
-    personal: ["date", "love", "marry", "sweetheart", "girlfriend", "boyfriend", "sexy", "dating", "gym", "workout", "fitness", "eat", "dinner", "lunch", "drink", "coffee", "movie", "travel", "holiday"],
+    personal: ["date", "love", "marry", "sweetheart", "girlfriend", "boyfriend", "sexy", "dating", "gym", "workout", "fitness", "eat", "dinner", "lunch", "drink", "coffee", "movie", "travel", "holiday", "yoga", "walk", "dance", "party", "sleep", "dream"],
     identity: ["who are you", "what is your name", "what do you do", "introduce yourself"],
     greeting: ["hi", "hello", "hey", "good morning", "good evening", "yo", "sup", "how are you", "what's up"],
     strategy: ["offer", "plan", "strategy", "grow", "revenue", "target", "money", "client", "customer", "leads", "marketing", "attract", "botox", "bridal", "service", "upsell", "aov", "staff", "team"]
@@ -87,19 +87,21 @@ export const generateGrowthPlan = async (
     };
   }
 
-  // 2. PERSONAL / CASUAL (The "Gym/Date" layer)
-  if (intents.personal.some(p => query.includes(p))) {
-    let specificRejection = getFrag("CASUAL_NO");
-    if (query.includes("gym") || query.includes("workout")) {
-      specificRejection = "Haha, I'd probably be the only one at the gym who's made of code! 🏋️‍♂️ As much as I'd love a workout, my 'heavy lifting' is usually limited to crunching your salon data.";
-    } else if (query.includes("eat") || query.includes("dinner") || query.includes("food")) {
-      specificRejection = "I wish! But I only consume data and electricity. 🍕 Maybe you can have a great meal while I figure out how to fill those empty slots for tomorrow?";
-    }
+  // 2. PERSONAL / CASUAL (Deeply Human Layer)
+  const personalMatch = intents.personal.find(p => query.includes(p));
+  if (personalMatch || (query.length < 30 && !intents.strategy.some(s => query.includes(s)) && !intents.greeting.some(g => query.includes(g)))) {
+    const topic = personalMatch || query.split(' ').pop()?.replace(/[?!.]/g, '') || "that";
+    const funnyLines = [
+      `${topic.charAt(0).toUpperCase() + topic.slice(1)}? Haha, now that's a stretch for an AI! 😅 I'd love to join, but I think I'd just be a bunch of pixels hanging out.`,
+      `Honestly, I'm a bit of a homebody—stuck right here in the AAR systems. But I'm always up for some mental gymnastics with your salon data instead of ${topic}!`,
+      `Umm... I don't think my digital self is quite ready for ${topic} yet! 😅 But hey, I can definitely help you fall in love with your salon's growth numbers.`,
+      `As much as I'd like to, I don't have the legs (or a physical form) for ${topic}! 🤖 Maybe I'll stick to what I'm good at—making you money.`
+    ];
     
     return {
       intent: "personal",
       isReinforced: false,
-      summary: `${specificRejection} ${getFrag("BRIDGE_TO_BUSINESS")}`,
+      summary: `${funnyLines[Math.floor(Math.random() * funnyLines.length)]} ${getFrag("BRIDGE_TO_BUSINESS")}`,
       steps: [],
       projections: { newRevenue: 0, confidence: 100 }
     };
@@ -147,11 +149,14 @@ export const generateGrowthPlan = async (
     };
   }
 
-  // 5. FALLBACK (Still Human)
+  // 5. THE "EXPERT FRIEND" FALLBACK (Never Robotic)
+  const words = query.split(' ');
+  const randomWord = words[Math.floor(Math.random() * words.length)];
+  
   return {
     intent: "chat",
     isReinforced: false,
-    summary: `Honestly, I'm not entirely sure how to answer that, but I'm here if you want to talk about growing the brand or hitting that ₹7L goal. What's your top priority right now?`,
+    summary: `Honestly, I was just thinking about ${randomWord}—but in a business way. 😅 But seriously, I'm here if you want to talk about growing the brand or hitting that ₹7L goal. What's your top priority right now?`,
     steps: [],
     projections: { newRevenue: 0, confidence: 100 }
   };
