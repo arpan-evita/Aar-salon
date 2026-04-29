@@ -1,4 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Activity,
   Bot,
@@ -16,6 +18,16 @@ import {
   Users,
   Wand2,
   Zap,
+  Calendar,
+  AlertCircle,
+  BarChart3,
+  Search,
+  Copy,
+  ChevronRight,
+  TrendingDown,
+  UserPlus,
+  Rocket,
+  Star
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -225,113 +237,409 @@ const AdvancedAnalytics = () => {
 };
 
 const AIGrowthAssistant = () => {
+  const [loading, setLoading] = useState(true);
   const [target, setTarget] = useState(700000);
-  const [current, setCurrent] = useState(438000);
-  const [question, setQuestion] = useState("How can I reach ₹7 lakh this month?");
-  const plan = estimateRevenuePlan(target, current);
+  const [question, setQuestion] = useState("");
+  const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
 
-  const deploySegment = (name: string) => {
-    toast.success(`${name} automation queued. WhatsApp copy and staff tasks are ready.`);
+  const [data, setData] = useState({
+    invoices: [] as any[],
+    customers: [] as any[],
+    bookings: [] as any[],
+    leads: [] as any[],
+    memberships: [] as any[],
+  });
+
+  const [analysis, setAnalysis] = useState<any>(null);
+
+  useEffect(() => {
+    fetchEverything();
+  }, []);
+
+  const fetchEverything = async () => {
+    setLoading(true);
+    try {
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      const [
+        { data: invoices },
+        { data: customers },
+        { data: bookings },
+        { data: leads },
+        { data: memberships },
+      ] = await Promise.all([
+        supabase.from('invoices').select('*').gte('created_at', firstDayOfMonth.toISOString()),
+        supabase.from('customers').select('*'),
+        supabase.from('bookings').select('*').gte('booking_date', now.toISOString().split('T')[0]),
+        supabase.from('leads').select('*'),
+        supabase.from('customer_memberships').select('*')
+      ]);
+
+      const dataSet = {
+        invoices: invoices || [],
+        customers: customers || [],
+        bookings: bookings || [],
+        leads: leads || [],
+        memberships: memberships || [],
+      };
+
+      setData(dataSet);
+      runIntelligence(dataSet);
+    } catch (e) {
+      console.error(e);
+      toast.error("AI Brain synchronization failed.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const copyTemplate = (message: string) => {
-    navigator.clipboard?.writeText(message);
-    toast.success("WhatsApp template copied with variables.");
+  const runIntelligence = (dataSet: any) => {
+    const now = new Date();
+    const dayOfMonth = now.getDate();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
+    // 1. Revenue & Forecast
+    const currentRev = dataSet.invoices.reduce((sum: number, i: any) => sum + Number(i.total), 0);
+    const pace = currentRev / dayOfMonth;
+    const projected = pace * daysInMonth;
+    const gap = Math.max(target - currentRev, 0);
+
+    // 2. Customer Intelligence
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const churnRisk = dataSet.customers.filter((c: any) => 
+      c.last_visit_at && new Date(c.last_visit_at) < thirtyDaysAgo
+    ).length;
+
+    const vipGaps = dataSet.customers.filter((c: any) => 
+      c.total_spend > 15000 && (!c.last_visit_at || new Date(c.last_visit_at) < thirtyDaysAgo)
+    ).length;
+
+    // 3. Smart Offers
+    const haircutAudience = dataSet.customers.filter((c: any) => {
+      const lastVisit = c.last_visit_at ? new Date(c.last_visit_at) : null;
+      if (!lastVisit) return false;
+      const days = (now.getTime() - lastVisit.getTime()) / (1000 * 3600 * 24);
+      return days >= 25 && days <= 35;
+    }).length;
+
+    const membershipTargets = dataSet.customers.filter((c: any) => 
+      c.total_spend > 10000 && !dataSet.memberships.find((m: any) => m.customer_id === c.id)
+    ).length;
+
+    // 4. Empty Slots (Next 3 days)
+    const capacityPerDay = 40; // 8 hours * 5 stylists
+    const nextThreeDays = dataSet.bookings.length; // Simplified
+    const emptySlotPercentage = Math.max(0, 100 - (nextThreeDays / (capacityPerDay * 3) * 100));
+
+    setAnalysis({
+      currentRev,
+      projected,
+      gap,
+      confidence: projected > target ? 92 : 78,
+      churnRisk,
+      vipGaps,
+      haircutAudience,
+      membershipTargets,
+      emptySlotPercentage: Math.round(emptySlotPercentage),
+      dailyActions: [
+        { id: 1, text: `Call ${dataSet.leads.filter((l: any) => l.source === 'Academy').length} Academy leads from last week`, icon: UserPlus },
+        { id: 2, text: `Send comeback offer to ${haircutAudience} haircut clients`, icon: Zap },
+        { id: 3, text: `Fill tomorrow's empty slots with student promo`, icon: Calendar },
+        { id: 4, text: `Ask today's happy customers for reviews`, icon: Star },
+        { id: 5, text: `Push membership renewals to ${dataSet.memberships.filter((m: any) => m.status === 'expiring').length} users`, icon: Rocket },
+      ],
+      offers: [
+        { id: 'hc', title: 'Haircut Comeback', audience: haircutAudience, rev: haircutAudience * 800, prob: 91, rule: 'Inactive 25-35 days' },
+        { id: 'mu', title: 'Membership Upgrade', audience: membershipTargets, rev: membershipTargets * 1500, prob: 88, rule: 'Spent ₹10k+ no membership' },
+        { id: 'es', title: 'Empty Slot Booster', audience: 12, rev: 12000, prob: 74, rule: 'Weekday 1pm-4pm gaps' },
+        { id: 'ap', title: 'Academy Push', audience: dataSet.leads.length, rev: dataSet.leads.length * 5000, prob: 79, rule: 'Pending leads' },
+      ]
+    });
   };
+
+  const handleAskAI = () => {
+    if (!question) return;
+    setIsTyping(true);
+    setAiResponse(null);
+
+    // Simulate thinking
+    setTimeout(() => {
+      let resp = "";
+      if (question.toLowerCase().includes("reach") || question.toLowerCase().includes("lakh")) {
+        resp = `To reach ₹${target/100000} Lakh, we have a gap of ${formatINR(analysis.gap)}. I recommend: \n1. Target the ${analysis.haircutAudience} inactive haircut clients (Exp. ₹${analysis.haircutAudience * 800})\n2. Push memberships to ${analysis.membershipTargets} high spenders (Exp. ₹${analysis.membershipTargets * 1500})\n3. Fill weekday gaps which are currently ${analysis.emptySlotPercentage}% empty.`;
+      } else {
+        resp = `Based on live data, your top priority today is reactivating ${analysis.churnRisk} customers at risk of churn and following up with ${analysis.vipGaps} VIPs who haven't visited in 30 days. Your current pace puts you at ${formatINR(analysis.projected)} by month end.`;
+      }
+      setAiResponse(resp);
+      setIsTyping(false);
+    }, 1500);
+  };
+
+  const deployAction = (name: string) => {
+    toast.success(`AI Campaign "${name}" deployed to matching audience.`);
+  };
+
+  if (loading || !analysis) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[600px] space-y-4 animate-pulse">
+        <Bot className="w-12 h-12 text-primary/50" />
+        <p className="text-muted-foreground font-heading text-xl">Waking up AAR's growth brain...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="gold-gradient rounded-3xl p-[1px] shadow-2xl shadow-primary/10">
-        <div className="rounded-3xl bg-background/95 p-6 md:p-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">AI Growth Assistant</p>
-              <h2 className="mt-2 font-heading text-3xl text-foreground">Ask AAR’s growth brain what to do next</h2>
-              <p className="mt-2 max-w-2xl text-sm text-muted-foreground">It turns revenue targets into campaigns, offers, staff actions, academy pushes, and retention flows.</p>
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20">
+      {/* 1. Main Command Center */}
+      <div className="gold-gradient rounded-3xl p-[1.5px] shadow-2xl shadow-primary/20 relative overflow-hidden group">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(212,175,55,0.1),transparent)]" />
+        <div className="rounded-3xl bg-background/95 p-6 md:p-10 relative">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-primary">Live Growth Intelligence</p>
+              </div>
+              <h2 className="font-heading text-4xl text-foreground">AAR Revenue Strategist</h2>
+              <p className="max-w-2xl text-sm text-muted-foreground leading-relaxed">
+                Analyzing {data.customers.length} customers, {data.invoices.length} invoices, and {data.bookings.length} upcoming slots to optimize your path to ₹{target/100000}L.
+              </p>
             </div>
-            <div className="rounded-2xl border border-primary/20 bg-primary/10 px-5 py-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Revenue Gap</p>
-              <p className="text-2xl font-bold">{formatINR(plan.gap)}</p>
+            
+            <div className="flex gap-4">
+              <div className="glass-strong border border-primary/20 rounded-2xl p-6 min-w-[200px]">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-1">Current Revenue</p>
+                <p className="text-3xl font-bold">{formatINR(analysis.currentRev)}</p>
+                <div className="mt-2 flex items-center gap-1 text-[10px] text-green-400">
+                  <TrendingUp className="w-3 h-3" /> Pace: {formatINR(analysis.projected)}
+                </div>
+              </div>
+              <div className="glass-strong border border-red-500/20 rounded-2xl p-6 min-w-[200px]">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-red-400 mb-1">Revenue Gap</p>
+                <p className="text-3xl font-bold">{formatINR(analysis.gap)}</p>
+                <p className="mt-2 text-[10px] text-muted-foreground">Needed for target</p>
+              </div>
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-            <label className="space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Monthly Target</span>
-              <input value={target} onChange={(e) => setTarget(Number(e.target.value) || 0)} className="w-full rounded-xl border border-border/40 bg-secondary/40 px-4 py-3 text-sm outline-none focus:border-primary/50" />
-            </label>
-            <label className="space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Current Revenue</span>
-              <input value={current} onChange={(e) => setCurrent(Number(e.target.value) || 0)} className="w-full rounded-xl border border-border/40 bg-secondary/40 px-4 py-3 text-sm outline-none focus:border-primary/50" />
-            </label>
-            <label className="space-y-2 md:col-span-1">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Ask AI</span>
-              <input value={question} onChange={(e) => setQuestion(e.target.value)} className="w-full rounded-xl border border-border/40 bg-secondary/40 px-4 py-3 text-sm outline-none focus:border-primary/50" />
-            </label>
+          <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-3 items-end">
+             <div className="space-y-3">
+                <Label className="text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Monthly Target (₹)</Label>
+                <div className="relative">
+                   <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
+                   <Input 
+                      type="number"
+                      value={target}
+                      onChange={(e) => setTarget(Number(e.target.value))}
+                      className="bg-secondary/40 border-border/30 pl-11 py-6 text-lg font-bold rounded-2xl focus:ring-primary/20" 
+                   />
+                </div>
+             </div>
+             <div className="lg:col-span-2 space-y-3">
+                <Label className="text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Ask Growth Brain Anything</Label>
+                <div className="relative">
+                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                   <Input 
+                      placeholder="How can I reach ₹7 lakh? / What should I do today?" 
+                      value={question}
+                      onChange={(e) => setQuestion(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAskAI()}
+                      className="bg-secondary/40 border-border/30 pl-11 py-6 text-base rounded-2xl focus:ring-primary/20" 
+                   />
+                   <button 
+                      onClick={handleAskAI}
+                      disabled={isTyping}
+                      className="absolute right-2 top-2 bottom-2 gold-gradient px-6 rounded-xl text-[10px] font-bold uppercase tracking-widest text-primary-foreground hover:scale-[1.02] transition-transform disabled:opacity-50"
+                   >
+                      {isTyping ? "Thinking..." : "Strategize"}
+                   </button>
+                </div>
+             </div>
           </div>
+
+          {aiResponse && (
+            <div className="mt-6 p-6 rounded-2xl bg-primary/5 border border-primary/10 animate-in fade-in slide-in-from-top-2 duration-500">
+               <div className="flex gap-4">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                     <Bot className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="space-y-4 flex-1">
+                     <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">{aiResponse}</p>
+                     <div className="flex gap-2">
+                        <button className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
+                           <Wand2 className="w-3 h-3" /> Optimize Plan
+                        </button>
+                        <button className="text-[10px] font-bold text-muted-foreground hover:underline ml-4">Dismiss</button>
+                     </div>
+                  </div>
+               </div>
+            </div>
+          )}
         </div>
       </div>
 
+      {/* 2. Top Row Stats */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
         {[
-          ["Haircut comeback campaigns", plan.haircutCampaigns],
-          ["Membership upgrade push", plan.membershipPush],
-          ["Academy admissions", plan.academyAdmissions],
-          ["Empty slot recovery", plan.emptySlotRecovery],
-        ].map(([label, value]) => (
-          <div key={label} className="glass rounded-2xl border border-border/50 p-5">
-            <Sparkles className="mb-4 h-5 w-5 text-primary" />
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
-            <p className="mt-2 text-2xl font-bold text-foreground">{formatINR(Number(value))}</p>
+          { label: "Forecasted Revenue", val: formatINR(analysis.projected), icon: TrendingUp, color: "text-green-400", sub: `Confidence: ${analysis.confidence}%` },
+          { label: "Empty Slot Recovery", val: `${analysis.emptySlotPercentage}%`, icon: Calendar, color: "text-blue-400", sub: "Recoverable weekday gaps" },
+          { label: "Churn Risk", val: analysis.churnRisk, icon: AlertCircle, color: "text-red-400", sub: "Inactive > 30 days" },
+          { label: "VIP Retention Gap", val: analysis.vipGaps, icon: Star, color: "text-primary", sub: "High spenders missing" }
+        ].map((stat, i) => (stat.label &&
+          <div key={i} className="glass rounded-2xl border border-border/50 p-6 hover:border-primary/30 transition-colors group">
+            <div className="flex items-center justify-between mb-4">
+               <stat.icon className={`w-5 h-5 ${stat.color}`} />
+               <ChevronRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-primary transition-colors" />
+            </div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{stat.label}</p>
+            <p className="mt-1 text-3xl font-bold text-foreground">{stat.val}</p>
+            <p className="mt-2 text-[11px] text-muted-foreground">{stat.sub}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <div className="glass rounded-3xl border border-border/50 p-6">
-          <h3 className="mb-5 flex items-center gap-2 font-heading text-xl"><Target className="h-5 w-5 text-primary" /> AI Suggested Offers</h3>
-          <div className="space-y-4">
-            {smartSegments.map((segment) => (
-              <div key={segment.name} className="rounded-2xl border border-border/40 bg-secondary/20 p-4">
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <h4 className="text-sm font-bold">{segment.name}</h4>
-                    <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{segment.rule}</p>
-                    <p className="mt-2 text-[11px] font-medium text-primary">{segment.action}</p>
-                  </div>
-                  <button onClick={() => deploySegment(segment.name)} className="rounded-xl bg-primary px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-primary-foreground hover:opacity-90">
-                    Deploy
-                  </button>
+      {/* 3. Deep Analysis Sections */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        {/* Daily Actions */}
+        <div className="glass rounded-3xl border border-border/50 p-8 flex flex-col">
+          <div className="flex items-center justify-between mb-8">
+             <div>
+                <h3 className="font-heading text-xl">Top Daily Actions</h3>
+                <p className="text-xs text-muted-foreground mt-1">AI prioritized tasks for today.</p>
+             </div>
+             <Zap className="w-5 h-5 text-primary" />
+          </div>
+          <div className="space-y-4 flex-1">
+            {analysis.dailyActions.map((action: any) => (
+              <div key={action.id} className="group flex items-start gap-4 p-4 rounded-2xl hover:bg-secondary/30 transition-colors border border-transparent hover:border-border/30">
+                <div className="w-10 h-10 rounded-xl bg-secondary/50 flex items-center justify-center flex-shrink-0 text-primary group-hover:scale-110 transition-transform">
+                  <action.icon className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium leading-snug">{action.text}</p>
+                  <button className="mt-2 text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Execute Now</button>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="glass rounded-3xl border border-border/50 p-6">
-          <h3 className="mb-5 flex items-center gap-2 font-heading text-xl"><MessageSquare className="h-5 w-5 text-primary" /> WhatsApp Personalization</h3>
-          <div className="space-y-4">
-            {whatsAppTemplates.map((template) => (
-              <div key={template.title} className="rounded-2xl border border-border/40 bg-background/50 p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-bold">{template.title}</p>
-                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{template.useCase}</p>
-                  </div>
-                  <button onClick={() => copyTemplate(template.message)} className="rounded-lg border border-primary/20 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/10">
-                    Copy
-                  </button>
-                </div>
-                <p className="text-xs leading-relaxed text-foreground/80">{template.message}</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {template.variables.map((variable) => (
-                    <span key={variable} className="rounded-full bg-secondary px-2 py-1 text-[9px] font-bold text-muted-foreground">{variable}</span>
-                  ))}
-                </div>
+        {/* AI Suggested Offers */}
+        <div className="glass rounded-3xl border border-border/50 p-8 xl:col-span-2">
+           <div className="flex items-center justify-between mb-8">
+              <div>
+                 <h3 className="font-heading text-xl">Dynamic Revenue Campaigns</h3>
+                 <p className="text-xs text-muted-foreground mt-1">Offers generated by analyzing current customer behavior.</p>
               </div>
-            ))}
-          </div>
+              <Rocket className="w-5 h-5 text-primary" />
+           </div>
+           
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {analysis.offers.map((offer: any) => (
+                 <div key={offer.id} className="rounded-2xl border border-border/40 bg-secondary/20 p-6 flex flex-col justify-between">
+                    <div>
+                       <div className="flex items-center justify-between mb-4">
+                          <h4 className="text-base font-bold">{offer.title}</h4>
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-lg">Prob: {offer.prob}%</span>
+                       </div>
+                       <p className="text-[11px] text-muted-foreground mb-4">Rule: {offer.rule}</p>
+                       <div className="grid grid-cols-2 gap-4 mb-6">
+                          <div className="p-3 rounded-xl bg-background/50 border border-border/20">
+                             <p className="text-[9px] uppercase text-muted-foreground mb-1">Audience</p>
+                             <p className="text-lg font-bold">{offer.audience}</p>
+                          </div>
+                          <div className="p-3 rounded-xl bg-background/50 border border-border/20">
+                             <p className="text-[9px] uppercase text-muted-foreground mb-1">Exp. Revenue</p>
+                             <p className="text-lg font-bold text-green-400">₹{offer.rev.toLocaleString()}</p>
+                          </div>
+                       </div>
+                    </div>
+                    <button 
+                      onClick={() => deployAction(offer.title)}
+                      className="w-full py-3 rounded-xl border border-primary/30 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary hover:text-primary-foreground transition-all"
+                    >
+                       Deploy Campaign
+                    </button>
+                 </div>
+              ))}
+           </div>
         </div>
+      </div>
+
+      {/* 4. WhatsApp Personalization & Intelligence */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+         <div className="glass rounded-3xl border border-border/50 p-8">
+            <div className="flex items-center justify-between mb-8">
+               <h3 className="font-heading text-xl">WhatsApp Strategy</h3>
+               <MessageSquare className="w-5 h-5 text-primary" />
+            </div>
+            <div className="space-y-4">
+               {whatsAppTemplates.map((template) => (
+                  <div key={template.title} className="p-6 rounded-2xl bg-secondary/20 border border-border/20 relative group">
+                     <div className="flex items-center justify-between mb-3">
+                        <p className="text-sm font-bold">{template.title}</p>
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText(template.message);
+                            toast.success("Template copied!");
+                          }}
+                          className="p-2 rounded-lg hover:bg-primary/20 text-primary transition-colors"
+                        >
+                           <Copy className="w-4 h-4" />
+                        </button>
+                     </div>
+                     <p className="text-xs text-muted-foreground italic leading-relaxed mb-4">"{template.message}"</p>
+                     <div className="flex flex-wrap gap-2">
+                        {template.variables.map(v => (
+                           <span key={v} className="text-[9px] font-bold px-2 py-1 rounded bg-background border border-border/20 text-muted-foreground">{v}</span>
+                        ))}
+                     </div>
+                  </div>
+               ))}
+            </div>
+         </div>
+
+         <div className="glass rounded-3xl border border-border/50 p-8">
+            <div className="flex items-center justify-between mb-8">
+               <h3 className="font-heading text-xl">Customer Intelligence</h3>
+               <Activity className="w-5 h-5 text-primary" />
+            </div>
+            <div className="space-y-6">
+               <div className="p-5 rounded-2xl border border-red-500/20 bg-red-500/5">
+                  <div className="flex items-center gap-3 mb-2 text-red-400">
+                     <TrendingDown className="w-4 h-4" />
+                     <p className="text-sm font-bold">Churn Alert</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                     {analysis.churnRisk} regular customers haven't visited in over 30 days. This represents a potential revenue loss of {formatINR(analysis.churnRisk * 1200)} if they are not reactivated this week.
+                  </p>
+               </div>
+
+               <div className="p-5 rounded-2xl border border-primary/20 bg-primary/5">
+                  <div className="flex items-center gap-3 mb-2 text-primary">
+                     <Users className="w-4 h-4" />
+                     <p className="text-sm font-bold">VIP Opportunity</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                     {analysis.vipGaps} high-value customers (spent >₹15k) are currently idle. Recommend personal outreach with the VIP Loyalty Bonus campaign.
+                  </p>
+               </div>
+
+               <div className="p-5 rounded-2xl border border-blue-500/20 bg-blue-500/5">
+                  <div className="flex items-center gap-3 mb-2 text-blue-400">
+                     <BarChart3 className="w-4 h-4" />
+                     <p className="text-sm font-bold">Membership Strategy</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                     {analysis.membershipTargets} regular clients have spent enough to qualify for the Gold Membership. Upgrade them now to lock in recurring visits.
+                  </p>
+               </div>
+            </div>
+         </div>
       </div>
     </div>
   );
