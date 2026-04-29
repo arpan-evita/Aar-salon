@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   CalendarDays, Users, Scissors, BarChart3, Clock, ArrowLeft,
   TrendingUp, IndianRupee, UserCheck, Calendar, LogOut, Plus, Mail, Shield, Trash2,
@@ -83,9 +83,13 @@ const tabGroups: TabGroup[] = [
 const allTabs = tabGroups.flatMap(group => group.items);
 
 const AdminDashboard = () => {
-  const { user, roles, signOut, hasRole } = useAuth();
+  const { user, roles, signOut } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("overview");
+  const { tabId } = useParams();
+  
+  // Use URL param as activeTab, fallback to overview
+  const activeTab = tabId || "overview";
+  
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [globalSearch, setGlobalSearch] = useState("");
 
@@ -93,8 +97,8 @@ const AdminDashboard = () => {
     `${tab.label} ${tab.id}`.toLowerCase().includes(globalSearch.toLowerCase())
   );
 
-  const openTab = (tabId: string) => {
-    setActiveTab(tabId);
+  const openTab = (id: string) => {
+    navigate(`/admin/${id}`);
     setGlobalSearch("");
     if (window.innerWidth < 768) setIsSidebarOpen(false);
   };
@@ -289,7 +293,7 @@ const AdminDashboard = () => {
                 We are building a robust backend to handle high-performance data operations for this module.
               </p>
               <button 
-                onClick={() => setActiveTab('overview')}
+                onClick={() => openTab('overview')}
                 className="gold-gradient text-primary-foreground px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-opacity"
               >
                 Back to Dashboard
