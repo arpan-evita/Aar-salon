@@ -145,18 +145,44 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
   const q = query.toLowerCase();
 
   // Intent Detection
-  const isOffer = q.includes("offer") || q.includes("discount") || q.includes("promo") || q.includes("deal");
+  const isOffer = q.includes("offer") || q.includes("discount") || q.includes("promo") || q.includes("deal") || q.includes("free") || q.includes("gift");
   const isRevenue = q.includes("revenue") || q.includes("money") || q.includes("target") || q.includes("income") || q.includes("profit") || q.includes("reach");
   const isStaff = q.includes("staff") || q.includes("team") || q.includes("stylist") || q.includes("employee") || q.includes("performance");
   const isMarketing = q.includes("marketing") || q.includes("ads") || q.includes("campaign") || q.includes("social");
+  const isSpecificService = q.includes("haircut") || q.includes("facial") || q.includes("spa") || q.includes("pedicure") || q.includes("manicure") || q.includes("color") || q.includes("keratin");
 
-  // Reference memory if available
+  // Reference memory if available - Fix the doubling bug by checking if previous content already has the prefix
   const hadPreviousDiscussion = history.length > 0;
-  const memoryContext = hadPreviousDiscussion 
-    ? `Continuing our analysis of ${history[history.length-1].content.slice(0, 30)}... ` 
-    : "";
+  let memoryContext = "";
+  if (hadPreviousDiscussion) {
+    const lastMsg = history[history.length-1].content;
+    if (!lastMsg.startsWith("Continuing our analysis")) {
+      memoryContext = `Continuing our analysis of ${lastMsg.slice(0, 40)}... `;
+    }
+  }
 
-  // 1. Handle Offers/Promotions
+  // 1. Handle Specific Service Proposals (e.g., "what if we give one free haircut")
+  if (isSpecificService && (q.includes("free") || q.includes("offer") || q.includes("what if"))) {
+    const service = q.match(/haircut|facial|spa|pedicure|manicure|color|keratin/)?.[0] || "service";
+    const isFree = q.includes("free");
+    
+    if (isFree) {
+      return {
+        summary: `${memoryContext}Analyzing your 'Free ${service.toUpperCase()}' proposal through the Dr. Basesh Gala 'Finance Pillar' lens:`,
+        steps: [
+          `CAUTION: A free ${service} has a high 'Acquisition Cost'. Unless it's tied to a high-ticket upsell (like a Keratin treatment or a 12-month membership), you are just leaking 'Fuel'.`,
+          `STRATEGY: Instead of 'Free', use 'Value Add'. Give a free scalp massage with every ${service}. It preserves the 'Dignity' of the service while increasing the 'Dua' of the customer.`,
+          `DATA CHECK: You have ${data.bookings.emptySlotsNext3Days} empty slots. Use the ${service} offer ONLY for 'Flash Fill' during non-peak hours (Tue-Thu 11am-4pm) to avoid cannibalizing full-price weekend revenue.`
+        ],
+        projections: {
+          newRevenue: -500, // Short term loss for long term gain
+          confidence: 75
+        }
+      };
+    }
+  }
+
+  // 2. Handle Offers/Promotions
   if (isOffer) {
     const offerAdvice = [];
     if (data.bookings.emptySlotsNext3Days > 3) {
@@ -179,7 +205,7 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
     };
   }
 
-  // 2. Handle Revenue/Targets
+  // 3. Handle Revenue/Targets
   if (isRevenue) {
     return {
       summary: `${memoryContext}LISTEN CAREFULLY: To hit that ₹${(data.revenue.target/100000).toFixed(1)}L target, we need to bridge a ₹${data.revenue.gap.toLocaleString()} gap. This isn't about working harder; it's about the 'Zero-Exit Mandate' and systems.`,
@@ -195,7 +221,7 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
     };
   }
 
-  // 3. Handle Staff
+  // 4. Handle Staff
   if (isStaff) {
     return {
       summary: `${memoryContext}Team performance is the 'Energy Vessel' of your salon. With an average utilization of ${data.staff.avgUtilization}%, you have room for growth without hiring.`,
@@ -211,7 +237,7 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
     };
   }
 
-  // 4. Handle Marketing
+  // 5. Handle Marketing
   if (isMarketing) {
     return {
       summary: `${memoryContext}Your marketing must move from 'Information' to 'Emotion'. You are selling luxury, not hair.`,
