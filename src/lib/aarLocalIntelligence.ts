@@ -175,7 +175,7 @@ export const generateGrowthPlan = async (
     return {
       intent: 'marketing',
       isReinforced,
-      summary: `Activating ${serviceKey} Growth Framework. We are deploying a high-ticket upsell strategy to maximize your ${serviceKey} margins.`,
+      summary: `I've analyzed your ${serviceKey} performance against your current ₹${data.revenue.gap?.toLocaleString()} revenue gap. To hit your ₹7L target, we need to stop treating ${serviceKey} as a simple service and start treating it as a high-margin recurring engine.\n\n**The Strategy:**\n${expertise.advice}\n\n**Immediate Upsell:**\n${expertise.upsell}\n\n**Action Plan:**\n1. **Anchor Your Price:** Set a high-ticket membership first to make single sessions look like a steal.\n2. **Target Your VIPs:** We'll focus exclusively on your ${expertise.target} group who already have the highest trust in your brand.\n\nWould you like me to draft the WhatsApp campaign for this strategy?`,
       steps: [
         `ANCHOR PRICING: ${expertise.advice.split('.')[0]}.`,
         `UPSELL FLOW: ${expertise.upsell}`,
@@ -188,13 +188,6 @@ export const generateGrowthPlan = async (
           difficulty: "Medium", 
           timeline: "7 Days", 
           details: expertise.advice 
-        },
-        {
-          title: "One-Click Upsell",
-          impact: "Medium",
-          difficulty: "Easy",
-          timeline: "Immediate",
-          details: expertise.upsell
         }
       ],
       offers: [
@@ -209,7 +202,7 @@ export const generateGrowthPlan = async (
     return {
       intent: 'upsell',
       isReinforced,
-      summary: "AOV Optimization Active. We are implementing 'Post-Purchase Joy' to capture impulse upgrades.",
+      summary: `Increasing your Average Order Value (AOV) is the fastest way to bridge your ₹${data.revenue.gap?.toLocaleString()} gap without spending more on ads. I recommend we activate **'Post-Purchase Joy'** points throughout the customer journey.\n\n**Core Recommendations:**\n\n- **The Wash Station Upsell:** Train your team to offer ₹500 rituals while the customer is already relaxed at the wash station. It has a 90% profit margin.\n- **Bundle Anchoring:** Stop offering single services. Every booking should be a 'Mini-Transformation'.\n- **Membership Conversion:** We should target your top 20% spenders and move them to annual recurring plans to lock in revenue.\n\nDoes this sound like a plan you'd like to implement with your staff this week?`,
       steps: [
         "WASH STATION UPSELL: Train staff to offer ₹500 - ₹800 add-ons during the hair wash.",
         "BUNDLE ANCHORING: Replace single services with 'Mini-Transformation' bundles.",
@@ -228,11 +221,11 @@ export const generateGrowthPlan = async (
     return {
       intent: 'marketing',
       isReinforced,
-      summary: `Synthesizing a high-conversion 'Grand Slam' offer. Based on your current revenue gap of ₹${data.revenue.gap?.toLocaleString()}, we need a multi-layered bundle.`,
+      summary: `I'm building a **Grand Slam Offer** tailored to your current metrics. With a ₹${data.revenue.gap?.toLocaleString()} gap and ${data.customers.atRisk}% churn risk, we need a high-urgency move to recover revenue fast.\n\n**The 'GrowthOS' Bundle:**\nWe should combine your top services into a 'Total Transformation' package. \n\n**Execution Steps:**\n1. **Limit Supply:** Only 50 slots available to create immediate urgency.\n2. **Target Inactive Clients:** We'll deploy this via WhatsApp to everyone who hasn't visited in 45+ days.\n3. **The Hook:** ${advice}\n\nShall I generate the campaign creative for you?`,
       steps: [
-        "BUNDLE CREATION: Combine top services (Haircut + Botox) into a signature package.",
+        "BUNDLE CREATION: Combine top services into a signature package.",
         "URGENCY INJECTION: Set a 48-hour limit for the first 50 bookings.",
-        "WHATSAPP DEPLOYMENT: Target your 'At-Risk' segment (${data.customers.atRisk}% churn risk)."
+        "WHATSAPP DEPLOYMENT: Target your 'At-Risk' segment."
       ],
       offers: [
         { name: "The GrowthOS Bundle", target: "At-Risk Customers", benefit: "20% Off + Free Kit", action: "WhatsApp Blast" }
@@ -249,10 +242,10 @@ export const generateGrowthPlan = async (
     return {
       intent: 'staff',
       isReinforced,
-      summary: "Acting as your Revenue Operator. We are shifting to 'Retention-First' staff metrics to stabilize the floor.",
+      summary: `I see we have ${data.staff.active} active staff members out of ${data.staff.total}. To hit our goals, we need to shift from 'Service-First' to **'Retention-First'** metrics.\n\n**The Plan:**\n\n- **Retention Bonus:** We should reward stylists who maintain a repeat customer rate of over 75%.\n- **Utilization Audit:** I've noticed some staff are underutilized. We can route automated leads specifically to them to balance the floor load.\n\nWould you like me to see which stylists are currently below the 70% retention threshold?`,
       steps: [
         "REWARD RETENTION: Implement a commission bump for stylists with repeat rates >75%.",
-        "UTILIZATION AUDIT: Redirect leads to underutilized staff (Active: ${data.staff.active}/${data.staff.total})."
+        "UTILIZATION AUDIT: Redirect leads to underutilized staff."
       ],
       strategies: [
         { title: "Retention Bonus", impact: "High", difficulty: "Easy", timeline: "Immediate", details: "Implement a 5% commission bump for stylists who maintain a 70%+ repeat rate." }
@@ -266,7 +259,7 @@ export const generateGrowthPlan = async (
     return {
       intent: 'academy',
       isReinforced,
-      summary: "Activating Academy Business Model. Focusing on Student Lifetime Value and high-ticket enrollment.",
+      summary: `Activating your **Academy Business Model**. To hit your enrollment goals, we need to focus on Student Lifetime Value and high-ticket certifications.\n\n**Strategic Recommendation:**\nI recommend shifting your budget from generic search ads to Instagram 'Success Stories'. We should also host a free 'Masterclass' webinar to filter high-intent leads before they even talk to your team.\n\nShall I set up the tracking for your next academy intake?`,
       steps: [
         "LEAD SOURCE OPTIMIZATION: Shift budget from Google to Instagram for visual 'Success Stories'.",
         "CONVERSION EVENT: Host a free 'Masterclass' to filter high-intent students."
@@ -281,7 +274,7 @@ export const generateGrowthPlan = async (
     return {
       intent: 'retention',
       isReinforced,
-      summary: `Retention Crisis Mode. Churn risk is at ${data.customers.atRisk}%. We must activate win-back flows immediately.`,
+      summary: `I've flagged a **Retention Risk**. Your current churn risk is at ${data.customers.atRisk}%, which is impacting your baseline revenue. We need to move from 'one-off' visits to an LTV-focused engine.\n\n**The Win-Back Framework:**\n- **RFM Segmentation:** I'll help you segment your customers into 'Loyal' vs 'Lost'.\n- **Tiered Escalation:** We'll send escalating WhatsApp offers (10% -> 20% -> 30%) over the next 90 days to recover these clients.\n\nShould we start with the 'Lost' segment (clients who haven't visited in 60+ days)?`,
       steps: [
         "RFM SEGMENTATION: Segment customers into 'Loyal' vs 'Lost'.",
         "TIERED VOUCHERS: Send escalation offers (10% -> 20% -> 30%) over 3 months."
@@ -297,7 +290,7 @@ export const generateGrowthPlan = async (
     return {
       intent: 'pricing',
       isReinforced,
-      summary: "Pricing Advisor Engaged. We are implementing 'Menu Anchoring' to boost average ticket size.",
+      summary: `I'm engaging your **Pricing Advisor** module. We can boost your margins by at least 10% just by applying psychological anchoring to your menu.\n\n**Immediate Moves:**\n- **Menu Anchoring:** Place your most expensive service (e.g., 'Royal Bridal') at the very top. This makes your ₹5k - ₹10k services look affordable by comparison.\n- **Charm Pricing:** We'll adjust your core service prices to end in .99 or .95 to trigger the 'left-digit' effect.\n\nWould you like me to audit your current service list for these pricing opportunities?`,
       steps: [
         "MENU ANCHORING: Place 'Royal Bridal Package' at top to anchor price expectation.",
         "CHARM PRICING: End all prices in .99 or .95 to trigger impulse buying."
@@ -313,11 +306,10 @@ export const generateGrowthPlan = async (
   return {
     intent: 'growth',
     isReinforced,
-    summary: "Lead Growth Consultant Active. Scanning your salon data for untapped revenue pockets.",
+    summary: `I'm scanning your salon data right now. We have exactly ₹${data.revenue.gap?.toLocaleString()} left to recover to hit your monthly target of ₹${data.revenue.target?.toLocaleString()}.\n\nTo bridge this gap, I'm recommending a **CEO Identity Shift**: spend less time on the floor and more time on these high-leverage systems. \n\n**Key Move:**\n${KNOWLEDGE_BASE.MINDSET[0].advice}\n\nWhat specific part of the business shall we optimize first—your marketing, staff performance, or retention flows?`,
     steps: [
       `TARGET GAP: We have ₹${data.revenue.gap?.toLocaleString()} to recover this month.`,
-      "UPSYSTEMS: Activate 'Post-Purchase' upsells for every booking.",
-      "CEO SHIFT: Spend 4 hours this week purely on these strategy implementations."
+      "UPSYSTEMS: Activate 'Post-Purchase' upsells for every booking."
     ],
     strategies: [
       { title: "Owner vs Operator", impact: "High", difficulty: "Hard", timeline: "Ongoing", details: KNOWLEDGE_BASE.MINDSET[0].advice }
