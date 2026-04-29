@@ -70,6 +70,14 @@ const HUMAN_INTROS = [
   "If I were in your shoes right now, knowing we have a ₹{gap} gap to hit ₹7L, I'd double down on what's working."
 ];
 
+const GREETINGS = [
+  "Hey there! How's everything going at AAR Salon today?",
+  "Hello! Ready to make some moves on that ₹7L target today?",
+  "Hey! Hope you're having a great day. How can I help you out today?",
+  "Hi! I've been scanning the latest metrics—everything's looking sharp. What's on your mind?",
+  "Hey! Good to see you. Ready to dive into some strategy or just checking in?"
+];
+
 const HUMAN_ADVICE = {
   ACQUISITION: [
     "Instead of burning money on broad ads, let's go for high-intent spenders. I'd launch a 'Signature Transformation' series on Instagram. Showcase the before-and-after of your Botox rituals. It's not just a service; it's a result people are willing to pay a premium for.",
@@ -107,10 +115,35 @@ export const generateGrowthPlan = async (
   history: {role: string, content: string}[],
   learnedPatterns: LearningPattern[] = []
 ): Promise<GrowthPlan> => {
-  const query = q.toLowerCase();
+  const query = q.toLowerCase().trim();
   const gapNum = data.revenue.gap || 0;
   const gap = gapNum.toLocaleString();
   
+  // 1. Detect Greeting
+  const isGreeting = ["hi", "hello", "hey", "good morning", "good evening", "yo"].includes(query);
+  
+  if (isGreeting) {
+    const greeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)].replace(/{gap}/g, gap);
+    return {
+      intent: "greeting",
+      isReinforced: false,
+      summary: greeting,
+      steps: [],
+      projections: { newRevenue: 0, confidence: 100 }
+    };
+  }
+
+  // 2. Detect Small Talk / Meta
+  if (query.length < 10 && !query.includes("₹") && !query.includes("target")) {
+    return {
+      intent: "chat",
+      isReinforced: false,
+      summary: "I'm here! What's on your mind regarding the salon today? We can talk strategy, marketing, or even just check how the team's doing.",
+      steps: [],
+      projections: { newRevenue: 0, confidence: 100 }
+    };
+  }
+
   const intents = {
     scaling: query.includes("scale") || query.includes("system") || query.includes("sop") || query.includes("expand"),
     team: query.includes("staff") || query.includes("team") || query.includes("stylist") || query.includes("employee") || query.includes("performance"),
