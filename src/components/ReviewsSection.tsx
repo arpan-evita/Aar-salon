@@ -15,9 +15,21 @@ const ReviewsSection = () => {
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {
-    supabase.from("reviews").select("customer_name, rating, comment")
-      .eq("is_approved", true).order("created_at", { ascending: false })
-      .then(({ data }) => { setReviews(data && data.length > 0 ? data : fallbackReviews); });
+    const fetchReviews = async () => {
+      const { data } = await supabase
+        .from("reviews")
+        .select("customer_name, rating, comment, is_featured")
+        .eq("is_approved", true)
+        .order("is_featured", { ascending: false })
+        .order("created_at", { ascending: false });
+
+      if (data && data.length > 0) {
+        setReviews(data);
+      } else {
+        setReviews(fallbackReviews);
+      }
+    };
+    fetchReviews();
   }, []);
 
   if (reviews.length === 0) return null;
