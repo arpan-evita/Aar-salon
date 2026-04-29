@@ -321,7 +321,11 @@ const AIGrowthAssistant = () => {
   const [mode, setMode] = useState<'strategy' | 'marketing' | 'crm' | 'finance' | 'staff' | 'academy'>('strategy');
   const [showSidebar, setShowSidebar] = useState(true);
   const [showInsights, setShowInsights] = useState(true);
+  const [attachments, setAttachments] = useState<{file: File, preview: string}[]>([]);
+  const [isListening, setIsListening] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
   
   const [data, setData] = useState<any>(null);
   const [analysis, setAnalysis] = useState<any>(null);
@@ -329,17 +333,92 @@ const AIGrowthAssistant = () => {
   useEffect(() => {
     fetchEverything();
     fetchSessions();
+
+    // Initialize Speech Recognition
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = Array.from(event.results)
+          .map((result: any) => result[0])
+          .map((result: any) => result.transcript)
+          .join('');
+        setQuestion(transcript);
+      };
+
+      recognitionRef.current.onend = () => setIsListening(false);
+      recognitionRef.current.onerror = () => setIsListening(false);
+    }
   }, []);
+
+  const toggleVoiceTyping = () => {
+    if (!recognitionRef.current) {
+      toast.error("Voice typing is not supported in this browser.");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+        toast.info("Listening... Speak your growth strategy.", {
+          icon: <Mic className="w-4 h-4 text-gold" />,
+        });
+      } catch (e) {
+        console.error("Speech recognition error:", e);
+        setIsListening(false);
+      }
+    }
+  };
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [history, isTyping]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    processFiles(files);
+  };
+
+  const processFiles = (files: File[]) => {
+    const newAttachments = files.map(file => ({
+      file,
+      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : ''
+    }));
+    setAttachments(prev => [...prev, ...newAttachments]);
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = Array.from(e.clipboardData.items);
+    const files = items
+      .filter(item => item.type.startsWith('image/'))
+      .map(item => item.getAsFile())
+      .filter((file): file is File => file !== null);
+    
+    if (files.length > 0) {
+      processFiles(files);
+    }
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => {
+      const updated = [...prev];
+      if (updated[index].preview) URL.revokeObjectURL(updated[index].preview);
+      updated.splice(index, 1);
+      return updated;
+    });
+  };
+
   const fetchEverything = async () => {
-    // ... same logic as before to fetch invoices, customers, etc.
+    // ... logic remains same
     const { data: invoices } = await supabase.from('invoices').select('*');
     const { data: customers } = await supabase.from('customers').select('*');
-    // Simplified analysis for demo
     const currentRev = invoices?.reduce((sum, i) => sum + Number(i.total), 0) || 0;
     setAnalysis({
       currentRev,
@@ -370,12 +449,17 @@ const AIGrowthAssistant = () => {
   };
 
   const handleAskAI = async () => {
-    if (!question) return;
+    if (!question && attachments.length === 0) return;
     const userMsg = question;
     setQuestion("");
+    setAttachments([]);
     setIsTyping(true);
 
-    const newUserMsg = { role: 'user', content: userMsg };
+    const newUserMsg = { 
+      role: 'user', 
+      content: userMsg || (attachments.length > 0 ? `Shared ${attachments.length} attachment(s)` : ""),
+      metadata: { attachments: attachments.map(a => ({ name: a.file.name, type: a.file.type })) }
+    };
     setHistory(prev => [...prev, newUserMsg]);
 
     const salonData: SalonData = {
@@ -405,6 +489,13 @@ const AIGrowthAssistant = () => {
 
   return (
     <div className="elite-ai-container rounded-3xl overflow-hidden border border-gold/10 shadow-2xl">
+      <input 
+        type="file" 
+        multiple 
+        ref={fileInputRef} 
+        className="hidden" 
+        onChange={handleFileChange}
+      />
       {/* LEFT SIDEBAR */}
       <AnimatePresence>
         {showSidebar && (
@@ -514,7 +605,17 @@ const AIGrowthAssistant = () => {
                     {msg.content}
                   </div>
 
-                  {msg.metadata && (
+                  {msg.metadata?.attachments && (
+                    <div className="mt-3 flex gap-2">
+                      {msg.metadata.attachments.map((att: any, idx: number) => (
+                        <div key={idx} className="px-2 py-1 rounded bg-gold/10 border border-gold/20 text-[9px] text-gold uppercase font-bold">
+                          📎 {att.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {msg.metadata && msg.metadata.intent && (
                     <div className="mt-6 space-y-4">
                       {msg.metadata.metrics && (
                         <div className="grid grid-cols-2 gap-3">
@@ -561,6 +662,24 @@ const AIGrowthAssistant = () => {
         {/* INPUT AREA */}
         <div className="elite-input-container">
           <div className="max-w-4xl mx-auto space-y-4">
+            {/* ATTACHMENT PREVIEW */}
+            {attachments.length > 0 && (
+              <div className="attachment-gallery">
+                {attachments.map((att, idx) => (
+                  <div key={idx} className="attachment-preview">
+                    <button onClick={() => removeAttachment(idx)} className="remove-attachment"><Plus className="w-3 h-3 rotate-45" /></button>
+                    {att.preview ? (
+                      <img src={att.preview} alt="upload" />
+                    ) : (
+                      <div className="attachment-file-icon">
+                        <Paperclip className="w-5 h-5" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* QUICK CHIPS */}
             <div className="flex items-center gap-2 overflow-x-auto elite-scroll pb-2">
               {['Bridal campaign', 'Botox upsell', 'Staff ROI', 'Membership push'].map(chip => (
@@ -585,11 +704,12 @@ const AIGrowthAssistant = () => {
             </div>
 
             <div className="elite-input-wrapper">
-              <button className="p-2 text-muted-foreground hover:text-gold"><Plus className="w-5 h-5" /></button>
-              <button className="p-2 text-muted-foreground hover:text-gold"><Paperclip className="w-5 h-5" /></button>
+              <button onClick={() => fileInputRef.current?.click()} className="p-2 text-muted-foreground hover:text-gold"><Plus className="w-5 h-5" /></button>
+              <button onClick={() => fileInputRef.current?.click()} className="p-2 text-muted-foreground hover:text-gold"><Paperclip className="w-5 h-5" /></button>
               <textarea 
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
+                onPaste={handlePaste}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
@@ -600,12 +720,14 @@ const AIGrowthAssistant = () => {
                 placeholder={`Ask ${mode} bot how to grow your salon...`}
                 className="elite-input resize-none h-auto max-h-32 py-4"
               />
-              <button className="p-2 text-muted-foreground hover:text-gold"><Mic className="w-5 h-5" /></button>
+              <button onClick={toggleVoiceTyping} className={`p-2 transition-all ${isListening ? 'mic-active' : 'text-muted-foreground hover:text-gold'}`}>
+                <Mic className="w-5 h-5" />
+              </button>
               <button onClick={handleAskAI} className="elite-send-btn ml-2">
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-center text-[9px] text-muted-foreground uppercase tracking-widest">AAR Local Intelligence (ALI) - Private Private Growth Consultant</p>
+            <p className="text-center text-[9px] text-muted-foreground uppercase tracking-widest">AAR Local Intelligence (ALI) - Private Growth Consultant</p>
           </div>
         </div>
       </div>
