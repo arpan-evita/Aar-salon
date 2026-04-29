@@ -310,6 +310,81 @@ const MetricCard = ({ metric }: { metric: any }) => (
   </div>
 );
 
+const ExecutiveOfferGallery = () => (
+  <div className="space-y-8">
+    <div className="flex items-end justify-between">
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gold mb-2">Campaign Center</p>
+        <h3 className="text-3xl font-heading text-foreground">Ready-Made Growth Offers</h3>
+        <p className="text-sm text-muted-foreground mt-2">Data-backed templates to reactivate churned clients and boost high-value bookings.</p>
+      </div>
+      <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold/10 border border-gold/20 text-gold text-[10px] font-bold uppercase tracking-widest hover:bg-gold/20 transition-all">
+        <Plus className="w-4 h-4" /> Create Custom Offer
+      </button>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {smartSegments.map((segment, idx) => (
+        <div key={idx} className="elite-card p-6 flex flex-col h-full group hover:border-gold/40 transition-all">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-10 h-10 rounded-xl bg-gold/10 flex items-center justify-center text-gold">
+              <Rocket className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] font-bold text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">{segment.confidence}% Confidence</span>
+          </div>
+          <h4 className="text-lg font-bold text-foreground mb-2">{segment.name}</h4>
+          <p className="text-xs text-muted-foreground mb-6 flex-1">{segment.audience}</p>
+          
+          <div className="pt-6 border-t border-gold/10 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] uppercase text-muted-foreground">Est. Revenue</span>
+              <span className="text-sm font-bold text-gold">{formatINR(segment.expectedRevenue)}</span>
+            </div>
+            <button className="w-full py-3 bg-gold text-black rounded-xl font-bold text-[10px] uppercase tracking-widest hover:scale-[1.02] transition-all">
+              Launch Campaign
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const DailyAutomationPulse = () => (
+  <div className="space-y-8">
+    <div>
+      <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gold mb-2">Growth Automation</p>
+      <h3 className="text-3xl font-heading text-foreground">Active Daily Actions</h3>
+      <p className="text-sm text-muted-foreground mt-2">Background triggers working to recover revenue while you manage your salon.</p>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {automationBlueprints.map((blue, idx) => (
+        <div key={idx} className="elite-card p-5 flex items-center gap-6 group hover:bg-gold/[0.02] transition-all">
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${blue.status === 'Live' ? 'bg-green-400/10 text-green-400' : 'bg-white/5 text-muted-foreground'}`}>
+            <Activity className="w-6 h-6" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h5 className="text-sm font-bold text-foreground truncate">{blue.name}</h5>
+              <span className={`text-[8px] uppercase font-bold px-1.5 py-0.5 rounded ${blue.status === 'Live' ? 'bg-green-400/20 text-green-400' : 'bg-white/10 text-muted-foreground'}`}>
+                {blue.status}
+              </span>
+            </div>
+            <p className="text-[10px] text-muted-foreground truncate">Outcome: {blue.outcome}</p>
+          </div>
+          <div className="text-right flex flex-col items-end gap-1">
+            <span className="text-[9px] uppercase text-muted-foreground tracking-widest">{blue.channel}</span>
+            <button className="text-[10px] font-bold text-gold hover:underline flex items-center gap-1">
+              Configure <Settings className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 const AIGrowthAssistant = () => {
   const [loading, setLoading] = useState(true);
   const [target, setTarget] = useState(700000);
@@ -845,13 +920,19 @@ export default function PremiumGrowthModules({ module }: PremiumGrowthModulesPro
             <AIGrowthAssistant />
           </section>
           
-          <section className="w-full p-8 md:p-12 border-t border-gold/10 bg-black">
+          <section className="w-full p-8 md:p-12 lg:p-20 border-t border-gold/10 bg-black">
             <div className="max-w-[1600px] mx-auto">
-              <AdvancedAnalytics />
+              <ExecutiveOfferGallery />
             </div>
           </section>
 
-          <section className="w-full p-8 md:p-12 border-t border-gold/10 bg-[#050505]">
+          <section className="w-full p-8 md:p-12 lg:p-20 border-t border-gold/10 bg-[#050505]">
+            <div className="max-w-[1600px] mx-auto">
+              <DailyAutomationPulse />
+            </div>
+          </section>
+
+          <section className="w-full p-8 md:p-12 lg:p-20 border-t border-gold/10 bg-black pb-40">
             <div className="max-w-4xl mx-auto">
               <AdvancedSettings />
             </div>
