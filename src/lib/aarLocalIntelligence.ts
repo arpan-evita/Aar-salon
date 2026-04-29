@@ -63,11 +63,19 @@ export interface GrowthPlan {
 }
 
 const HUMAN_INTROS = [
-  "Look, I've been crunching the numbers for AAR Salon and that ₹{gap} gap is definitely bridgeable if we make the right moves.",
-  "Honestly, hitting the ₹7L target is all about focus. Right now, we're ₹{gap} away, and I have a clear plan for it.",
-  "Let's be real—to hit ₹7L this month, we can't just keep doing the same thing. Here's how I see us closing that ₹{gap} gap.",
-  "I was just looking at your latest metrics. That ₹{gap} revenue gap looks like a massive opportunity once we fix the leakage.",
-  "If I were in your shoes right now, knowing we have a ₹{gap} gap to hit ₹7L, I'd double down on what's working."
+  "I've been looking into this for AAR Salon, and here's a move that makes a lot of sense right now.",
+  "Honestly, I think we can make a big impact with this approach. Check this out:",
+  "Let's be real—the standard approach won't work for your brand. Here's how I see us handling this:",
+  "I was just analyzing your latest data, and this specific strategy stood out as a clear winner.",
+  "If I were in your shoes right now, this is exactly where I'd focus my energy.",
+  "Sure thing! Here's a tailored plan I've put together based on your current salon performance:",
+  "I've got you. Based on what we discussed and your latest metrics, here's the best move:"
+];
+
+const TARGET_INTROS = [
+  "Look, that ₹{gap} gap is definitely bridgeable. We just need to stay focused on high-margin moves.",
+  "Honestly, hitting that ₹7L target is within reach. We're ₹{gap} away, and here's the roadmap.",
+  "To close that ₹{gap} gap this month, we need to be very intentional. Here's the plan:"
 ];
 
 const HUMAN_OFFERS = {
@@ -91,7 +99,7 @@ const HUMAN_ADVICE = {
     "Push 'Consultative Prescriptions' instead of sales. Stylists shouldn't 'sell'—they should prescribe a 28-day roadmap for hair health."
   ],
   REVENUE: [
-    "The fastest way to close that ₹{gap} gap is at the wash station. A ₹800 'Flash Ritual' takes zero extra time but has a massive profit margin.",
+    "The fastest way to close the gap is at the wash station. A ₹800 'Flash Ritual' takes zero extra time but has a massive profit margin.",
     "We need 'Anchor Pricing'. Put a ₹50k 'Full Restoration' package at the top of your menu. It makes your ₹15k Botox look like incredible value."
   ]
 };
@@ -125,10 +133,11 @@ export const generateGrowthPlan = async (
     };
   }
 
-  // 2. High-Intent Detection (Even for short messages)
-  const isBusinessIntent = query.includes("offer") || query.includes("strategy") || query.includes("grow") || query.includes("revenue") || query.includes("plan") || query.includes("target") || query.includes("money") || query.includes("client") || query.includes("customer");
+  // 2. High-Intent Detection
+  const isTargetQuery = query.includes("target") || query.includes("gap") || query.includes("reach 7") || query.includes("7 lakh");
+  const isBusinessIntent = query.includes("offer") || query.includes("strategy") || query.includes("grow") || query.includes("revenue") || query.includes("plan") || query.includes("money") || query.includes("client") || query.includes("customer");
 
-  // 3. Greeting Detection (Only if NO business intent)
+  // 3. Greeting Detection
   const greetings = ["hi", "hello", "hey", "good morning", "good evening", "yo", "sup", "how are you"];
   if (!isBusinessIntent && greetings.some(g => query.startsWith(g)) && query.length < 15) {
     return {
@@ -185,7 +194,8 @@ export const generateGrowthPlan = async (
     };
   }
 
-  const intro = HUMAN_INTROS[Math.floor(Math.random() * HUMAN_INTROS.length)].replace(/{gap}/g, gap);
+  const introSource = isTargetQuery ? TARGET_INTROS : HUMAN_INTROS;
+  const intro = introSource[Math.floor(Math.random() * introSource.length)].replace(/{gap}/g, gap);
   const core = advicePool.map(a => a.replace(/{gap}/g, gap)).join("\n\n");
   const offerSection = offerText ? `\n\n**Here's a specific offer I'd launch right now:**\n${offerText.replace(/{gap}/g, gap)}` : "";
   const followUp = HUMAN_FOLLOW_UPS[Math.floor(Math.random() * HUMAN_FOLLOW_UPS.length)];
