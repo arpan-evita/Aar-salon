@@ -5,6 +5,7 @@ export interface SalonData {
     current: number;
     target: number;
     growth: number;
+    gap: number;
   };
   customers: {
     total: number;
@@ -131,83 +132,125 @@ export const generateGrowthPlan = async (
   history: {role: string, content: string}[],
   learnedPatterns: LearningPattern[] = []
 ): Promise<GrowthPlan> => {
-  const fullHistoryText = (history.map(h => h.content.toLowerCase()).join(" ") + " " + q.toLowerCase());
+  const query = q.toLowerCase();
+  const fullHistoryText = (history.map(h => h.content.toLowerCase()).join(" ") + " " + query);
   
   const ctx = {
     isRevenue: fullHistoryText.includes("revenue") || fullHistoryText.includes("sales") || fullHistoryText.includes("target") || fullHistoryText.includes("goal"),
     isStaff: fullHistoryText.includes("staff") || fullHistoryText.includes("stylist") || fullHistoryText.includes("team"),
     isAcademy: fullHistoryText.includes("academy") || fullHistoryText.includes("student") || fullHistoryText.includes("course"),
-    isRetention: fullHistoryText.includes("retention") || fullHistoryText.includes("churn") || fullHistoryText.includes("loyalty"),
-    isUpsell: fullHistoryText.includes("upsell") || fullHistoryText.includes("cross-sell") || fullHistoryText.includes("aov"),
+    isRetention: fullHistoryText.includes("retention") || fullHistoryText.includes("churn") || fullHistoryText.includes("loyalty") || fullHistoryText.includes("comeback"),
+    isUpsell: fullHistoryText.includes("upsell") || fullHistoryText.includes("cross-sell") || fullHistoryText.includes("aov") || fullHistoryText.includes("bundle"),
     isPricing: fullHistoryText.includes("price") || fullHistoryText.includes("cost") || fullHistoryText.includes("discount") || fullHistoryText.includes("psychology"),
-    services: [] as string[]
+    isOffer: fullHistoryText.includes("offer") || fullHistoryText.includes("campaign") || fullHistoryText.includes("promo") || fullHistoryText.includes("marketing"),
+    isVIP: fullHistoryText.includes("vip") || fullHistoryText.includes("premium") || fullHistoryText.includes("membership")
   };
 
   const currentIntentKey = ctx.isStaff ? 'staff' : ctx.isAcademy ? 'academy' : ctx.isRetention ? 'retention' : ctx.isUpsell ? 'upsell' : ctx.isPricing ? 'pricing' : 'general';
   const bestPattern = learnedPatterns.find(p => p.intent === currentIntentKey && p.feedback_score > 0);
   const isReinforced = !!bestPattern;
 
-  // A. Staff Performance
+  // A. Offer & Campaign Synthesis
+  if (ctx.isOffer || query.includes("offer") || query.includes("campaign")) {
+    const advice = KNOWLEDGE_BASE.OFFERS[0].advice;
+    return {
+      intent: 'marketing',
+      isReinforced,
+      summary: `Synthesizing a high-conversion campaign. Based on your current revenue gap of ₹${data.revenue.gap?.toLocaleString()}, we need a 'Grand Slam' move.`,
+      steps: [
+        "BUNDLE CREATION: Combine top services (Haircut + Botox) into a signature package.",
+        "URGENCY INJECTION: Set a 48-hour limit for the first 50 bookings.",
+        "WHATSAPP DEPLOYMENT: Target your 'At-Risk' segment (${data.customers.atRisk}% churn risk)."
+      ],
+      offers: [
+        { name: "The GrowthOS Bundle", target: "At-Risk Customers", benefit: "20% Off + Free Kit", action: "WhatsApp Blast" }
+      ],
+      strategies: [
+        { title: "Hormozi Grand Slam", impact: "High", difficulty: "Medium", timeline: "48 Hours", details: advice }
+      ],
+      projections: { newRevenue: data.revenue.gap * 0.35, confidence: 88 }
+    };
+  }
+
+  // B. Staff Performance
   if (ctx.isStaff) {
     return {
       intent: 'staff',
       isReinforced,
-      summary: "Acting as your Revenue Operator. We are shifting to 'Retention-First' staff metrics.",
+      summary: "Acting as your Revenue Operator. We are shifting to 'Retention-First' staff metrics to stabilize the floor.",
       steps: [
-        "REWARD RETENTION: Reward stylists with repeat customer rates >75%.",
-        "UTILIZATION AUDIT: If staff utilization is <60%, route automated leads."
+        "REWARD RETENTION: Implement a commission bump for stylists with repeat rates >75%.",
+        "UTILIZATION AUDIT: Redirect leads to underutilized staff (Active: ${data.staff.active}/${data.staff.total})."
       ],
       strategies: [
         { title: "Retention Bonus", impact: "High", difficulty: "Easy", timeline: "Immediate", details: "Implement a 5% commission bump for stylists who maintain a 70%+ repeat rate." }
       ],
-      projections: { newRevenue: data.revenue.current * 0.12, confidence: 88 }
+      projections: { newRevenue: data.revenue.current * 0.12, confidence: 91 }
     };
   }
 
-  // B. Academy
+  // C. Academy & Lead Gen
   if (ctx.isAcademy) {
     return {
       intent: 'academy',
       isReinforced,
-      summary: "Activating Academy Business Model. Focusing on Student Lifetime Value.",
-      steps: ["LEAD SOURCE OPTIMIZATION: Focus Instagram Ads on 'Beauty Career' keywords."],
+      summary: "Activating Academy Business Model. Focusing on Student Lifetime Value and high-ticket enrollment.",
+      steps: [
+        "LEAD SOURCE OPTIMIZATION: Shift budget from Google to Instagram for visual 'Success Stories'.",
+        "CONVERSION EVENT: Host a free 'Masterclass' to filter high-intent students."
+      ],
       offers: [{ name: "Early Bird Certification", target: "Inquiry Leads", benefit: "₹2000 Off", action: "WhatsApp Blast" }],
       projections: { newRevenue: data.revenue.current * 0.20, confidence: 85 }
     };
   }
 
-  // C. Retention
-  if (ctx.isRetention) {
+  // D. Retention & Churn
+  if (ctx.isRetention || data.customers.atRisk > 20) {
     return {
       intent: 'retention',
       isReinforced,
-      summary: "Activating Customer Retention Engine. Shifting to LTV Maximization.",
-      steps: ["RFM SEGMENTATION: Identify 'Champions' and target with VIP drops."],
-      metrics: [{ label: "Retention Rate", value: "52%", change: "+4%", trend: "up" }],
-      strategies: [{ title: "Tiered Win-Back", impact: "High", difficulty: "Medium", timeline: "14 Days", details: "Day 60: Free Hair Wash. Day 90: ₹500 Voucher." }],
+      summary: `Retention Crisis Mode. Churn risk is at ${data.customers.atRisk}%. We must activate win-back flows immediately.`,
+      steps: [
+        "RFM SEGMENTATION: Segment customers into 'Loyal' vs 'Lost'.",
+        "TIERED VOUCHERS: Send escalation offers (10% -> 20% -> 30%) over 3 months."
+      ],
+      metrics: [{ label: "Churn Risk", value: `${data.customers.atRisk}%`, change: "Critical", trend: "down" }],
+      strategies: [{ title: "Tiered Win-Back", impact: "High", difficulty: "Medium", timeline: "14 Days", details: KNOWLEDGE_BASE.RETENTION_CRM[0].advice }],
       projections: { newRevenue: data.revenue.current * 0.18, confidence: 90 }
     };
   }
 
-  // D. Pricing
+  // E. Pricing Psychology
   if (ctx.isPricing) {
     return {
       intent: 'pricing',
       isReinforced,
-      summary: "Pricing Advisor Engaged. Using Menu Anchoring and Charm Pricing.",
-      steps: ["MENU ANCHORING: Show your most expensive service first."],
-      strategies: [{ title: "Menu Decoy", impact: "Medium", difficulty: "Easy", timeline: "Immediate", details: "Add a 'Super Luxury' service to boost sales of mid-tier." }],
+      summary: "Pricing Advisor Engaged. We are implementing 'Menu Anchoring' to boost average ticket size.",
+      steps: [
+        "MENU ANCHORING: Place 'Royal Bridal Package' at top to anchor price expectation.",
+        "CHARM PRICING: End all prices in .99 or .95 to trigger impulse buying."
+      ],
+      strategies: [
+        { title: "Psychological Discounting", impact: "Medium", difficulty: "Easy", timeline: "Immediate", details: KNOWLEDGE_BASE.PRICING[0].advice }
+      ],
       projections: { newRevenue: data.revenue.current * 0.10, confidence: 85 }
     };
   }
 
-  // Default
+  // Default / Global Growth
   return {
     intent: 'growth',
     isReinforced,
-    summary: "Acting as your Lead Growth Consultant. Building a multi-layered scale plan.",
-    steps: ["ACQUISITION: Run hyperlocal ads.", "CONVERSION: Use Value-First offers."],
-    projections: { newRevenue: data.revenue.current * 0.25, confidence: 82 }
+    summary: "Lead Growth Consultant Active. Scanning your salon data for untapped revenue pockets.",
+    steps: [
+      `TARGET GAP: We have ₹${data.revenue.gap?.toLocaleString()} to recover this month.`,
+      "UPSYSTEMS: Activate 'Post-Purchase' upsells for every booking.",
+      "CEO SHIFT: Spend 4 hours this week purely on these strategy implementations."
+    ],
+    strategies: [
+      { title: "Owner vs Operator", impact: "High", difficulty: "Hard", timeline: "Ongoing", details: KNOWLEDGE_BASE.MINDSET[0].advice }
+    ],
+    projections: { newRevenue: data.revenue.gap * 0.40, confidence: 82 }
   };
 };
 
