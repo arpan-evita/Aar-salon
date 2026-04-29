@@ -128,6 +128,36 @@ const KNOWLEDGE_BASE = {
       consultant: "Alex Hormozi"
     }
   ],
+  PRICING_PSYCHOLOGY: [
+    {
+      condition: (d: SalonData) => d.revenue.current > 0,
+      advice: "Apply 'Charm Pricing'. End your service prices in .99 or .95. The 'Left-Digit Bias' makes ₹499 feel significantly cheaper than ₹500. For luxury services, use whole numbers (₹5000) to signal prestige.",
+      title: "Psychological Thresholds",
+      impact: "Medium" as const,
+      consultant: "Pricing Scientist"
+    },
+    {
+      condition: (d: SalonData) => d.revenue.gap > 50000,
+      advice: "Use the 'Decoy Effect'. When offering a ₹2000 facial and a ₹5000 luxury spa, introduce a ₹4500 'Plus' option that is only slightly better than the ₹2000 one. The ₹5000 luxury option will now look like the 'obvious winner'.",
+      title: "Asymmetric Dominance (Decoy)",
+      impact: "High" as const,
+      consultant: "Pricing Scientist"
+    },
+    {
+      condition: (d: SalonData) => d.revenue.current > 0,
+      advice: "Rule of 100: For services under ₹1000, show discounts as percentages (25% OFF). For services over ₹1000, show absolute values (₹500 OFF). The larger number always wins in the customer's brain.",
+      title: "Discount Formatting",
+      impact: "Medium" as const,
+      consultant: "Pricing Scientist"
+    },
+    {
+      condition: (d: SalonData) => d.revenue.current > 0,
+      advice: "Descending Order: List your most expensive services first on your menu. Customers fear losing quality as they scan down, making them more likely to pick the higher-priced mid-tier options.",
+      title: "Menu Order Psychology",
+      impact: "Medium" as const,
+      consultant: "Pricing Scientist"
+    }
+  ],
   MINDSET: [
     {
       condition: (d: SalonData) => d.revenue.current > 500000,
@@ -216,6 +246,7 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
     isMarketing: fullHistoryText.includes("marketing") || fullHistoryText.includes("ads") || fullHistoryText.includes("campaign"),
     isAdvanced: fullHistoryText.includes("strategy") || fullHistoryText.includes("scale") || fullHistoryText.includes("growth") || fullHistoryText.includes("plan") || fullHistoryText.includes("advanced") || fullHistoryText.includes("grand slam"),
     isAvatar: fullHistoryText.includes("avatar") || fullHistoryText.includes("customer") || fullHistoryText.includes("lead") || fullHistoryText.includes("target audience") || fullHistoryText.includes("journey"),
+    isPricing: fullHistoryText.includes("price") || fullHistoryText.includes("cost") || fullHistoryText.includes("discount") || fullHistoryText.includes("menu") || fullHistoryText.includes("psychology"),
     services: [] as string[]
   };
 
@@ -224,7 +255,7 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
   });
 
   // 2. Reinforcement Learning: Check if we have high-performing patterns for this intent
-  const currentIntentKey = ctx.isAvatar ? 'avatar' : ctx.isOffer ? 'offer' : ctx.isRevenue ? 'revenue' : ctx.isStaff ? 'staff' : 'general';
+  const currentIntentKey = ctx.isPricing ? 'pricing' : ctx.isAvatar ? 'avatar' : ctx.isOffer ? 'offer' : ctx.isRevenue ? 'revenue' : ctx.isStaff ? 'staff' : 'general';
   const bestPattern = learnedPatterns.find(p => p.intent === currentIntentKey && p.feedback_score > 0);
   const isReinforced = !!bestPattern;
 
@@ -239,7 +270,26 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
 
   // 4. Response Routing Logic
 
-  // A. Avatar & Lost Chapter Strategy
+  // A. Pricing Psychology Strategy
+  if (ctx.isPricing || q.includes("psychology")) {
+    return {
+      intent: 'pricing',
+      isReinforced,
+      summary: `Activating Pricing Psychology Engine. We are moving from 'Cost-Plus' to 'Psychological Value' pricing.`,
+      steps: [
+        "RULE OF 100: For services < ₹1000, use % discounts (e.g., 20% OFF). For services > ₹1000, use absolute values (e.g., ₹500 OFF). The larger numerical value feels like a bigger win to the brain.",
+        "DECOY INSTALLATION: Don't just offer one price. If you have a ₹2500 facial, introduce a ₹5500 'Luxury' option and a ₹5000 'Plus' decoy. The ₹5500 will become your best-seller.",
+        "MENU ANCHORING: List your most expensive service at the TOP. This anchors the customer to a high number, making every subsequent price feel like a bargain.",
+        "CHARM PRICING: Use 'Left-Digit Bias'. ₹999 converts 28% better than ₹1000 for standard services. Keep whole numbers (₹10,000) ONLY for your most premium membership tiers."
+      ],
+      projections: {
+        newRevenue: data.revenue.current * 0.22,
+        confidence: 88
+      }
+    };
+  }
+
+  // B. Avatar & Lost Chapter Strategy
   if (ctx.isAvatar || q.includes("lost chapter")) {
     return {
       intent: 'avatar',
