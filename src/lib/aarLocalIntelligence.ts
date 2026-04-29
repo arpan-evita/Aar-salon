@@ -158,6 +158,29 @@ const KNOWLEDGE_BASE = {
       consultant: "Pricing Scientist"
     }
   ],
+  UPSELL_CROSS_SELL: [
+    {
+      condition: (d: SalonData) => d.revenue.current > 0,
+      advice: "Activate 'Post-Purchase Joy'. The moment after a customer books/pays is their most engaged state. Use the confirmation page to offer a one-click 'Instant Upgrade' (e.g., 'Add a 15-min scalp massage for just ₹499').",
+      title: "Digital Impulse Buy",
+      impact: "High" as const,
+      consultant: "Shopify/Vogue Tech"
+    },
+    {
+      condition: (d: SalonData) => d.revenue.current > 0,
+      advice: "Use 'Threshold Progress Bars'. Show customers how close they are to a reward (e.g., 'You're only ₹500 away from a Free Hair Spa Kit!'). This triggers the reward center and boosts AOV.",
+      title: "Gamified Thresholds",
+      impact: "High" as const,
+      consultant: "E-commerce Growth"
+    },
+    {
+      condition: (d: SalonData) => d.revenue.current > 0,
+      advice: "Cheaper-per-unit Logic: When upselling larger product sizes (e.g., 500ml vs 200ml shampoo), always highlight the 'Savings per ml'. Customers justify higher upfront costs with long-term convenience.",
+      title: "Volume Justification",
+      impact: "Medium" as const,
+      consultant: "Involve.me Psychology"
+    }
+  ],
   MINDSET: [
     {
       condition: (d: SalonData) => d.revenue.current > 500000,
@@ -247,6 +270,7 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
     isAdvanced: fullHistoryText.includes("strategy") || fullHistoryText.includes("scale") || fullHistoryText.includes("growth") || fullHistoryText.includes("plan") || fullHistoryText.includes("advanced") || fullHistoryText.includes("grand slam"),
     isAvatar: fullHistoryText.includes("avatar") || fullHistoryText.includes("customer") || fullHistoryText.includes("lead") || fullHistoryText.includes("target audience") || fullHistoryText.includes("journey"),
     isPricing: fullHistoryText.includes("price") || fullHistoryText.includes("cost") || fullHistoryText.includes("discount") || fullHistoryText.includes("menu") || fullHistoryText.includes("psychology"),
+    isUpsell: fullHistoryText.includes("upsell") || fullHistoryText.includes("cross-sell") || fullHistoryText.includes("aov") || fullHistoryText.includes("bundle") || fullHistoryText.includes("order value"),
     services: [] as string[]
   };
 
@@ -255,7 +279,7 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
   });
 
   // 2. Reinforcement Learning: Check if we have high-performing patterns for this intent
-  const currentIntentKey = ctx.isPricing ? 'pricing' : ctx.isAvatar ? 'avatar' : ctx.isOffer ? 'offer' : ctx.isRevenue ? 'revenue' : ctx.isStaff ? 'staff' : 'general';
+  const currentIntentKey = ctx.isUpsell ? 'upsell' : ctx.isPricing ? 'pricing' : ctx.isAvatar ? 'avatar' : ctx.isOffer ? 'offer' : ctx.isRevenue ? 'revenue' : ctx.isStaff ? 'staff' : 'general';
   const bestPattern = learnedPatterns.find(p => p.intent === currentIntentKey && p.feedback_score > 0);
   const isReinforced = !!bestPattern;
 
@@ -270,7 +294,26 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
 
   // 4. Response Routing Logic
 
-  // A. Pricing Psychology Strategy
+  // A. Upsell & Cross-Sell Strategy
+  if (ctx.isUpsell || q.includes("aov")) {
+    return {
+      intent: 'upsell',
+      isReinforced,
+      summary: `Activating AOV Optimization Engine. We are focusing on 'Retention as the New Acquisition' and maximizing the 'Joy of Purchase'.`,
+      steps: [
+        "POST-PURCHASE JOY: The confirmation page is your highest-converting real estate. Add a one-click 'Instant Upgrade' offer here. Customers are 4.5x more likely to accept a recommendation during the 'Buying Mode' window.",
+        "THRESHOLD PROGRESS BARS: Implement a visual tracker: 'You're only ₹499 away from a Free Scalp Analysis!' This gamifies the checkout and naturally pushes customers to add one more retail product or service.",
+        "CHEAPER-PER-UNIT JUSTIFICATION: When selling home-care products, display the 'Price per Month' or 'Price per ml'. It justifies the ₹2000 upfront cost by showing it's only ₹10/day for professional results.",
+        "BUNDLE PACKAGING: Create 'Service Kits' (e.g., Pre-Bridal Bundle). Buying bundled items should save them 15% vs buying individual services, while clearing multiple inventory slots for you."
+      ],
+      projections: {
+        newRevenue: data.revenue.current * 0.15,
+        confidence: 92
+      }
+    };
+  }
+
+  // B. Pricing Psychology Strategy
   if (ctx.isPricing || q.includes("psychology")) {
     return {
       intent: 'pricing',
