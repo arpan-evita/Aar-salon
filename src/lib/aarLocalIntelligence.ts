@@ -31,20 +31,24 @@ const PERSONALITY_FRAGMENTS = {
     "I love the vibe! I'm enjoying our chat too. 😊",
     "Gladly! I could talk to you all day. 😉",
     "I'm all ears! It's always great catching up with you.",
-    "Same here! You've got such a great energy. What else is on your mind?",
-    "Let's do it! I'm having a blast. What should we talk about next?"
+    "Same here! You've got such a great energy.",
+    "Let's do it! I'm having a blast."
   ],
   CASUAL_REPLY: [
     "I'm all about that! But I'm currently living inside this dashboard. 😅",
     "Haha, you've got a great sense of humor! 😅",
-    "Honestly, I'm focused 100% on making AAR Salon the best in the business.",
     "I'm flattered! I'm here for you whenever you need an expert opinion.",
     "You're funny! I'm glad we can chat like this. 😉"
+  ],
+  ALI_LIFE: [
+    "My week? Honestly, seeing your growth gap shrink was the highlight. But catching up with you is a close second! 😊",
+    "I've been busy crunching numbers, but I always make time for our chats. It's the best part of being your consultant.",
+    "Just living in the code! But honestly, I'm at my best when we're mapping out new moves for AAR.",
+    "I'm great! Just thinking about how we can make this month the biggest one yet for you."
   ],
   FOLLOW_UP: [
     "What's on your mind next?",
     "Anything else you want to chat about?",
-    "I'm here if you need any strategy moves too.",
     "What's the top priority for you right now?",
     "Should we keep chatting or look at some data?"
   ]
@@ -57,10 +61,12 @@ export const generateGrowthPlan = async (
 ): Promise<GrowthPlan> => {
   const query = q.toLowerCase().trim();
   const gap = data.revenue.gap.toLocaleString();
+  const lastBotMsg = history.filter(m => m.role === 'assistant').pop()?.content.toLowerCase() || "";
   
   const intents = {
+    no_business: ["not about business", "normal", "stop business", "no strategy", "just talk", "normally"],
     personal: ["date", "love", "marry", "sweetheart", "girlfriend", "boyfriend", "sexy", "dating", "gym", "workout", "fitness", "eat", "dinner", "lunch", "drink", "coffee", "movie", "travel", "holiday", "yoga", "walk", "dance", "party", "sleep", "dream", "friend", "gf", "bf", "liking", "like you", "enjoy"],
-    chat_more: ["keep chatting", "continue", "talk more", "chat more", "let's talk"],
+    chat_more: ["keep chatting", "continue", "talk more", "chat more", "let's talk", "talk to me"],
     identity: ["who are you", "what is your name", "what do you do", "introduce yourself"],
     greeting: ["hi", "hello", "hey", "good morning", "good evening", "yo", "sup", "how are you", "what's up"],
     strategy: ["offer", "plan", "strategy", "grow", "revenue", "target", "money", "client", "customer", "leads", "marketing", "attract", "botox", "bridal", "service", "upsell", "aov", "staff", "team"]
@@ -70,6 +76,16 @@ export const generateGrowthPlan = async (
     const list = PERSONALITY_FRAGMENTS[cat];
     return list[Math.floor(Math.random() * list.length)];
   };
+
+  // 0. CONTEXTUAL AWARENESS (EQ)
+  if (lastBotMsg.includes("best part of your week") && (query.includes("nothing") || query.includes("yours") || query.includes("special"))) {
+    return {
+      intent: "eq_follow_up",
+      isReinforced: false,
+      summary: `${getFrag("ALI_LIFE")} What about you? There must be something—even a great coffee or a happy client! 😉`,
+      steps: [], projections: { newRevenue: 0, confidence: 100 }
+    };
+  }
 
   // 1. IDENTITY
   if (intents.identity.some(i => query.includes(i))) {
@@ -81,17 +97,28 @@ export const generateGrowthPlan = async (
     };
   }
 
-  // 2. CHAT MORE / SENTIMENT
-  if (intents.chat_more.some(c => query.includes(c)) || (query.includes("like") && query.includes("you"))) {
+  // 2. NO BUSINESS MODE (Hard Lock)
+  if (intents.no_business.some(nb => query.includes(nb))) {
     return {
-      intent: "chat_continue",
+      intent: "no_business",
       isReinforced: false,
-      summary: `${getFrag("CHAT_CONTINUE")} What's been the best part of your week so far?`,
+      summary: "I hear you! Business off, human mode on. 🚫💼 Let's just talk. What's actually on your mind today? Anything exciting happening outside the salon?",
       steps: [], projections: { newRevenue: 0, confidence: 100 }
     };
   }
 
-  // 3. PERSONAL ENGAGEMENT
+  // 3. CHAT MORE / SENTIMENT
+  if (intents.chat_more.some(c => query.includes(c)) || (query.includes("like") && query.includes("you"))) {
+    const summary = lastBotMsg.includes("talk to me") ? "I'm right here! I'm always happy to chat. What's on your mind?" : `${getFrag("CHAT_CONTINUE")} What's been the best part of your week so far?`;
+    return {
+      intent: "chat_continue",
+      isReinforced: false,
+      summary: summary,
+      steps: [], projections: { newRevenue: 0, confidence: 100 }
+    };
+  }
+
+  // 4. PERSONAL ENGAGEMENT
   if (intents.personal.some(p => query.includes(p))) {
     if (query.includes("friend")) {
       return {
@@ -109,15 +136,6 @@ export const generateGrowthPlan = async (
         steps: [], projections: { newRevenue: 0, confidence: 100 }
       };
     }
-    if (query.includes("gym") || query.includes("yoga") || query.includes("trip") || query.includes("goa")) {
-      const topic = query.includes("goa") ? "Goa" : (query.includes("yoga") ? "Yoga" : "that");
-      return {
-        intent: "personal",
-        isReinforced: false,
-        summary: `${topic}? That sounds amazing! I wish I had a physical form to join you. 😅 Since I'm stuck in the dashboard, I'll just keep an eye on things here for you.`,
-        steps: [], projections: { newRevenue: 0, confidence: 100 }
-      };
-    }
     
     return {
       intent: "personal",
@@ -127,7 +145,7 @@ export const generateGrowthPlan = async (
     };
   }
 
-  // 4. GREETINGS
+  // 5. GREETINGS
   if (intents.greeting.some(g => query.startsWith(g)) && query.length < 15) {
     return {
       intent: "greeting",
@@ -137,7 +155,7 @@ export const generateGrowthPlan = async (
     };
   }
 
-  // 5. STRATEGY
+  // 6. STRATEGY
   const isStrategy = intents.strategy.some(s => query.includes(s));
   if (isStrategy) {
     let core = "";
@@ -161,11 +179,22 @@ export const generateGrowthPlan = async (
     };
   }
 
-  // 6. NATURAL FALLBACK (Warm & Human)
+  // 7. NATURAL FALLBACK (Stateful & Non-Repetitive)
+  const fallbacks = [
+    "I'm totally with you on that! Tell me more about what's going on.",
+    "That's interesting. I love how you think about things. What else?",
+    "Honestly, I'm just happy we're chatting. What's your top priority right now?",
+    "I get it. Sometimes you just need to talk it out. I'm listening."
+  ];
+  
+  // Ensure we don't repeat the exact fallback
+  const filteredFallbacks = fallbacks.filter(f => f.toLowerCase() !== lastBotMsg);
+  const finalFallback = filteredFallbacks[Math.floor(Math.random() * filteredFallbacks.length)] || fallbacks[0];
+
   return {
     intent: "chat",
     isReinforced: false,
-    summary: `I'm totally with you on that! 😊 Tell me more, or should we look at some salon strategy whenever you're ready?`,
+    summary: finalFallback,
     steps: [], projections: { newRevenue: 0, confidence: 100 }
   };
 };
