@@ -356,33 +356,46 @@ const AIGrowthAssistant = () => {
     ).length;
 
     // 4. Empty Slots (Next 3 days)
-    const capacityPerDay = 40; // 8 hours * 5 stylists
-    const nextThreeDays = dataSet.bookings.length; // Simplified
-    const emptySlotPercentage = Math.max(0, 100 - (nextThreeDays / (capacityPerDay * 3) * 100));
+    const capacityPerDay = 40;
+    const nextThreeDays = dataSet.bookings.length; 
+    const emptySlots = Math.max(0, 100 - (nextThreeDays / (capacityPerDay * 3) * 100));
+
+    // 5. Academy Leads (last week)
+    const lastWeek = new Date();
+    lastWeek.setDate(lastWeek.getDate() - 7);
+    const academyLeads = (dataSet.leads || []).filter((l: any) => new Date(l.created_at) > lastWeek).length;
+
+    // 6. Haircut Comeback (30-45 days ago)
+    const fortyFiveDaysAgo = new Date();
+    fortyFiveDaysAgo.setDate(fortyFiveDaysAgo.getDate() - 45);
+    const haircutTargets = (dataSet.customers || []).filter((c: any) => 
+      c.last_visit_at && 
+      new Date(c.last_visit_at) < thirtyDaysAgo && 
+      new Date(c.last_visit_at) > fortyFiveDaysAgo
+    ).length;
+
+    // 7. Membership Renewals (next 7 days)
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    const renewalTargets = (dataSet.memberships || []).filter((m: any) => 
+      m.end_date && new Date(m.end_date) > now && new Date(m.end_date) < nextWeek
+    ).length;
+
+    // 8. Today's Review Requests
+    const todayStr = now.toISOString().split('T')[0];
+    const todayBookings = (dataSet.bookings || []).filter((b: any) => b.booking_date.startsWith(todayStr) && b.status === 'completed').length;
 
     setAnalysis({
-      currentRev,
-      projected,
-      gap,
-      confidence: projected > target ? 92 : 78,
-      churnRisk,
-      vipGaps,
-      haircutAudience,
-      membershipTargets,
-      emptySlotPercentage: Math.round(emptySlotPercentage),
-      dailyActions: [
-        { id: 1, text: `Call ${dataSet.leads.filter((l: any) => l.source === 'Academy').length} Academy leads from last week`, icon: UserPlus },
-        { id: 2, text: `Send comeback offer to ${haircutAudience} haircut clients`, icon: Zap },
-        { id: 3, text: `Fill tomorrow's empty slots with student promo`, icon: Calendar },
-        { id: 4, text: `Ask today's happy customers for reviews`, icon: Star },
-        { id: 5, text: `Push membership renewals to ${dataSet.memberships.filter((m: any) => m.status === 'expiring').length} users`, icon: Rocket },
-      ],
-      offers: [
-        { id: 'hc', title: 'Haircut Comeback', audience: haircutAudience, rev: haircutAudience * 800, prob: 91, rule: 'Inactive 25-35 days' },
-        { id: 'mu', title: 'Membership Upgrade', audience: membershipTargets, rev: membershipTargets * 1500, prob: 88, rule: 'Spent ₹10k+ no membership' },
-        { id: 'es', title: 'Empty Slot Booster', audience: 12, rev: 12000, prob: 74, rule: 'Weekday 1pm-4pm gaps' },
-        { id: 'ap', title: 'Academy Push', audience: dataSet.leads.length, rev: dataSet.leads.length * 5000, prob: 79, rule: 'Pending leads' },
-      ]
+      currentRev: totalRevenue,
+      projected: totalRevenue * 1.4,
+      gap: Math.max(target - totalRevenue, 0),
+      churnRisk: churnCount,
+      vipGaps: vips.length,
+      emptySlotPercentage: Math.round(emptySlots),
+      academyLeads,
+      haircutTargets,
+      renewalTargets,
+      todayBookings
     });
   };
 
@@ -393,7 +406,6 @@ const AIGrowthAssistant = () => {
     setQuestion("");
     setIsTyping(true);
     
-    // 1. Get current user
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       toast.error("Please sign in to use the AI Assistant");
@@ -401,46 +413,17 @@ const AIGrowthAssistant = () => {
       return;
     }
 
-    // 2. Add user message to local state & DB
     const newUserMsg = { role: 'user' as const, content: userMsg, user_id: user.id };
     setHistory(prev => [...prev, newUserMsg]);
     
     await supabase.from('ai_growth_chats').insert(newUserMsg);
 
-    const salonData: SalonData = {
-      revenue: {
-        current: analysis.currentRev,
-        target: target,
-        pace: analysis.currentRev / new Date().getDate(),
-        gap: analysis.gap
-      },
-      customers: {
-        total: data.customers.length,
-        churnRisk: analysis.churnRisk,
-        vips: analysis.vipGaps,
-        newThisMonth: data.customers.filter((c: any) => {
-          const created = new Date(c.created_at);
-          return created.getMonth() === new Date().getMonth();
-        }).length
-      },
-      staff: {
-        total: 5,
-        avgUtilization: 100 - analysis.emptySlotPercentage,
-        topPerformer: "Rahul"
-      },
-      inventory: {
-        lowStockItems: 3
-      },
-      bookings: {
-        emptySlotsNext3Days: Math.round(analysis.emptySlotPercentage * 1.2)
-      },
-      settings: {
-        brandVoice: "Premium warm luxury",
-        branch: "AAR Salon HQ"
-      }
+    const salonData = {
+      revenue: { current: analysis.currentRev, target: target },
+      customers: { churnRisk: analysis.churnRisk, vips: analysis.vipGaps },
+      bookings: { emptySlotsNext3Days: Math.round(analysis.emptySlotPercentage * 1.2) }
     };
 
-    // Use proprietary AAR Local Intelligence Engine with history context
     const plan = generateGrowthPlan(salonData, userMsg, history);
     const assistantContent = plan.summary + "\n\n" + plan.steps.map((s, i) => `${i+1}. ${s}`).join("\n\n");
 
@@ -452,8 +435,15 @@ const AIGrowthAssistant = () => {
     }, 1200);
   };
 
-  const deployAction = (name: string) => {
-    toast.success(`AI Campaign "${name}" deployed to matching audience.`);
+  const deployAction = (actionType: string) => {
+    const actions: any = {
+      academy: "Calling Academy leads now.",
+      comeback: "Triggering comeback offers for inactive clients.",
+      slots: "Sending student promo alerts for empty slots.",
+      reviews: "Requesting reviews from today's completed bookings.",
+      renewals: "Pushing renewal notifications for expiring memberships."
+    };
+    toast.success(actions[actionType] || "Action triggered.");
   };
 
   if (loading || !analysis) {
@@ -484,7 +474,6 @@ const AIGrowthAssistant = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-10">
-            {/* Left Column: Memory & Response */}
             <div className="space-y-6">
               <div className="bg-background/40 backdrop-blur-md rounded-2xl border border-white/5 p-6 min-h-[400px] max-h-[600px] overflow-y-auto flex flex-col gap-4 scrollbar-hide">
                 {loadingHistory ? (
@@ -543,7 +532,6 @@ const AIGrowthAssistant = () => {
               </div>
             </div>
 
-            {/* Right Column: Key Opportunities (Static context based on analysis) */}
             <div className="space-y-6">
               <div className="bg-gradient-to-br from-primary/10 to-transparent p-1 rounded-3xl">
                 <div className="bg-[#0A0A0B] rounded-[calc(1.5rem-1px)] p-8 space-y-6">
@@ -552,49 +540,59 @@ const AIGrowthAssistant = () => {
                     <Sparkles className="w-5 h-5 text-primary" />
                   </div>
                   
-                  <div className="space-y-4">
-                    {/* Priority 1 */}
-                    <div className="group bg-white/5 hover:bg-white/10 border border-white/10 p-5 rounded-2xl transition-all">
-                      <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center shrink-0">
-                          <AlertCircle className="w-5 h-5" />
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-sm font-bold">Retention Crisis</p>
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            {analysis.churnRisk} customers haven't visited in 45 days. Projected loss: {formatINR(analysis.churnRisk * 1200)}.
-                          </p>
-                        </div>
+                  <div className="space-y-6">
+                    {/* Academy Leads */}
+                    <div className="flex items-center gap-4 group cursor-pointer hover:bg-white/5 p-2 rounded-xl transition-all" onClick={() => deployAction('academy')}>
+                      <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-primary/20 group-hover:text-primary transition-all">
+                        <UserPlus className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">Call {analysis.academyLeads} Academy leads from last week</p>
+                        <button className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Execute Now</button>
                       </div>
                     </div>
 
-                    {/* Priority 2 */}
-                    <div className="group bg-white/5 hover:bg-white/10 border border-white/10 p-5 rounded-2xl transition-all">
-                      <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0">
-                          <Star className="w-5 h-5" />
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-sm font-bold">VIP Opportunity</p>
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            {analysis.vipGaps} high-value customers (spent &gt;₹15k) are currently idle. Recommend personal outreach.
-                          </p>
-                        </div>
+                    {/* Comeback Offers */}
+                    <div className="flex items-center gap-4 group cursor-pointer hover:bg-white/5 p-2 rounded-xl transition-all" onClick={() => deployAction('comeback')}>
+                      <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-primary/20 group-hover:text-primary transition-all">
+                        <Zap className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">Send comeback offer to {analysis.haircutTargets} haircut clients</p>
+                        <button className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Execute Now</button>
                       </div>
                     </div>
 
-                    {/* Priority 3 */}
-                    <div className="group bg-white/5 hover:bg-white/10 border border-white/10 p-5 rounded-2xl transition-all">
-                      <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
-                          <Calendar className="w-5 h-5" />
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-sm font-bold">Slot Optimization</p>
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            Your slots are {analysis.emptySlotPercentage}% empty on weekdays. Run a 'Flash Fill' promo.
-                          </p>
-                        </div>
+                    {/* Empty Slots */}
+                    <div className="flex items-center gap-4 group cursor-pointer hover:bg-white/5 p-2 rounded-xl transition-all" onClick={() => deployAction('slots')}>
+                      <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-primary/20 group-hover:text-primary transition-all">
+                        <Calendar className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">Fill tomorrow's empty slots with student promo</p>
+                        <button className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Execute Now</button>
+                      </div>
+                    </div>
+
+                    {/* Reviews */}
+                    <div className="flex items-center gap-4 group cursor-pointer hover:bg-white/5 p-2 rounded-xl transition-all" onClick={() => deployAction('reviews')}>
+                      <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-primary/20 group-hover:text-primary transition-all">
+                        <Star className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">Ask {analysis.todayBookings} today's happy customers for reviews</p>
+                        <button className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Execute Now</button>
+                      </div>
+                    </div>
+
+                    {/* Membership Renewals */}
+                    <div className="flex items-center gap-4 group cursor-pointer hover:bg-white/5 p-2 rounded-xl transition-all" onClick={() => deployAction('renewals')}>
+                      <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-primary/20 group-hover:text-primary transition-all">
+                        <Rocket className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">Push membership renewals to {analysis.renewalTargets} users</p>
+                        <button className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Execute Now</button>
                       </div>
                     </div>
                   </div>
@@ -610,14 +608,13 @@ const AIGrowthAssistant = () => {
         </div>
       </div>
 
-      {/* 2. Top Row Stats */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
         {[
-          { label: "Forecasted Revenue", val: formatINR(analysis.projected), icon: TrendingUp, color: "text-green-400", sub: `Confidence: ${analysis.confidence}%` },
+          { label: "Forecasted Revenue", val: formatINR(analysis.projected), icon: TrendingUp, color: "text-green-400", sub: `Confidence: 85%` },
           { label: "Empty Slot Recovery", val: `${analysis.emptySlotPercentage}%`, icon: Calendar, color: "text-blue-400", sub: "Recoverable weekday gaps" },
           { label: "Churn Risk", val: analysis.churnRisk, icon: AlertCircle, color: "text-red-400", sub: "Inactive > 30 days" },
           { label: "VIP Retention Gap", val: analysis.vipGaps, icon: Star, color: "text-primary", sub: "High spenders missing" }
-        ].map((stat, i) => (stat.label &&
+        ].map((stat, i) => (
           <div key={i} className="glass rounded-2xl border border-border/50 p-6 hover:border-primary/30 transition-colors group">
             <div className="flex items-center justify-between mb-4">
                <stat.icon className={`w-5 h-5 ${stat.color}`} />
@@ -629,76 +626,7 @@ const AIGrowthAssistant = () => {
           </div>
         ))}
       </div>
-
-      {/* 3. Deep Analysis Sections */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        {/* Daily Actions */}
-        <div className="glass rounded-3xl border border-border/50 p-8 flex flex-col">
-          <div className="flex items-center justify-between mb-8">
-             <div>
-                <h3 className="font-heading text-xl">Top Daily Actions</h3>
-                <p className="text-xs text-muted-foreground mt-1">AI prioritized tasks for today.</p>
-             </div>
-             <Zap className="w-5 h-5 text-primary" />
-          </div>
-          <div className="space-y-4 flex-1">
-            {analysis.dailyActions.map((action: any) => (
-              <div key={action.id} className="group flex items-start gap-4 p-4 rounded-2xl hover:bg-secondary/30 transition-colors border border-transparent hover:border-border/30">
-                <div className="w-10 h-10 rounded-xl bg-secondary/50 flex items-center justify-center flex-shrink-0 text-primary group-hover:scale-110 transition-transform">
-                  <action.icon className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium leading-snug">{action.text}</p>
-                  <button className="mt-2 text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Execute Now</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* AI Suggested Offers */}
-        <div className="glass rounded-3xl border border-border/50 p-8 xl:col-span-2">
-           <div className="flex items-center justify-between mb-8">
-              <div>
-                 <h3 className="font-heading text-xl">Dynamic Revenue Campaigns</h3>
-                 <p className="text-xs text-muted-foreground mt-1">Offers generated by analyzing current customer behavior.</p>
-              </div>
-              <Rocket className="w-5 h-5 text-primary" />
-           </div>
-           
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {analysis.offers.map((offer: any) => (
-                 <div key={offer.id} className="rounded-2xl border border-border/40 bg-secondary/20 p-6 flex flex-col justify-between">
-                    <div>
-                       <div className="flex items-center justify-between mb-4">
-                          <h4 className="text-base font-bold">{offer.title}</h4>
-                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-lg">Prob: {offer.prob}%</span>
-                       </div>
-                       <p className="text-[11px] text-muted-foreground mb-4">Rule: {offer.rule}</p>
-                       <div className="grid grid-cols-2 gap-4 mb-6">
-                          <div className="p-3 rounded-xl bg-background/50 border border-border/20">
-                             <p className="text-[9px] uppercase text-muted-foreground mb-1">Audience</p>
-                             <p className="text-lg font-bold">{offer.audience}</p>
-                          </div>
-                          <div className="p-3 rounded-xl bg-background/50 border border-border/20">
-                             <p className="text-[9px] uppercase text-muted-foreground mb-1">Exp. Revenue</p>
-                             <p className="text-lg font-bold text-green-400">₹{offer.rev.toLocaleString()}</p>
-                          </div>
-                       </div>
-                    </div>
-                    <button 
-                      onClick={() => deployAction(offer.title)}
-                      className="w-full py-3 rounded-xl border border-primary/30 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary hover:text-primary-foreground transition-all"
-                    >
-                       Deploy Campaign
-                    </button>
-                 </div>
-              ))}
-           </div>
-        </div>
-      </div>
-
-      {/* 4. WhatsApp Personalization & Intelligence */}
+      
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
          <div className="glass rounded-3xl border border-border/50 p-8">
             <div className="flex items-center justify-between mb-8">
@@ -721,11 +649,6 @@ const AIGrowthAssistant = () => {
                         </button>
                      </div>
                      <p className="text-xs text-muted-foreground italic leading-relaxed mb-4">"{template.message}"</p>
-                     <div className="flex flex-wrap gap-2">
-                        {template.variables.map(v => (
-                           <span key={v} className="text-[9px] font-bold px-2 py-1 rounded bg-background border border-border/20 text-muted-foreground">{v}</span>
-                        ))}
-                     </div>
                   </div>
                ))}
             </div>
@@ -756,7 +679,6 @@ const AIGrowthAssistant = () => {
                      {analysis.vipGaps} high-value customers (spent &gt;₹15k) are currently idle. Recommend personal outreach with the VIP Loyalty Bonus campaign.
                   </p>
                </div>
-
                <div className="p-5 rounded-2xl border border-blue-500/20 bg-blue-500/5">
                   <div className="flex items-center gap-3 mb-2 text-blue-400">
                      <BarChart3 className="w-4 h-4" />
