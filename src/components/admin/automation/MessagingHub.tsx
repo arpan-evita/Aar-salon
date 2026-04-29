@@ -451,7 +451,7 @@ const MessagingHub = () => {
                       <Zap className="w-3.5 h-3.5" /> Webhook URL
                     </h4>
                     <p className="text-[10px] text-muted-foreground mb-3 leading-relaxed">
-                      Copy this URL and paste it into your Meta Developer Dashboard under WhatsApp > Configuration.
+                      Copy this URL and paste it into your Meta Developer Dashboard under WhatsApp &gt; Configuration.
                     </p>
                     <div className="bg-background border border-border/30 rounded-lg p-3 text-xs font-mono text-muted-foreground truncate select-all">
                        https://[project-ref].supabase.co/functions/v1/whatsapp-webhook
