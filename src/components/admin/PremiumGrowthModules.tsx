@@ -861,6 +861,7 @@ const AIGrowthAssistant = () => {
          </div>
       </div>
     </div>
+  </div>
   );
 };
 
