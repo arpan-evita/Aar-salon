@@ -70,26 +70,29 @@ const HUMAN_INTROS = [
   "If I were in your shoes right now, knowing we have a ₹{gap} gap to hit ₹7L, I'd double down on what's working."
 ];
 
+const HUMAN_OFFERS = {
+  ACQUISITION: "✨ **OFFER: The Signature First-Timer Invite**\n\n\"Experience the AAR Signature: Get a complimentary Expert Skin Analysis + 20% OFF your first Botox or High-Ticket Ritual. Limited to first 25 bookings this week. Book now: [Link]\"",
+  RETENTION: "🎁 **OFFER: The 'We Miss You' VIP Pass**\n\n\"It's been a while since your last AAR Ritual. We’ve reserved a special 'Renewal Package' for you: Get a Hair Spa + Refresh Cut for just ₹1,999 (Regular ₹3,500). Valid for 48 hours only.\"",
+  UPSELL: "🚀 **OFFER: The Wash-Station Upgrade**\n\n\"Add a 'Flash Glow' Ritual to any service today for just ₹799. Instant results, zero extra time. Ask your stylist for the 'AAR Glow' upgrade.\"",
+  BRIDAL: "👰 **OFFER: The Bridal Glow-Up Roadmap**\n\n\"Secure your wedding glow. Book our 3-month Roadmap today and get your Trial Makeup + 2 Pre-Wedding Facials completely FREE. Total value saved: ₹8,500.\""
+};
+
 const HUMAN_ADVICE = {
   ACQUISITION: [
     "Instead of burning money on broad ads, let's go for high-intent spenders. I'd launch a 'Signature Transformation' series on Instagram. Showcase the before-and-after of your Botox rituals. It's not just a service; it's a result people are willing to pay a premium for.",
-    "For new clients, forget discounts. Offer a 'VIP Digital Analysis' magnet. Let them upload a photo for a skin report. It builds your authority before they even step in the salon, making that ₹5k+ booking a no-brainer.",
-    "We should also look at 'Mirror Marketing'. Your current VIPs are gold. Why not give them an exclusive 'Guest Invitation' to bring a friend for a complimentary consultation? It pre-vettes your new acquisitions to have the same spending power as your best clients."
+    "For new clients, forget discounts. Offer a 'VIP Digital Analysis' magnet. Let them upload a photo for a skin report. It builds your authority before they even step in the salon, making that ₹5k+ booking a no-brainer."
   ],
   SCALING: [
-    "If we want to scale AAR Salon without you burning out, we need to get you out of 'Operator Mode'. The business shouldn't stop because you stepped away. We need standard SOPs for the consultation—every stylist following the same diagnosis flow ensures the 'Signature Experience' is identical every time.",
-    "Systems are the only way to fill that gap. I'd set up automated win-back triggers on WhatsApp for anyone who hasn't visited in 45 days. It's money on the table that doesn't require any manual work from your side.",
-    "Think of it this way: build the people who build the business. If the team is following a system, you're free to focus on the high-level growth moves that actually move the needle."
+    "To scale without you burning out, we need 'People-Independent' systems. Every stylist following the same 3-step diagnosis flow ensures the 'Signature Experience' is identical every time.",
+    "Systems are the only way to fill that gap. I'd set up automated win-back triggers on WhatsApp for anyone who hasn't visited in 45 days. It's money on the table."
   ],
   TEAM: [
-    "Your team shouldn't just be technicians; they need to be growth partners. I'd reward the stylists who keep their repeat customer rate above 75%. They're the ones building your long-term revenue base, not just one-off haircuts.",
-    "I'd also start pushing 'Consultative Prescriptions' instead of sales. Stylists shouldn't 'sell' products—they should prescribe a 28-day roadmap for hair health. It's a psychological shift that increases AOV by default.",
-    "If I were you, I'd implement a dynamic bonus for converting basic services into 'Ritual Bundles'. It aligns their income directly with our ₹7L goal."
+    "Reward the stylists who keep their repeat customer rate above 75%. They're building your long-term revenue base, not just one-off haircuts.",
+    "Push 'Consultative Prescriptions' instead of sales. Stylists shouldn't 'sell'—they should prescribe a 28-day roadmap for hair health."
   ],
   REVENUE: [
-    "The fastest way to close that ₹{gap} gap is at the wash station. A ₹800 'Flash Ritual' takes zero extra time but has a massive profit margin. If we convert just 30% of your daily traffic, we hit our targets significantly faster.",
-    "We also need to look at 'Anchor Pricing'. Put a high-end ₹50k 'Full Restoration' package at the top of your menu. It makes your ₹15k Botox and ₹8k Skin treatments look like incredible value in comparison. It’s a pure psychological move.",
-    "For rapid revenue, 'Grand Slam Offers' are the way to go. Combine your top-performing services into a 3-month 'Glow-Up Roadmap'. By selling 'Certainty' and results instead of just sessions, you can charge a 40% premium."
+    "The fastest way to close that ₹{gap} gap is at the wash station. A ₹800 'Flash Ritual' takes zero extra time but has a massive profit margin.",
+    "We need 'Anchor Pricing'. Put a ₹50k 'Full Restoration' package at the top of your menu. It makes your ₹15k Botox look like incredible value."
   ]
 };
 
@@ -122,9 +125,12 @@ export const generateGrowthPlan = async (
     };
   }
 
-  // 2. Greeting / Chat Detection
+  // 2. High-Intent Detection (Even for short messages)
+  const isBusinessIntent = query.includes("offer") || query.includes("strategy") || query.includes("grow") || query.includes("revenue") || query.includes("plan") || query.includes("target") || query.includes("money") || query.includes("client") || query.includes("customer");
+
+  // 3. Greeting Detection (Only if NO business intent)
   const greetings = ["hi", "hello", "hey", "good morning", "good evening", "yo", "sup", "how are you"];
-  if (greetings.some(g => query.startsWith(g)) && query.length < 15) {
+  if (!isBusinessIntent && greetings.some(g => query.startsWith(g)) && query.length < 15) {
     return {
       intent: "greeting",
       isReinforced: false,
@@ -134,33 +140,23 @@ export const generateGrowthPlan = async (
     };
   }
 
-  // 3. Small Talk / Simple Questions
-  if (query.length < 20 && !query.includes("₹") && !query.includes("target") && !query.includes("revenue") && !query.includes("growth") && !query.includes("strategy")) {
-    return {
-      intent: "chat",
-      isReinforced: false,
-      summary: `I'm just a consultant ready to help. What can I do for you right now?`,
-      steps: [],
-      projections: { newRevenue: 0, confidence: 100 }
-    };
-  }
-
-  // 4. Strategic Intent Detection
   const intents = {
     scaling: query.includes("scale") || query.includes("system") || query.includes("sop") || query.includes("expand"),
     team: query.includes("staff") || query.includes("team") || query.includes("stylist") || query.includes("employee") || query.includes("performance"),
-    retention: query.includes("retention") || query.includes("churn") || query.includes("loyalty") || query.includes("comeback"),
+    retention: query.includes("retention") || query.includes("churn") || query.includes("loyalty") || query.includes("comeback") || (query.includes("offer") && query.includes("old")),
     upsell: query.includes("upsell") || query.includes("aov") || query.includes("ticket") || query.includes("bundle"),
     botox: query.includes("botox") || query.includes("filler") || query.includes("premium"),
     bridal: query.includes("bridal") || query.includes("wedding"),
-    acquisition: query.includes("acquisition") || query.includes("new client") || query.includes("leads") || query.includes("marketing") || query.includes("attract") || query.includes("customer") || query.includes("grow")
+    acquisition: query.includes("acquisition") || query.includes("new client") || query.includes("leads") || query.includes("marketing") || query.includes("attract") || query.includes("customer") || query.includes("offer") || query.includes("grow")
   };
 
   let advicePool: string[] = [];
+  let offerText = "";
   let intentName = "general";
 
   if (intents.acquisition) {
     advicePool = [HUMAN_ADVICE.ACQUISITION[0], HUMAN_ADVICE.ACQUISITION[1]];
+    offerText = HUMAN_OFFERS.ACQUISITION;
     intentName = "acquisition";
   } else if (intents.scaling) {
     advicePool = [HUMAN_ADVICE.SCALING[0], HUMAN_ADVICE.SCALING[1]];
@@ -170,19 +166,20 @@ export const generateGrowthPlan = async (
     intentName = "team";
   } else if (intents.botox || intents.upsell || query.includes("revenue")) {
     advicePool = [HUMAN_ADVICE.REVENUE[0], HUMAN_ADVICE.REVENUE[1]];
+    offerText = HUMAN_OFFERS.UPSELL;
     intentName = "revenue";
   } else if (intents.retention) {
-    advicePool = [HUMAN_ADVICE.SCALING[1], HUMAN_ADVICE.ACQUISITION[2]];
+    advicePool = [HUMAN_ADVICE.SCALING[1]];
+    offerText = HUMAN_OFFERS.RETENTION;
     intentName = "retention";
   } else if (intents.bridal) {
+    offerText = HUMAN_OFFERS.BRIDAL;
     intentName = "marketing";
-    advicePool = [HUMAN_ADVICE.REVENUE[2]];
   } else {
-    // If we have NO business intent, but the query is long, answer specifically if possible or give general bridge
     return {
       intent: "chat",
       isReinforced: false,
-      summary: `I'm not exactly sure what you mean by that, but if it's about growing the salon, I'm all ears. Should we talk about revenue or your team?`,
+      summary: `I'm ready to help. What's on your mind? We can talk strategy, create an offer, or analyze your team performance.`,
       steps: [],
       projections: { newRevenue: 0, confidence: 100 }
     };
@@ -190,16 +187,10 @@ export const generateGrowthPlan = async (
 
   const intro = HUMAN_INTROS[Math.floor(Math.random() * HUMAN_INTROS.length)].replace(/{gap}/g, gap);
   const core = advicePool.map(a => a.replace(/{gap}/g, gap)).join("\n\n");
+  const offerSection = offerText ? `\n\n**Here's a specific offer I'd launch right now:**\n${offerText.replace(/{gap}/g, gap)}` : "";
   const followUp = HUMAN_FOLLOW_UPS[Math.floor(Math.random() * HUMAN_FOLLOW_UPS.length)];
 
-  let serviceBonus = "";
-  if (query.includes("botox")) {
-    serviceBonus = "\n\n**Just a thought:** Botox is high-trust. Move to annual plans to lock in that recurring revenue.";
-  } else if (query.includes("bridal")) {
-    serviceBonus = "\n\n**Pro tip:** Sell 'Certainty'. Bundle everything into a 3-month roadmap.";
-  }
-
-  const finalSummary = `${intro}\n\n${core}${serviceBonus}\n\n${followUp}`;
+  const finalSummary = `${intro}\n\n${core}${offerSection}\n\n${followUp}`;
 
   return {
     intent: intentName,
