@@ -138,124 +138,125 @@ export const synthesizeAdvice = (data: SalonData): ALIRecommendation[] => {
 
 /**
  * Strategy Generator: Creates a cohesive plan based on multiple recommendations
- * Now uses intent detection to be more "Human Consultant" like.
+ * Now uses FULL history scan to maintain context across the entire session.
  */
 export const generateGrowthPlan = (data: SalonData, query: string, history: any[] = []) => {
   const recs = synthesizeAdvice(data);
   const q = query.toLowerCase();
 
-  // Intent Detection
-  const isOffer = q.includes("offer") || q.includes("discount") || q.includes("promo") || q.includes("deal") || q.includes("free") || q.includes("gift");
-  const isRevenue = q.includes("revenue") || q.includes("money") || q.includes("target") || q.includes("income") || q.includes("profit") || q.includes("reach");
-  const isStaff = q.includes("staff") || q.includes("team") || q.includes("stylist") || q.includes("employee") || q.includes("performance");
-  const isMarketing = q.includes("marketing") || q.includes("ads") || q.includes("campaign") || q.includes("social");
-  const isSpecificService = q.includes("haircut") || q.includes("facial") || q.includes("spa") || q.includes("pedicure") || q.includes("manicure") || q.includes("color") || q.includes("keratin");
+  // 1. Context Extraction: Scan full history for persistent topics
+  const fullHistoryText = history.map(h => h.content.toLowerCase()).join(" ") + " " + q;
+  
+  const ctx = {
+    isOffer: fullHistoryText.includes("offer") || fullHistoryText.includes("discount") || fullHistoryText.includes("promo") || fullHistoryText.includes("free"),
+    isRevenue: fullHistoryText.includes("revenue") || fullHistoryText.includes("money") || fullHistoryText.includes("target") || fullHistoryText.includes("gap"),
+    isStaff: fullHistoryText.includes("staff") || fullHistoryText.includes("team") || fullHistoryText.includes("stylist") || fullHistoryText.includes("performance"),
+    isMarketing: fullHistoryText.includes("marketing") || fullHistoryText.includes("ads") || fullHistoryText.includes("campaign"),
+    services: [] as string[]
+  };
 
-  // Reference memory if available - Fix the doubling bug by checking if previous content already has the prefix
-  const hadPreviousDiscussion = history.length > 0;
-  let memoryContext = "";
-  if (hadPreviousDiscussion) {
-    const lastMsg = history[history.length-1].content;
-    if (!lastMsg.startsWith("Continuing our analysis")) {
-      memoryContext = `Continuing our analysis of ${lastMsg.slice(0, 40)}... `;
-    }
+  ["haircut", "facial", "spa", "pedicure", "manicure", "color", "keratin"].forEach(s => {
+    if (fullHistoryText.includes(s)) ctx.services.push(s);
+  });
+
+  // Determine the "Active Intent" (current query priority vs history)
+  const currentIntent = {
+    offer: q.includes("offer") || q.includes("discount") || q.includes("promo") || q.includes("deal") || q.includes("free"),
+    revenue: q.includes("revenue") || q.includes("money") || q.includes("target") || q.includes("income") || q.includes("profit") || q.includes("reach"),
+    staff: q.includes("staff") || q.includes("team") || q.includes("stylist") || q.includes("employee") || q.includes("performance"),
+    marketing: q.includes("marketing") || q.includes("ads") || q.includes("campaign") || q.includes("social"),
+    service: ctx.services.some(s => q.includes(s))
+  };
+
+  // Check for refinement queries (e.g. "tell me more", "how?", "another option")
+  const isRefinement = q.includes("more") || q.includes("how") || q.includes("elaborate") || q.includes("why") || q.includes("another") || q.includes("explain") || q.length < 15;
+
+  // 2. Memory Context Synthesis - Avoid prefixing "Continuing our analysis" if already present
+  let memorySummary = "";
+  if (history.length > 0) {
+    const topics = [];
+    if (ctx.isOffer) topics.push("promotions");
+    if (ctx.isRevenue) topics.push("revenue targets");
+    if (ctx.isStaff) topics.push("team performance");
+    if (ctx.services.length > 0) topics.push(ctx.services.join("/") + " services");
+
+    memorySummary = `Deepening our consult on your ${topics.join(", ")}. `;
   }
 
-  // 1. Handle Specific Service Proposals (e.g., "what if we give one free haircut")
-  if (isSpecificService && (q.includes("free") || q.includes("offer") || q.includes("what if"))) {
-    const service = q.match(/haircut|facial|spa|pedicure|manicure|color|keratin/)?.[0] || "service";
-    const isFree = q.includes("free");
-    
-    if (isFree) {
-      return {
-        summary: `${memoryContext}Analyzing your 'Free ${service.toUpperCase()}' proposal through the Dr. Basesh Gala 'Finance Pillar' lens:`,
-        steps: [
-          `CAUTION: A free ${service} has a high 'Acquisition Cost'. Unless it's tied to a high-ticket upsell (like a Keratin treatment or a 12-month membership), you are just leaking 'Fuel'.`,
-          `STRATEGY: Instead of 'Free', use 'Value Add'. Give a free scalp massage with every ${service}. It preserves the 'Dignity' of the service while increasing the 'Dua' of the customer.`,
-          `DATA CHECK: You have ${data.bookings.emptySlotsNext3Days} empty slots. Use the ${service} offer ONLY for 'Flash Fill' during non-peak hours (Tue-Thu 11am-4pm) to avoid cannibalizing full-price weekend revenue.`
-        ],
-        projections: {
-          newRevenue: -500, // Short term loss for long term gain
-          confidence: 75
-        }
-      };
-    }
-  }
+  // 3. Response Routing Logic
 
-  // 2. Handle Offers/Promotions
-  if (isOffer) {
-    const offerAdvice = [];
-    if (data.bookings.emptySlotsNext3Days > 3) {
-      offerAdvice.push(`Since you have ${data.bookings.emptySlotsNext3Days} empty slots coming up, I recommend a 'Flash Fill' discount of 20% for any booking in the next 24 hours.`);
-    }
-    if (data.customers.churnRisk > 5) {
-      offerAdvice.push(`To address your ${data.customers.churnRisk} at-risk clients, let's create a 'Comeback Special': A complimentary deep conditioning treatment with any service above ₹1,000.`);
-    }
-    if (data.customers.vips > 0) {
-      offerAdvice.push(`For your ${data.customers.vips} VIPs, don't just give a discount. Give them 'Exclusive Access' to a new service trial.`);
-    }
-
+  // A. Specific Service & Offer Refinement (e.g. "what if we give one free haircut" followed by "how?")
+  if ((currentIntent.service || (isRefinement && ctx.services.length > 0)) && ctx.isOffer) {
+    const mainService = ctx.services[ctx.services.length - 1] || "service";
     return {
-      summary: `${memoryContext}To make a truly 'Great Offer', we must solve for your current bottlenecks. Based on your data, here is your 3-tier promotion strategy:`,
-      steps: offerAdvice.length > 0 ? offerAdvice : ["Create a 'Bundle & Save' offer for low-utilization services to increase ARPU."],
-      projections: {
-        newRevenue: data.customers.churnRisk * 800 + (data.bookings.emptySlotsNext3Days * 1200),
-        confidence: 88
-      }
-    };
-  }
-
-  // 3. Handle Revenue/Targets
-  if (isRevenue) {
-    return {
-      summary: `${memoryContext}LISTEN CAREFULLY: To hit that ₹${(data.revenue.target/100000).toFixed(1)}L target, we need to bridge a ₹${data.revenue.gap.toLocaleString()} gap. This isn't about working harder; it's about the 'Zero-Exit Mandate' and systems.`,
+      summary: `${memorySummary}Let's drill down into the 'Free ${mainService.toUpperCase()}' strategy. In the Dr. Basesh Gala 'Finance Pillar', we must avoid 'Suicide Scaling'.`,
       steps: [
-        `Focus on your ${data.customers.vips} VIPs—they are your 'Vital Solution'. Increasing their frequency by 10% closes 40% of your gap.`,
-        `Your pace is currently ${data.revenue.pace > 1 ? 'strong' : 'lagging'}. We need to shift from 'Push Product' to 'India 2' aspirational marketing immediately.`,
-        "Implement a weekly 'Accounting Void' check to ensure margins aren't leaking in your top services."
+        `ROI AUDIT: A free ${mainService} costs you ~₹${mainService === 'haircut' ? '250' : '800'} in variable labor. To break even, you MUST secure a re-booking on the spot.`,
+        "TACTIC: Instead of just 'Free', offer a 'Mystery Upgrade'. Tell them: 'Book your next visit now and your ${mainService} today is on us'. This locks in the LTV (Lifetime Value).",
+        `DATA LEVERAGE: You mentioned ${ctx.services.join(", ")}. Bundle them! A 'High-Value Package' is always better than a single free service.`
       ],
       projections: {
-        newRevenue: data.revenue.gap * 0.4,
-        confidence: 94
-      }
-    };
-  }
-
-  // 4. Handle Staff
-  if (isStaff) {
-    return {
-      summary: `${memoryContext}Team performance is the 'Energy Vessel' of your salon. With an average utilization of ${data.staff.avgUtilization}%, you have room for growth without hiring.`,
-      steps: [
-        `Identify why your ${data.staff.topPerformer ? data.staff.topPerformer : 'top team members'} are succeeding and map their 'Tongue' pillar scripts for the rest of the team.`,
-        "Use Rajiv Talreja's '6 R's' (Remunerate, Review, Reward, etc.) to automate management. Stop being the 'Firefighter' in your business.",
-        "Preserve the 'Dua' of your laborers by investing in their skill mastery during the current downtime."
-      ],
-      projections: {
-        newRevenue: 25000,
-        confidence: 82
-      }
-    };
-  }
-
-  // 5. Handle Marketing
-  if (isMarketing) {
-    return {
-      summary: `${memoryContext}Your marketing must move from 'Information' to 'Emotion'. You are selling luxury, not hair.`,
-      steps: [
-        "Stop boring ads. Use 'Kahania Bikti Hai' (Stories Sell) to showcase the transformation of your clients.",
-        `Leverage your ${data.customers.total} customer base. A referral program for your ${data.customers.vips} VIPs is 5x cheaper than new ads.`,
-        "Focus on the 'India 2' class—they have the money and the aspiration. Your brand voice must reflect their status."
-      ],
-      projections: {
-        newRevenue: 30000,
+        newRevenue: 12000,
         confidence: 85
       }
     };
   }
 
-  // Default: General Growth Strategy
+  // B. Revenue & Growth Focus
+  if (currentIntent.revenue || (isRefinement && ctx.isRevenue)) {
+    return {
+      summary: `${memorySummary}Focusing on your ₹${(data.revenue.target/100000).toFixed(1)}L goal and the ₹${data.revenue.gap.toLocaleString()} gap:`,
+      steps: [
+        `Prioritize your ${data.customers.vips} VIPs. If you move them from 1 visit/month to 1.2 visits/month, your gap shrinks by 20% instantly.`,
+        "Apply the 'Faster, Cheaper, Easier' framework. Is your booking link in your Instagram bio? If not, you're losing 'Fuel' every hour.",
+        "Dr. Basesh Gala says: 'Persistence is your default operational state.' Don't stop the campaign until the target is met."
+      ],
+      projections: {
+        newRevenue: data.revenue.gap * 0.35,
+        confidence: 92
+      }
+    };
+  }
+
+  // C. General Offer Focus
+  if (currentIntent.offer || (isRefinement && ctx.isOffer)) {
+    const offerAdvice = [];
+    if (data.bookings.emptySlotsNext3Days > 3) {
+      offerAdvice.push(`FLASH FILL: You have ${data.bookings.emptySlotsNext3Days} gaps. 20% off for 'Last Minute' bookings via WhatsApp.`);
+    }
+    if (data.customers.churnRisk > 5) {
+      offerAdvice.push(`COMEBACK: Send a ₹500 'Welcome Back' credit to your ${data.customers.churnRisk} at-risk regulars.`);
+    }
+    
+    return {
+      summary: `${memorySummary}To maximize impact, we are using your 'Expiring Inventory' (${data.bookings.emptySlotsNext3Days} slots) as the anchor:`,
+      steps: offerAdvice.length > 0 ? offerAdvice : ["Bundle your lowest utilization services into a 'Power Hour' package to boost mid-week ARPU."],
+      projections: {
+        newRevenue: 25000,
+        confidence: 88
+      }
+    };
+  }
+
+  // D. Staff & Performance
+  if (currentIntent.staff || (isRefinement && ctx.isStaff)) {
+    return {
+      summary: `${memorySummary}Optimizing your 'Energy Vessel' (Team Utilization: ${data.staff.avgUtilization}%):`,
+      steps: [
+        `Your top performer (${data.staff.topPerformer || 'Primary Stylist'}) is the benchmark. Record their consultation 'Tongue' scripts.`,
+        "Implement Rajiv Talreja's '6 R's' system. Every Monday at 9 AM, review the previous week's 'Retail vs Service' ratios.",
+        "Preserve 'Dua': When the salon is empty, invest in training. Skill mastery is the only true security for your team."
+      ],
+      projections: {
+        newRevenue: 15000,
+        confidence: 80
+      }
+    };
+  }
+
+  // E. Default: General Growth Strategy (using history if available)
   return {
-    summary: `${memoryContext}I've analyzed your full operational stack. Your business is currently a 'Push Product'. Let's turn it into a 'Vital Solution' using the 'Janani vs Khaala' people strategy and systemized growth.`,
+    summary: `${memorySummary}I've analyzed your full operational stack. We are transitioning you from 'Push Product' to 'Vital Solution' logic.`,
     steps: recs.slice(0, 3).map(r => r.strategy),
     projections: {
       newRevenue: 45000,
