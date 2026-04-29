@@ -657,10 +657,7 @@ const AIGrowthAssistant = () => {
             )}
             <div ref={chatEndRef} />
           </div>
-        </div>
-
-        {/* INPUT AREA */}
-        <div className="elite-input-container">
+             <div className="elite-input-container">
           <div className="max-w-4xl mx-auto space-y-4">
             {/* ATTACHMENT PREVIEW */}
             {attachments.length > 0 && (
@@ -730,92 +727,76 @@ const AIGrowthAssistant = () => {
             <p className="text-center text-[9px] text-muted-foreground uppercase tracking-widest">AAR Local Intelligence (ALI) - Private Growth Consultant</p>
           </div>
         </div>
-      </div>
 
-      {/* RIGHT INSIGHTS PANEL */}
-      <AnimatePresence>
-        {showInsights && (
-          <motion.div 
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 320, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            className="elite-insights-panel elite-scroll overflow-y-auto"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-bold uppercase tracking-[0.3em] text-gold">Dynamic Insights</h3>
-              <button onClick={() => setShowInsights(false)} className="text-muted-foreground hover:text-gold"><PanelRight className="w-4 h-4" /></button>
-            </div>
-
-            <div className="space-y-6">
-              {/* REVENUE STATUS */}
-              <div className="elite-card p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Target Progress</span>
-                  <span className="text-[10px] font-bold text-gold">74%</span>
-                </div>
-                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-6">
-                  <div className="h-full bg-gold w-[74%] shadow-[0_0_10px_rgba(212,175,55,0.5)]" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-[8px] uppercase text-muted-foreground mb-1">Current</p>
-                    <p className="text-sm font-bold text-foreground">₹5.2L</p>
-                  </div>
-                  <div>
-                    <p className="text-[8px] uppercase text-muted-foreground mb-1">Gap</p>
-                    <p className="text-sm font-bold text-gold">₹1.8L</p>
-                  </div>
-                </div>
+        {/* BOTTOM INSIGHTS PANEL */}
+        <AnimatePresence>
+          {showInsights && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="elite-insights-panel"
+            >
+              <div className="flex flex-col gap-1 shrink-0 pr-8 border-r border-gold/10">
+                <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-gold">Dynamic Vitals</h3>
+                <button onClick={() => setShowInsights(false)} className="text-[10px] text-muted-foreground hover:text-gold flex items-center gap-1">Hide <ChevronDown className="w-3 h-3" /></button>
               </div>
 
-              {/* LIVE METRICS */}
-              <div className="space-y-4">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Salon Vitals</p>
-                <div className="grid grid-cols-1 gap-3">
+              <div className="flex-1 flex items-center gap-8 min-w-0">
+                {/* REVENUE STATUS */}
+                <div className="elite-card p-4 min-w-[240px]">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase">Target progress: 74%</span>
+                  </div>
+                  <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden mb-3">
+                    <div className="h-full bg-gold w-[74%]" />
+                  </div>
+                  <div className="flex gap-4">
+                    <p className="text-xs font-bold text-foreground">₹5.2L <span className="text-[8px] text-muted-foreground font-normal ml-1">CURR</span></p>
+                    <p className="text-xs font-bold text-gold">₹1.8L <span className="text-[8px] text-muted-foreground font-normal ml-1">GAP</span></p>
+                  </div>
+                </div>
+
+                {/* LIVE METRICS */}
+                <div className="flex items-center gap-4">
                   {[
-                    { label: 'Repeat Rate', value: '64%', trend: '+3%', trendUp: true, icon: TrendingUp },
-                    { label: 'Churn Risk', value: '12%', trend: '-2%', trendUp: true, icon: Activity },
-                    { label: 'Empty Slots', value: '24', trend: 'High', trendUp: false, icon: ZapOff },
-                    { label: 'VIP Clients', value: '42', trend: '+5', trendUp: true, icon: Star },
+                    { label: 'Repeat', value: '64%', trendUp: true, icon: TrendingUp },
+                    { label: 'Churn', value: '12%', trendUp: true, icon: Activity },
+                    { label: 'VIPs', value: '42', trendUp: true, icon: Star },
                   ].map((item, idx) => (
-                    <div key={idx} className="elite-card p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-                          <item.icon className={`w-4 h-4 ${item.trendUp ? 'text-gold' : 'text-muted-foreground'}`} />
-                        </div>
-                        <div>
-                          <p className="text-[9px] uppercase text-muted-foreground">{item.label}</p>
-                          <p className="text-sm font-bold">{item.value}</p>
-                        </div>
+                    <div key={idx} className="elite-card p-3 flex items-center gap-3 min-w-[120px]">
+                      <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center">
+                        <item.icon className="w-3.5 h-3.5 text-gold" />
                       </div>
-                      <span className={`text-[10px] font-bold ${item.trendUp ? 'text-green-400' : 'text-red-400'}`}>{item.trend}</span>
+                      <div>
+                        <p className="text-[8px] uppercase text-muted-foreground">{item.label}</p>
+                        <p className="text-xs font-bold">{item.value}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
-              </div>
 
-              {/* SUGGESTED ACTIONS */}
-              <div className="space-y-4">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Recommended Actions</p>
-                <div className="space-y-2">
-                  {[
-                    { text: 'Send WhatsApp to 126 haircut clients', icon: ArrowRight },
-                    { text: 'Renew 12 expiring memberships', icon: Zap },
-                    { text: 'Apply Botox promo to VIPs', icon: Star },
-                  ].map((act, idx) => (
-                    <div key={idx} className="flex items-center gap-3 p-3 rounded-xl border border-gold/10 hover:bg-gold/5 cursor-pointer group transition-all">
-                      <div className="w-6 h-6 rounded-md bg-gold/10 flex items-center justify-center">
+                {/* SUGGESTED ACTIONS */}
+                <div className="flex-1 overflow-hidden">
+                  <div className="flex gap-3 overflow-x-auto elite-scroll pb-1">
+                    {[
+                      { text: 'Send WhatsApp to 126 haircut clients', icon: ArrowRight },
+                      { text: 'Renew 12 expiring memberships', icon: Zap },
+                      { text: 'Apply Botox promo to VIPs', icon: Star },
+                    ].map((act, idx) => (
+                      <div key={idx} className="flex items-center gap-2 p-2 rounded-xl border border-gold/10 hover:bg-gold/5 cursor-pointer group transition-all shrink-0">
                         <act.icon className="w-3 h-3 text-gold" />
+                        <span className="text-[10px] text-muted-foreground group-hover:text-gold whitespace-nowrap">{act.text}</span>
                       </div>
-                      <span className="text-[11px] text-muted-foreground group-hover:text-gold transition-colors">{act.text}</span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+ce>
     </div>
   );
 };
@@ -856,7 +837,7 @@ const AdvancedSettings = () => {
 
 export default function PremiumGrowthModules({ module }: PremiumGrowthModulesProps) {
   return (
-    <div className="container mx-auto max-w-7xl">
+    <div className="w-full h-full">
       {module === "analytics" && <AdvancedAnalytics />}
       {module === "assistant" && <AIGrowthAssistant />}
       {module === "settings" && <AdvancedSettings />}

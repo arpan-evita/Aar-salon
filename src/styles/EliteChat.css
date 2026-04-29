@@ -5,11 +5,12 @@
   color: #e5e5e5;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   height: calc(100vh - 64px);
+  width: 100%;
   display: flex;
   overflow: hidden;
 }
 
-/* 3-Panel Layout */
+/* Horizontal Layout */
 .elite-sidebar {
   width: 280px;
   background: rgba(10, 10, 10, 0.8);
@@ -17,6 +18,7 @@
   display: flex;
   flex-direction: column;
   backdrop-filter: blur(10px);
+  flex-shrink: 0;
 }
 
 .elite-main-chat {
@@ -25,17 +27,21 @@
   flex-direction: column;
   background: radial-gradient(circle at center, #111 0%, #050505 100%);
   position: relative;
+  overflow: hidden;
 }
 
 .elite-insights-panel {
-  width: 320px;
-  background: rgba(10, 10, 10, 0.8);
-  border-left: 1px solid rgba(212, 175, 55, 0.1);
+  width: 100%;
+  background: rgba(10, 10, 10, 0.9);
+  border-top: 1px solid rgba(212, 175, 55, 0.1);
   backdrop-filter: blur(10px);
-  padding: 24px;
+  padding: 20px 40px;
   display: flex;
-  flex-direction: column;
-  gap: 20px;
+  flex-direction: row;
+  align-items: center;
+  gap: 32px;
+  overflow-x: auto;
+  flex-shrink: 0;
 }
 
 /* Glassmorphism Cards */
