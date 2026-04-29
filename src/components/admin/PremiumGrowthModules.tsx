@@ -601,7 +601,7 @@ const AIGrowthAssistant = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start mt-10">
             {/* Sidebar for Sessions */}
-            <div className="lg:col-span-1 space-y-4">
+            <div className="lg:col-span-1 space-y-4 sticky top-10">
               <button 
                 onClick={createNewChat}
                 className="w-full h-12 flex items-center justify-center gap-2 border border-primary/30 rounded-xl bg-primary/5 text-primary text-xs font-bold uppercase tracking-widest hover:bg-primary/10 transition-all"
@@ -610,7 +610,7 @@ const AIGrowthAssistant = () => {
                 New Chat
               </button>
               
-              <div className="space-y-2 max-h-[500px] overflow-y-auto scrollbar-hide pr-2">
+              <div className="space-y-2 max-h-[600px] overflow-y-auto scrollbar-hide pr-2">
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 mb-2">History</p>
                 {loadingSessions ? (
                   <div className="space-y-2 animate-pulse">
@@ -641,8 +641,10 @@ const AIGrowthAssistant = () => {
               </div>
             </div>
 
-            <div className="lg:col-span-2 space-y-6">
-              <div className="bg-background/40 backdrop-blur-md rounded-2xl border border-white/5 p-6 min-h-[400px] max-h-[600px] overflow-y-auto flex flex-col gap-4 scrollbar-hide">
+            {/* Main Content: Chat + Priorities */}
+            <div className="lg:col-span-3 space-y-8">
+              <div className="space-y-6">
+                <div className="bg-background/40 backdrop-blur-md rounded-2xl border border-white/5 p-6 min-h-[400px] max-h-[600px] overflow-y-auto flex flex-col gap-4 scrollbar-hide">
                 {loadingHistory ? (
                   <div className="flex-1 flex items-center justify-center">
                     <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -704,77 +706,70 @@ const AIGrowthAssistant = () => {
                   Strategize
                 </button>
               </div>
-            </div>
 
-            <div className="space-y-6">
               <div className="bg-gradient-to-br from-primary/10 to-transparent p-1 rounded-3xl">
-                <div className="bg-[#0A0A0B] rounded-[calc(1.5rem-1px)] p-8 space-y-6">
-                  <div className="flex items-center justify-between">
+                <div className="bg-[#0A0A0B] rounded-[calc(1.5rem-1px)] p-8">
+                  <div className="flex items-center justify-between mb-8">
                     <h3 className="font-heading text-xl text-foreground">Immediate Priorities</h3>
                     <Sparkles className="w-5 h-5 text-primary" />
                   </div>
                   
-                  <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {/* Academy Leads */}
-                    <div className="flex items-center gap-4 group cursor-pointer hover:bg-white/5 p-2 rounded-xl transition-all" onClick={() => deployAction('academy')}>
+                    <div className="flex items-center gap-4 group cursor-pointer hover:bg-white/5 p-4 rounded-xl transition-all border border-white/5" onClick={() => deployAction('academy')}>
                       <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-primary/20 group-hover:text-primary transition-all">
                         <UserPlus className="w-5 h-5" />
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-medium text-foreground">Call {analysis.academyLeads} Academy leads from last week</p>
+                        <p className="text-sm font-medium text-foreground">Call {analysis.academyLeads} Academy leads</p>
                         <button className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Execute Now</button>
                       </div>
                     </div>
 
                     {/* Comeback Offers */}
-                    <div className="flex items-center gap-4 group cursor-pointer hover:bg-white/5 p-2 rounded-xl transition-all" onClick={() => deployAction('comeback')}>
+                    <div className="flex items-center gap-4 group cursor-pointer hover:bg-white/5 p-4 rounded-xl transition-all border border-white/5" onClick={() => deployAction('comeback')}>
                       <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-primary/20 group-hover:text-primary transition-all">
                         <Zap className="w-5 h-5" />
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-medium text-foreground">Send comeback offer to {analysis.haircutTargets} haircut clients</p>
+                        <p className="text-sm font-medium text-foreground">Send {analysis.haircutTargets} comeback offers</p>
                         <button className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Execute Now</button>
                       </div>
                     </div>
 
                     {/* Empty Slots */}
-                    <div className="flex items-center gap-4 group cursor-pointer hover:bg-white/5 p-2 rounded-xl transition-all" onClick={() => deployAction('slots')}>
+                    <div className="flex items-center gap-4 group cursor-pointer hover:bg-white/5 p-4 rounded-xl transition-all border border-white/5" onClick={() => deployAction('slots')}>
                       <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-primary/20 group-hover:text-primary transition-all">
                         <Calendar className="w-5 h-5" />
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-medium text-foreground">Fill tomorrow's empty slots with student promo</p>
+                        <p className="text-sm font-medium text-foreground">Fill tomorrow's gaps</p>
                         <button className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Execute Now</button>
                       </div>
                     </div>
 
                     {/* Reviews */}
-                    <div className="flex items-center gap-4 group cursor-pointer hover:bg-white/5 p-2 rounded-xl transition-all" onClick={() => deployAction('reviews')}>
+                    <div className="flex items-center gap-4 group cursor-pointer hover:bg-white/5 p-4 rounded-xl transition-all border border-white/5" onClick={() => deployAction('reviews')}>
                       <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-primary/20 group-hover:text-primary transition-all">
                         <Star className="w-5 h-5" />
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-medium text-foreground">Ask {analysis.todayBookings} today's happy customers for reviews</p>
+                        <p className="text-sm font-medium text-foreground">Ask {analysis.todayBookings} review requests</p>
                         <button className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Execute Now</button>
                       </div>
                     </div>
 
                     {/* Membership Renewals */}
-                    <div className="flex items-center gap-4 group cursor-pointer hover:bg-white/5 p-2 rounded-xl transition-all" onClick={() => deployAction('renewals')}>
+                    <div className="flex items-center gap-4 group cursor-pointer hover:bg-white/5 p-4 rounded-xl transition-all border border-white/5" onClick={() => deployAction('renewals')}>
                       <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-primary/20 group-hover:text-primary transition-all">
                         <Rocket className="w-5 h-5" />
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-medium text-foreground">Push membership renewals to {analysis.renewalTargets} users</p>
+                        <p className="text-sm font-medium text-foreground">Push {analysis.renewalTargets} renewals</p>
                         <button className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Execute Now</button>
                       </div>
                     </div>
                   </div>
-
-                  <button className="w-full h-14 border border-primary/20 hover:bg-primary/5 text-primary rounded-2xl font-bold transition-all flex items-center justify-center gap-2">
-                    <Download className="w-4 h-4" />
-                    Download Full Strategy PDF
-                  </button>
                 </div>
               </div>
             </div>
