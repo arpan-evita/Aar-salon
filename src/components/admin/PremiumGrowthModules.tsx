@@ -796,7 +796,6 @@ const AIGrowthAssistant = () => {
           )}
         </AnimatePresence>
       </div>
-ce>
     </div>
   );
 };
