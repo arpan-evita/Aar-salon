@@ -181,6 +181,36 @@ const KNOWLEDGE_BASE = {
       consultant: "Involve.me Psychology"
     }
   ],
+  RETENTION_CRM: [
+    {
+      condition: (d: SalonData) => d.revenue.current > 0,
+      advice: "Apply RFM Analysis: Segment your customers into 'Champions' (Recency+Frequency+Monetary), 'At Risk' (Lapsed), and 'One-and-Done'. Target Champions with VIP early-access and At-Risk with escalating win-back offers.",
+      title: "RFM Segmentation",
+      impact: "High" as const,
+      consultant: "Nector/HubSpot"
+    },
+    {
+      condition: (d: SalonData) => d.revenue.current > 0,
+      advice: "Win-Back Escalation: For customers inactive for 60 days, send a 'We Miss You' soft nudge with a small reward. At 90 days, trigger a 'Hard Offer' (e.g., ₹1000 OFF) with a 48-hour expiry to trigger FOMO.",
+      title: "Escalating Reactivation",
+      impact: "High" as const,
+      consultant: "CRM Strategy"
+    },
+    {
+      condition: (d: SalonData) => d.revenue.current > 0,
+      advice: "Build 'Emotional Equity'. Move from transaction-led to community-led. Use 'Gift-with-Purchase' (GWP) to reinforce value. This builds identity-based loyalty that survives price increases.",
+      title: "Emotional Brand Equity",
+      impact: "Medium" as const,
+      consultant: "Vogue Business"
+    },
+    {
+      condition: (d: SalonData) => d.revenue.current > 0,
+      advice: "Replenishment Cycles: For services like hair color or facials, automate a 'Time to Re-book' reminder 5 days before their typical interval. Offer bonus points for re-booking within the window.",
+      title: "Predictive Replenishment",
+      impact: "High" as const,
+      consultant: "Nector/Optimove"
+    }
+  ],
   MINDSET: [
     {
       condition: (d: SalonData) => d.revenue.current > 500000,
@@ -271,6 +301,7 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
     isAvatar: fullHistoryText.includes("avatar") || fullHistoryText.includes("customer") || fullHistoryText.includes("lead") || fullHistoryText.includes("target audience") || fullHistoryText.includes("journey"),
     isPricing: fullHistoryText.includes("price") || fullHistoryText.includes("cost") || fullHistoryText.includes("discount") || fullHistoryText.includes("menu") || fullHistoryText.includes("psychology"),
     isUpsell: fullHistoryText.includes("upsell") || fullHistoryText.includes("cross-sell") || fullHistoryText.includes("aov") || fullHistoryText.includes("bundle") || fullHistoryText.includes("order value"),
+    isRetention: fullHistoryText.includes("retention") || fullHistoryText.includes("churn") || fullHistoryText.includes("loyalty") || fullHistoryText.includes("crm") || fullHistoryText.includes("comeback") || fullHistoryText.includes("return"),
     services: [] as string[]
   };
 
@@ -279,7 +310,7 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
   });
 
   // 2. Reinforcement Learning: Check if we have high-performing patterns for this intent
-  const currentIntentKey = ctx.isUpsell ? 'upsell' : ctx.isPricing ? 'pricing' : ctx.isAvatar ? 'avatar' : ctx.isOffer ? 'offer' : ctx.isRevenue ? 'revenue' : ctx.isStaff ? 'staff' : 'general';
+  const currentIntentKey = ctx.isRetention ? 'retention' : ctx.isUpsell ? 'upsell' : ctx.isPricing ? 'pricing' : ctx.isAvatar ? 'avatar' : ctx.isOffer ? 'offer' : ctx.isRevenue ? 'revenue' : ctx.isStaff ? 'staff' : 'general';
   const bestPattern = learnedPatterns.find(p => p.intent === currentIntentKey && p.feedback_score > 0);
   const isReinforced = !!bestPattern;
 
@@ -294,7 +325,26 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
 
   // 4. Response Routing Logic
 
-  // A. Upsell & Cross-Sell Strategy
+  // A. Retention & CRM Strategy
+  if (ctx.isRetention || q.includes("loyalty")) {
+    return {
+      intent: 'retention',
+      isReinforced,
+      summary: `Activating Customer Retention Engine. We are shifting from 'Acquisition Mode' to 'LTV Maximization' using RFM Analysis and Win-Back Escalation.`,
+      steps: [
+        "RFM SEGMENTATION: We will identify your 'Champions' (High R-F-M scores) and target them with VIP exclusive drops and early access. This reinforces their identity as your best customers.",
+        "ESCALATING WIN-BACK WORKFLOW: For customers who haven't visited in 60 days, we'll send a soft 'We Miss You' gift. If they reach 90 days, we'll trigger a high-value 'Hard Offer' with a 48-hour expiration to create immediate urgency.",
+        "PREDICTIVE REPLENISHMENT: Based on their past service history (e.g., hair color every 45 days), we will automate a reminder 5 days BEFORE they are expected to churn. Early re-booking is 3x cheaper than winning back a lost customer.",
+        "EMOTIONAL EQUITY (GWP): Instead of generic discounts, use 'Gift-with-Purchase' (GWP). A free travel-sized product feels like a reward, whereas a 20% discount feels like a price cut. Rewards build loyalty; discounts build price-sensitivity."
+      ],
+      projections: {
+        newRevenue: data.revenue.current * 0.18,
+        confidence: 90
+      }
+    };
+  }
+
+  // B. Upsell & Cross-Sell Strategy
   if (ctx.isUpsell || q.includes("aov")) {
     return {
       intent: 'upsell',
