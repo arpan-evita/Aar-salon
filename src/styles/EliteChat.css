@@ -4,10 +4,12 @@
   background-color: #050505;
   color: #e5e5e5;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  height: calc(100vh - 64px);
+  height: calc(100vh - 80px); /* Fill window height */
   width: 100%;
   display: flex;
   overflow: hidden;
+  border-radius: 0;
+  border: none;
 }
 
 /* Horizontal Layout */

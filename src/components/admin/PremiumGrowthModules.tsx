@@ -488,7 +488,7 @@ const AIGrowthAssistant = () => {
   if (loading) return <div className="h-full flex items-center justify-center"><Bot className="w-12 h-12 text-gold animate-pulse" /></div>;
 
   return (
-    <div className="elite-ai-container rounded-3xl overflow-hidden border border-gold/10 shadow-2xl">
+    <div className="elite-ai-container w-full">
       <input 
         type="file" 
         multiple 
@@ -838,10 +838,31 @@ const AdvancedSettings = () => {
 
 export default function PremiumGrowthModules({ module }: PremiumGrowthModulesProps) {
   return (
-    <div className="w-full h-full">
-      {module === "analytics" && <AdvancedAnalytics />}
-      {module === "assistant" && <AIGrowthAssistant />}
-      {module === "settings" && <AdvancedSettings />}
+    <div className="w-full flex flex-col bg-black">
+      {module === "assistant" ? (
+        <>
+          <section className="w-full">
+            <AIGrowthAssistant />
+          </section>
+          
+          <section className="w-full p-8 md:p-12 border-t border-gold/10 bg-black">
+            <div className="max-w-[1600px] mx-auto">
+              <AdvancedAnalytics />
+            </div>
+          </section>
+
+          <section className="w-full p-8 md:p-12 border-t border-gold/10 bg-[#050505]">
+            <div className="max-w-4xl mx-auto">
+              <AdvancedSettings />
+            </div>
+          </section>
+        </>
+      ) : (
+        <div className="p-8">
+          {module === "analytics" && <AdvancedAnalytics />}
+          {module === "settings" && <AdvancedSettings />}
+        </div>
+      )}
     </div>
   );
 }
