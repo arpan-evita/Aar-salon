@@ -211,6 +211,29 @@ const KNOWLEDGE_BASE = {
       consultant: "Nector/Optimove"
     }
   ],
+  SALON_BENCHMARKS: [
+    {
+      condition: (d: SalonData) => d.revenue.current > 0,
+      advice: "Retention Scoring: <40% (Critical), 40-55% (Weak), 55-65% (Average), 65-75% (Good), 75-85% (Excellent), 85%+ (Elite). If you are below 55%, prioritize 'Comeback Campaigns' and 'Membership Joins' immediately.",
+      title: "Retention Performance",
+      impact: "High" as const,
+      consultant: "Industry Standard"
+    },
+    {
+      condition: (d: SalonData) => d.revenue.current > 0,
+      advice: "Service Cycles: Haircut (25-35 days), Beard (15-25 days), Facial (30-45 days), Hair Spa (30-40 days), Botox/Keratin (60-120 days). Automate WhatsApp triggers 2-3 days BEFORE these windows close.",
+      title: "Repeat Visit Intelligence",
+      impact: "High" as const,
+      consultant: "Operations Specialist"
+    },
+    {
+      condition: (d: SalonData) => d.revenue.current > 0,
+      advice: "CEO Decision Rules: If weekday slots are empty -> Run 'Student Combo' campaigns. If avg bill is low -> Trigger 'Low Friction Upsells' (e.g., Beard styling with haircut). If churn is high -> Activate 'Win-Back' flow with 48h expiry.",
+      title: "Revenue Operator Rules",
+      impact: "High" as const,
+      consultant: "CEO Advisor"
+    }
+  ],
   MINDSET: [
     {
       condition: (d: SalonData) => d.revenue.current > 500000,
@@ -299,9 +322,10 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
     isMarketing: fullHistoryText.includes("marketing") || fullHistoryText.includes("ads") || fullHistoryText.includes("campaign"),
     isAdvanced: fullHistoryText.includes("strategy") || fullHistoryText.includes("scale") || fullHistoryText.includes("growth") || fullHistoryText.includes("plan") || fullHistoryText.includes("advanced") || fullHistoryText.includes("grand slam"),
     isAvatar: fullHistoryText.includes("avatar") || fullHistoryText.includes("customer") || fullHistoryText.includes("lead") || fullHistoryText.includes("target audience") || fullHistoryText.includes("journey"),
-    isPricing: fullHistoryText.includes("price") || fullHistoryText.includes("cost") || fullHistoryText.includes("discount") || fullHistoryText.includes("menu") || fullHistoryText.includes("psychology"),
     isUpsell: fullHistoryText.includes("upsell") || fullHistoryText.includes("cross-sell") || fullHistoryText.includes("aov") || fullHistoryText.includes("bundle") || fullHistoryText.includes("order value"),
     isRetention: fullHistoryText.includes("retention") || fullHistoryText.includes("churn") || fullHistoryText.includes("loyalty") || fullHistoryText.includes("crm") || fullHistoryText.includes("comeback") || fullHistoryText.includes("return"),
+    isStaff: fullHistoryText.includes("staff") || fullHistoryText.includes("stylist") || fullHistoryText.includes("performance") || fullHistoryText.includes("team"),
+    isAcademy: fullHistoryText.includes("academy") || fullHistoryText.includes("student") || fullHistoryText.includes("course") || fullHistoryText.includes("training"),
     services: [] as string[]
   };
 
@@ -310,7 +334,7 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
   });
 
   // 2. Reinforcement Learning: Check if we have high-performing patterns for this intent
-  const currentIntentKey = ctx.isRetention ? 'retention' : ctx.isUpsell ? 'upsell' : ctx.isPricing ? 'pricing' : ctx.isAvatar ? 'avatar' : ctx.isOffer ? 'offer' : ctx.isRevenue ? 'revenue' : ctx.isStaff ? 'staff' : 'general';
+  const currentIntentKey = ctx.isStaff ? 'staff' : ctx.isAcademy ? 'academy' : ctx.isRetention ? 'retention' : ctx.isUpsell ? 'upsell' : ctx.isPricing ? 'pricing' : ctx.isAvatar ? 'avatar' : ctx.isOffer ? 'offer' : ctx.isRevenue ? 'revenue' : 'general';
   const bestPattern = learnedPatterns.find(p => p.intent === currentIntentKey && p.feedback_score > 0);
   const isReinforced = !!bestPattern;
 
@@ -325,7 +349,45 @@ export const generateGrowthPlan = (data: SalonData, query: string, history: any[
 
   // 4. Response Routing Logic
 
-  // A. Retention & CRM Strategy
+  // A. Staff & Team Performance
+  if (ctx.isStaff || q.includes("team")) {
+    return {
+      intent: 'staff',
+      isReinforced,
+      summary: `Acting as your Revenue Operator. We are shifting from 'Revenue-Only' tracking to 'Retention-First' staff metrics.`,
+      steps: [
+        "REWARD RETENTION: Establish a 'Retention Bonus'. Reward stylists who have a repeat customer rate >75% (Excellent benchmark). Revenue is temporary; a loyal client base is permanent equity.",
+        "UTILIZATION AUDIT: If staff utilization is <60%, route automated leads to idle stylists. Use 'Student Combo' campaigns to fill their weekday morning slots.",
+        "UPSELL COACHING: Train staff on 'Low-Friction' upsells. A hair wash or beard trim added to a haircut is easier to sell than a full Botox treatment in one go.",
+        "NO-SHOW PENALTY/INCENTIVE: Give stylists a bonus for every appointment that they confirm personally via WhatsApp, reducing no-show rates by up to 45%."
+      ],
+      projections: {
+        newRevenue: data.revenue.current * 0.12,
+        confidence: 88
+      }
+    };
+  }
+
+  // B. Academy & Training Growth
+  if (ctx.isAcademy || q.includes("course")) {
+    return {
+      intent: 'academy',
+      isReinforced,
+      summary: `Activating Academy Business Model. Focusing on 'Student Lifetime Value' and 'Certification Lead Funnels'.`,
+      steps: [
+        "LEAD SOURCE OPTIMIZATION: Focus Instagram Ads on 'Beauty Career' keywords. 80% of student leads come from visual transformations and success stories of previous graduates.",
+        "STUDENT FOLLOW-UP FUNNEL: Automate a 3-part WhatsApp sequence for course inquiries. Day 1: Syllabus. Day 2: Student Placements. Day 3: Early-bird Discount (₹999 off).",
+        "MASTERCLASS UPSELLS: Offer 'Advanced Certifications' (e.g., Nanoplastia Masterclass) to existing basic course students. It's 5x cheaper to upsell a student than to find a new one.",
+        "ACADEMY-TO-SALON PIPELINE: Use your top graduates to fill junior stylist roles, ensuring service consistency while keeping labor costs optimized."
+      ],
+      projections: {
+        newRevenue: data.revenue.current * 0.20,
+        confidence: 85
+      }
+    };
+  }
+
+  // C. Retention & CRM Strategy
   if (ctx.isRetention || q.includes("loyalty")) {
     return {
       intent: 'retention',
