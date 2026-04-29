@@ -901,6 +901,7 @@ const AIGrowthAssistant = ({ analysis }: { analysis: any }) => {
               </button>
             </div>
             <p className="text-center text-[9px] text-muted-foreground uppercase tracking-widest">AAR Local Intelligence (ALI) - Private Growth Consultant</p>
+          </div>
         </div>
       </div>
     </div>
